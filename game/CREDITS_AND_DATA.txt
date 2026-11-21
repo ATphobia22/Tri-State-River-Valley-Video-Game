@@ -1,0 +1,26 @@
+RIVER VALLEY FAMILY ADVENTURE - CREDITS AND DATA BOUNDARIES
+2026-11-21, standalone family game, not a government/TSM system.
+
+Player-uploaded source prototypes:
+  Tri-State Open World — Playable(1).html
+  Tri-State_Open_World___Mount_Vernon_47620__Physics___BIM___PTDT-V35___GTA___Sims___Farm_Sim_25_.html
+Gameplay data were extracted from the attached prototypes and preserved unmodified in `data/valley-data.json`.
+
+Provided dataset metadata claims Mount Vernon area geography, 4,429 derived
+building footprints, 719 road records, 44 POIs, and 200x200 terrain DEM.
+Footprints are marked DERIVED; DEM datum/units PENDING_EVIDENCE, 8.4% fill.
+Metadata lists 708 roads although there are 719 records.
+
+The user-supplied prototypes attributed road input to OpenStreetMap;
+© OpenStreetMap contributors, ODbL: https://www.openstreetmap.org/copyright
+The user-provided prototypes cite Indiana IGIO building footprints;
+verify redistribution and derivative-source terms before publishing publicly.
+
+Three.js library included from the user-provided prototype:
+Three.js authors, MIT License (see vendor/THREE_LICENSE.txt).
+
+Other artistic objects (trees, badges, scenery, missions) are wholly synthetic
+scene geometry and original app design; game river shape is illustrative.
+No remote stock images, screenshots, paid-generated assets, or copyrighted music are bundled.
+
+References and attribution here are not proof of authoritative data validation.

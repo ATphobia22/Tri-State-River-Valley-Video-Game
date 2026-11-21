@@ -1,0 +1,96 @@
+{
+  "source": "Original model geometry generated for this game by build_models.py",
+  "license": "Project-original assets; no external model imports",
+  "models": [
+    {
+      "name": "barn",
+      "bytes": 6888,
+      "meshes": 6,
+      "sha256": "01d634da01fe2b5fb9d416df8d826e80fd7e68fbea5ff6249051215d0c281db8",
+      "bounds": [
+        [
+          -20.0,
+          -0.5,
+          -33.0
+        ],
+        [
+          34.8,
+          44.8,
+          21.5
+        ]
+      ]
+    },
+    {
+      "name": "riverboat",
+      "bytes": 8140,
+      "meshes": 6,
+      "sha256": "fd21b2614a7a7019a5de69a35a7728dba41cbb3088bb99717c18df7151fbe3d1",
+      "bounds": [
+        [
+          -30.0,
+          0.0,
+          -12.5
+        ],
+        [
+          30.0,
+          40.0,
+          12.5
+        ]
+      ]
+    },
+    {
+      "name": "fishing_pier",
+      "bytes": 5720,
+      "meshes": 3,
+      "sha256": "b9dbfc4dce3c7954b5581317cbfd944e1287183863c83161cae21b7061215fe8",
+      "bounds": [
+        [
+          -26.0,
+          -5.5,
+          -27.0
+        ],
+        [
+          26.0,
+          9.0,
+          35.0
+        ]
+      ]
+    },
+    {
+      "name": "courthouse",
+      "bytes": 6828,
+      "meshes": 5,
+      "sha256": "f69463606cf0ab2b2f390eb07d3b2c64cb01810c4cdbf7e6dd618f131d015373",
+      "bounds": [
+        [
+          -28.0,
+          0.0,
+          -25.5
+        ],
+        [
+          28.0,
+          70.0,
+          22.5
+        ]
+      ]
+    },
+    {
+      "name": "oak_cottage",
+      "bytes": 3612,
+      "meshes": 4,
+      "sha256": "aebc4b3d392f323d135eb57951fa56377dae8896dea5dfc4a832884d8dcf22d2",
+      "bounds": [
+        [
+          -19.88,
+          -0.5,
+          -21.5
+        ],
+        [
+          19.88,
+          32.0,
+          14.0
+        ]
+      ]
+    }
+  ]
+}

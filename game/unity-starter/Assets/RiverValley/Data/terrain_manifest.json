@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "tsm.unity-preview.1",
+  "createdUtc": "2026-11-21",
+  "purpose": "Visualization preview; not engineering/regulatory or survey-grade",
+  "sourceDataSha256": "9aa613a137a742c68a06e412bc321de9783ad8fb00b6eb59a40c864a78c3ad10",
+  "rawDemSha256": "db5d112e8ebc5da09ed121427a913c30af21fec8f716baf9a7dac0e6a8c5da07",
+  "unityHeightmapSha256": "d0aab1492bd6b13c6a1800975a06d4f3e36568e7616db01defb8a3314b020e85",
+  "gridResolution": 257,
+  "sourceResolution": 200,
+  "widthMeters": 9064.23725,
+  "depthMeters": 9222.5908,
+  "heightMeters": 47.31715,
+  "elevationMinFt": 342.54,
+  "elevationMaxFt": 497.78,
+  "heightmapOrientation": "Rows south to north; columns west to east; Unity TerrainData heights[z,x]",
+  "heightmapFormat": "unsigned 16-bit little-endian normalized 0..65535, x fastest, row major",
+  "boundsWgs84": {
+    "lonMin": -87.94188005620418,
+    "lonMax": -87.83877035224613,
+    "latMin": 37.894506105160744,
+    "latMax": 37.977596051789895
+  },
+  "sourceGrid": {
+    "minFt": 340.0,
+    "stepFt": 0.01,
+    "fillPct": 8.4,
+    "verticalDatum": "PENDING_EVIDENCE",
+    "coordinateTransform": "local affine approximation in browser source, not authoritative EPSG:2966 transformation"
+  },
+  "packCounts": {
+    "buildings": 4429,
+    "roads": 719,
+    "pois": 44,
+    "roadLabels": 6
+  },
+  "buildingAuthorityClassCounts": {
+    "2": 4429
+  },
+  "metadataRoadCount": 708,
+  "roadCountMismatch": true,
+  "provenance": [
+    {
+      "filename": "Tri-State Open World — Playable(1).html",
+      "sha256": "4c83d48b33aa3fed57318f93ec848f9a9df75073fa195012724f122b751051f2",
+      "bytes": 16482587
+    },
+    {
+      "filename": "Tri-State_Open_World___Mount_Vernon_47620__Physics___BIM___PTDT-V35___GTA___Sims___Farm_Sim_25_.html",
+      "sha256": "72bab3d0b91c77275a2d369640f3cd00323498af02544c2edeb53c8b10a838bb",
+      "bytes": 1816738
+    }
+  ],
+  "limits": [
+    "8.4% of DEM grid has inpainted cells, position mask unavailable",
+    "All packed building authority_class values are 2=DERIVED",
+    "The supplied files do not include a validated vertical transformation receipt",
+    "Geodesic width/depth approximate tangent plane; do not use for survey-grade GIS joins",
+    "Unity Editor, build, and visual scene launch not available to verify in this environment"
+  ]
+}

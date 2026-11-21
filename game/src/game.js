@@ -1,0 +1,686 @@
+/* River Valley Family Adventure: self-contained local-only browser game.
+   No network endpoints, no trackers, no external audio, and no repository integration. */
+(function(){
+'use strict';
+const WORLD=window.ValleyOpenWorld, C=window.ValleyCore, DATA=window.VALLEY_DATA, GEO=window.ValleyGeometry, VFX=window.ValleyVisuals, QT=window.ValleyTerrain, MODEL=window.ValleyModelLoader, ATM=window.ValleyAtmosphere, DIR=window.ValleyDirector, STORY=window.ValleyStoryscape;
+const $=id=>document.getElementById(id);
+const canvas=$('world'),atlas=$('atlas'),mapCanvas=$('minimap');
+const ctx=atlas.getContext('2d',{alpha:false}); // separate 2D surface; WebGL uses its own canvas
+const mapCtx=mapCanvas.getContext('2d');
+const nameKey=i=>'river-family-adventure-v1-slot-'+i;
+let slot=0,save=C.freshSave('Family Explorer'),started=false,touring=false,tourAt=0,tourTimer=0,tourFrom=null,toastTimer=0;
+let player={x:16,z:504},near=null,selected='riverfront',view='auto',renderer=null,scene=null,camera=null,avatar=null,car=null,dog=null,beaconGroup=null,terrainMesh=null,treeMeshes=[],sunLight=null,ambient=null,waterMesh=null,house=null;
+let activity=null,huntRound=null,fishRound=null,activityInterval=null;
+let worldGame=null,worldActive=null,worldHuntRound=null,worldFishRound=null,worldAim=.5,worldStatus="",lastWorldHUD=0,playerHeading=0;
+let backdropOpen=false,backdropLocation='riverfront',backdropLast=0;
+let shotPlaying=false,shotStart=0,shotIndex=0;
+const SHOTS=Object.freeze([{scene:'riverfront',look:'natural',title:'01 · Ohio River · Arrival'},{scene:'farm',look:'golden',title:'02 · Valley Farm · Golden Fields'},{scene:'woods',look:'lantern',title:'03 · Oak Grove · Firefly Night'},{scene:'riverfront',look:'storm',title:'04 · Ohio River · Summer Storm'},{scene:'riverfront',look:'blue',title:'05 · Riverfront · Blue Hour'}]);
+const SHOT_DURATION=4200;
+let director3D=null,directorLastFX=0,perfFrames=0,perfSince=0,perfFPS=0,cinemaPrefs={look:"natural",quality:"balanced",strength:.72,grain:false,showStats:false};
+let atmosphere=null,gameModels=[],terrainMeshes=[],terrainIndex=null,terrainAt={x:Infinity,z:Infinity,dist:Infinity,viewHeight:0},terrainStats={tiles:0,triangles:0,levels:{}},roadMesh=null,buildingMesh=null,buildingItems=[],detailBuildings=new Map(),detailGroup=null,detailLast={x:Infinity,z:Infinity},lastLODLabel='';
+let roofInstances=null,tourCurve=null;
+let activeTerrainSegments=16,terrainDetail='auto',visualEffects='full';
+let time=15.5,weather='clear',season='summer',keys=new Set(),pointerDown=false,pointerX=0,pointerY=0,cameraYaw=.2,cameraDist=74,mapZoom=1;
+let demArray,grid=DATA.grid,staticMap=null,needsMap=true,lastUI=0,lastFrame=0,lastPersist=0;
+const G=window.THREE;
+const rand=(function(){let v=78932;return function(){v=(Math.imul(v,1664525)+1013904223)>>>0;return v/4294967296;}})();
+const LIMIT=C.LIMIT, TWO=LIMIT*2;
+function decodeDem(){
+ const raw=atob(grid.b64), buf=new Uint8Array(raw.length);
+ for(let i=0;i<raw.length;i++)buf[i]=raw.charCodeAt(i);
+ const dv=new DataView(buf.buffer);demArray=new Uint16Array(buf.length/2);
+ for(let i=0;i<demArray.length;i++)demArray[i]=dv.getUint16(i*2,true);
+}
+decodeDem();
+function heightFt(x,z){
+ // Preserve the source prototype's documented local registration; unverified survey datum.
+ const lon=-87.8950+x*0.00001137489;
+ const lat=37.9325-(z-430)*0.000009009399;
+ const u=(lon-grid.lonMin)/(grid.lonMax-grid.lonMin);
+ const v=(grid.latMax-lat)/(grid.latMax-grid.latMin);
+ return C.sampleGrid(grid,demArray,u,v);
+}
+function sourceHeight(x,z){return C.clamp((heightFt(x,z)-342.5)*.3048,-4,70);}
+// Exact barycentric sample of the currently visible PlaneGeometry triangle; no separate road/building height frame.
+function height(x,z){return terrainIndex?QT.terrainHeight(terrainIndex,x,z,sourceHeight):sourceHeight(x,z);}
+
+function themeHeight(h){
+ const high=C.clamp((h-2)/48,0,1);
+ const pal={
+  spring:[[91,142,94],[122,154,103]],summer:[[102,143,92],[142,159,106]],
+  autumn:[[150,143,84],[154,112,83]],winter:[[157,175,174],[213,221,220]]
+ }[season];
+ const lo=pal[0],hi=pal[1],f=high;
+ return [Math.round(lo[0]+(hi[0]-lo[0])*f),Math.round(lo[1]+(hi[1]-lo[1])*f),Math.round(lo[2]+(hi[2]-lo[2])*f)];
+}
+function worldToMap(x,z,w,h){return [(x+LIMIT)/TWO*w,(z+LIMIT)/TWO*h];}
+function makeStaticMap(){
+ const c=document.createElement('canvas');c.width=900;c.height=900;
+ const ct=c.getContext('2d');let tile=5;
+ for(let py=0;py<900;py+=tile){for(let px=0;px<900;px+=tile){
+  const x=px/900*TWO-LIMIT,z=py/900*TWO-LIMIT,v=height(x,z);
+  let a=themeHeight(v);ct.fillStyle=`rgb(${a[0]},${a[1]},${a[2]})`;ct.fillRect(px,py,tile+1,tile+1);
+ }}
+ // Designed water corridor, intentionally illustrative rather than a factual river polygon.
+ ct.fillStyle='#397889';ct.beginPath();ct.moveTo(0,900);
+ for(let x=0;x<=900;x+=12){let wx=x/900*TWO-LIMIT;let zz=1200+125*Math.sin(wx/550)+65*Math.cos(wx/175);ct.lineTo(x,(zz+LIMIT)/TWO*900);}
+ ct.lineTo(900,900);ct.closePath();ct.fill();
+ ct.lineJoin='round';ct.lineCap='round';
+ DATA.roads.forEach(road=>{if(!Array.isArray(road[1]))return;
+  const pts=road[1],r=road[0];ct.strokeStyle=r>=6?'#b4a884':'#383f3a';ct.lineWidth=r>=6?1.1:1.7;ct.beginPath();
+  for(let k=0;k<pts.length-1;k+=2){const p=worldToMap(pts[k]*.25,pts[k+1]*.25,900,900);if(k===0)ct.moveTo(...p);else ct.lineTo(...p);}ct.stroke();
+ });
+ ct.fillStyle='#e4dbbb';DATA.buildings.forEach((b,i)=>{if(i%2===1)return;const p=worldToMap((b[0]+35)*.25,(b[1]+35)*.25,900,900);ct.fillRect(p[0],p[1],1.5,1.5);});
+ // Not survey-verified: these are intended game-level region labels.
+ ct.fillStyle='#f6ffea';ct.font='bold 17px system-ui';ct.shadowColor='#244539';ct.shadowBlur=8;
+ ct.fillText('MOUNT VERNON',378,445);ct.font='italic 19px Georgia';ct.fillText('Ohio River • stylized',310,785);ct.shadowBlur=0;
+ return c;
+}
+function mapDraw(targetCtx,width,height,focus){
+ if(!staticMap||needsMap){staticMap=makeStaticMap();needsMap=false;}
+ targetCtx.save();targetCtx.clearRect(0,0,width,height);
+ if(focus){
+  const f=worldToMap(player.x,player.z,900,900),base=Math.max(width,height)/900*mapZoom*.99;
+  targetCtx.translate(width/2,height/2);targetCtx.scale(base,base);targetCtx.translate(-f[0],-f[1]);
+  targetCtx.drawImage(staticMap,0,0);
+  if(save.homestead){const hp=worldToMap(-740,-210,900,900);targetCtx.fillStyle='#fff9e0';targetCtx.font=`${Math.max(10,25/base)}px system-ui`;targetCtx.fillText('🏠',hp[0],hp[1]);}
+  for(const st of C.STOPS){const p=worldToMap(st.x,st.z,900,900);targetCtx.lineWidth=4/base;targetCtx.strokeStyle='#183a33';targetCtx.fillStyle=save.completed.includes(st.id)?'#b1f3c6':'#ffd57e';targetCtx.beginPath();targetCtx.arc(...p,11/base,0,Math.PI*2);targetCtx.fill();targetCtx.stroke();}
+  targetCtx.fillStyle='#f9fff7';targetCtx.strokeStyle='#1a4540';targetCtx.lineWidth=6/base;targetCtx.beginPath();targetCtx.arc(...f,9/base,0,Math.PI*2);targetCtx.fill();targetCtx.stroke();
+ } else {
+  targetCtx.drawImage(staticMap,0,0,width,height);
+  if(save.homestead){const hp=worldToMap(-740,-210,width,height);targetCtx.font="18px system-ui";targetCtx.fillText("🏠",hp[0],hp[1]);}
+  for(const st of C.STOPS){const p=worldToMap(st.x,st.z,width,height);targetCtx.fillStyle=save.completed.includes(st.id)?'#83f3b7':'#f9d274';targetCtx.strokeStyle='#183c36';targetCtx.lineWidth=3;targetCtx.beginPath();targetCtx.arc(...p,5,0,Math.PI*2);targetCtx.fill();targetCtx.stroke();}
+  const p=worldToMap(player.x,player.z,width,height);targetCtx.fillStyle='#fcffff';targetCtx.strokeStyle='#0c4340';targetCtx.lineWidth=3;targetCtx.beginPath();targetCtx.arc(...p,6,0,Math.PI*2);targetCtx.fill();targetCtx.stroke();
+ }
+ targetCtx.restore();
+}
+function tryRenderer(){
+ if(!G||!G.WebGLRenderer)return false;
+ try{
+  const canvas3d=canvas;renderer=new G.WebGLRenderer({canvas:canvas3d,antialias:true,powerPreference:'default',preserveDrawingBuffer:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.25));
+  renderer.setSize(window.innerWidth,window.innerHeight,false);
+  renderer.outputColorSpace=G.SRGBColorSpace;
+  renderer.toneMapping=G.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.25;
+  scene=new G.Scene();scene.background=new G.Color('#a8bec2');scene.fog=new G.FogExp2('#bdd0ca',0.00019);
+  camera=new G.PerspectiveCamera(60,Math.max(1,innerWidth)/Math.max(1,innerHeight),.2,10500);
+  ambient=new G.HemisphereLight(0xd5e6ff,0x404e36,2.3);scene.add(ambient);
+  sunLight=new G.DirectionalLight(0xffe1a8,2.3);sunLight.position.set(100,220,-180);scene.add(sunLight);
+  buildTerrain();buildRiver();buildRoads();buildBuildings();buildTrees();buildBeacons();buildPlayer();buildHouse();buildOriginalModels();if(WORLD)worldGame=WORLD.sceneWorld(G,scene,height);if(ATM)atmosphere=ATM.create(G,scene,height,LIMIT);if(DIR)director3D=DIR.makeWorldFX(G,scene,height,LIMIT);
+  return true;
+ }catch(err){console.warn('WebGL unavailable; 2D atlas gameplay remains active.',err.message); if(renderer){try{renderer.dispose();}catch(_){}}renderer=null;scene=null;return false;}
+}
+// Active leaf tiles are selected by local screen-space height error, not one global mesh resolution.
+// Neighboring tile edges use their coarse neighbor's samples for exact junction alignment.
+function buildTerrain(){applyTerrainLOD(true);}
+function terrainBudget(){return visualEffects==='lite'?110:200;}
+function desiredPixelError(){return ({auto:8,high:3.5,medium:14,low:28})[terrainDetail]||8;}
+function tileColorMesh(tile,index){
+ const n=QT.WIDTH,ge=new G.PlaneGeometry(tile.width,tile.width,n,n);
+ ge.rotateX(-Math.PI/2);ge.translate(tile.x0+tile.width/2,0,tile.z0+tile.width/2);
+ const pos=ge.attributes.position,colors=[],rgb=new G.Color();
+ for(let i=0;i<pos.count;i++){
+  const y=tile.samples[i];pos.setY(i,y);
+  const c=themeHeight(y);rgb.setRGB(c[0]/255,c[1]/255,c[2]/255,G.SRGBColorSpace);
+  const grain=(Math.sin(pos.getX(i)*.028)*Math.cos(pos.getZ(i)*.013)+1)*.022;
+  colors.push(Math.min(1,rgb.r+grain),Math.min(1,rgb.g+grain),Math.min(1,rgb.b+grain));
+ }
+ ge.setAttribute('color',new G.Float32BufferAttribute(colors,3));ge.computeVertexNormals();
+ const mesh=new G.Mesh(ge,new G.MeshLambertMaterial({vertexColors:true,side:G.DoubleSide}));
+ mesh.userData.lod=tile.depth;mesh.frustumCulled=true;scene.add(mesh);
+ const skirts=[];
+ function addEdge(side){
+   const neighbour=QT.edgeNeighbor(tile,index,side);
+   if(neighbour&&neighbour.depth===tile.depth)return;
+   for(let k=0;k<n;k++){
+     let a,b;
+     if(side==='top'){a=[k,0];b=[k+1,0];}
+     if(side==='bottom'){a=[k,n];b=[k+1,n];}
+     if(side==='left'){a=[0,k];b=[0,k+1];}
+     if(side==='right'){a=[n,k];b=[n,k+1];}
+     let x0=tile.x0+a[0]*tile.width/n,z0=tile.z0+a[1]*tile.width/n,
+         x1=tile.x0+b[0]*tile.width/n,z1=tile.z0+b[1]*tile.width/n;
+     let y0=tile.samples[a[1]*(n+1)+a[0]],y1=tile.samples[b[1]*(n+1)+b[0]];
+     const depth=Math.min(8,Math.max(2,tile.geometricError*1.5));
+     skirts.push(x0,y0,z0,x0,y0-depth,z0,x1,y1,z1, x1,y1,z1,x0,y0-depth,z0,x1,y1-depth,z1);
+   }
+ }
+ ['top','bottom','left','right'].forEach(addEdge);
+ if(skirts.length){const g=new G.BufferGeometry();g.setAttribute('position',new G.Float32BufferAttribute(skirts,3));g.computeVertexNormals();
+  const seam=new G.Mesh(g,new G.MeshLambertMaterial({color:0x4d694e,side:G.DoubleSide}));seam.userData.lodSkirt=true;seam.frustumCulled=false;mesh.add(seam);
+ }
+ return mesh;
+}
+function applyTerrainLOD(force=false){
+ if(!scene||!QT)return;
+ if(!force&&Math.hypot(player.x-terrainAt.x,player.z-terrainAt.z)<100&&Math.abs(cameraDist-terrainAt.dist)<45&&Math.abs(innerHeight-terrainAt.viewHeight)<90)return;
+ terrainAt={x:player.x,z:player.z,dist:cameraDist,viewHeight:innerHeight};
+ const leaves=QT.selectTiles({height:sourceHeight,limit:LIMIT,cameraX:player.x,cameraZ:player.z,cameraAltitude:Math.max(52,cameraDist*.65),viewportHeight:Math.max(innerHeight,350),pixelError:desiredPixelError(),maxDepth:6,minDepth:2,maxTiles:terrainBudget(),roughnessFloor:.015});
+ const next=QT.makeTileIndex(leaves,LIMIT);
+ for(const leaf of leaves)leaf.samples=QT.tileSamples(sourceHeight,leaf,next);
+ const newMeshes=leaves.map(t=>tileColorMesh(t,next));
+ for(const m of terrainMeshes){scene.remove(m);m.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();obj.material.dispose();}});}
+ terrainMeshes=newMeshes;terrainMesh=newMeshes[0];terrainIndex=next;
+ terrainStats={tiles:leaves.length,triangles:leaves.length*QT.WIDTH*QT.WIDTH*2,levels:{}};
+ for(const t of leaves)terrainStats.levels[t.depth]=(terrainStats.levels[t.depth]||0)+1;
+ activeTerrainSegments=QT.WIDTH;
+ if(roadMesh){scene.remove(roadMesh);roadMesh.geometry.dispose();roadMesh.material.dispose();roadMesh=null;buildRoads();}
+ updateBuildingLOD(true);
+ const labels=Object.entries(terrainStats.levels).map(([l,n])=>`L${l}:${n}`).join(' · ');
+ const label=`Quadtree SSE ${terrainDetail.toUpperCase()} · ${leaves.length} tiles · ${labels}`;
+ if($('lodLabel'))$('lodLabel').textContent=label;lastLODLabel=label;
+}
+function buildRiver(){
+ const shape=[];const n=100;
+ for(let i=0;i<=n;i++){
+  const x=-LIMIT+i/n*TWO,z=1200+125*Math.sin(x/550)+65*Math.cos(x/175);
+  shape.push(x,.3,z);
+ }
+ const pos=[];const inds=[];
+ for(let i=0;i<=n;i++){
+  const x=shape[i*3],z=shape[i*3+2];pos.push(x,.55,z,x,.55,LIMIT+110);
+  if(i<n){const k=i*2;inds.push(k,k+1,k+2,k+1,k+3,k+2);}
+ }
+ const geo=new G.BufferGeometry();geo.setAttribute('position',new G.Float32BufferAttribute(pos,3));geo.setIndex(inds);geo.computeVertexNormals();
+ waterMesh=new G.Mesh(geo,new G.MeshPhongMaterial({color:0x468ea1,transparent:true,opacity:.87,shininess:75,side:G.DoubleSide}));scene.add(waterMesh);
+}
+function buildRoads(){
+ // Sample both *edges* of each ribbon on the SAME displayed terrain triangles.
+ // Short subdivisions prevent long straight road segments from cutting through hills.
+ const meshData=GEO.drapedRoadVertices(DATA.roads,height,LIMIT,12);
+ const geo=new G.BufferGeometry();geo.setAttribute('position',new G.Float32BufferAttribute(meshData.vertices,3));geo.computeVertexNormals();
+ roadMesh=new G.Mesh(geo,new G.MeshLambertMaterial({color:0x42474a,polygonOffset:true,polygonOffsetFactor:-2,side:G.DoubleSide}));
+ roadMesh.frustumCulled=false;scene.add(roadMesh);
+ console.info('River Valley road mesh sections',meshData.sections,'terrain LOD',activeTerrainSegments);
+}
+function detailedBuilding(rec){
+ const pts=rec.points.filter((_,i)=>i%Math.max(1,Math.ceil(rec.points.length/96))===0);
+ if(pts.length<3)return null;
+ const g=new G.Group(),wall=[],terrainY=pts.map(([x,z])=>height(x,z));
+ const roofY=Math.max(...terrainY)+rec.h;
+ for(let i=0;i<pts.length;i++){
+   const j=(i+1)%pts.length,[x,z]=pts[i],[nx,nz]=pts[j],h0=terrainY[i]-.25,h1=terrainY[j]-.25;
+   if(Math.hypot(nx-x,nz-z)<.1)continue;
+   wall.push(x,h0,z,nx,h1,nz,x,roofY,z, x,roofY,z,nx,h1,nz,nx,roofY,nz);
+ }
+ const wg=new G.BufferGeometry();wg.setAttribute('position',new G.Float32BufferAttribute(wall,3));wg.computeVertexNormals();
+ const wm=new G.Mesh(wg,new G.MeshLambertMaterial({color:[0xbda68c,0xc69b83,0xbb8775,0xbeb8a9][rec.i%4],side:G.DoubleSide}));g.add(wm);
+ try{
+   const sh=new G.Shape();pts.forEach(([x,z],i)=>{if(!i)sh.moveTo(x,z);else sh.lineTo(x,z);});sh.closePath();
+   const roofGeo=new G.ShapeGeometry(sh);roofGeo.rotateX(Math.PI/2);
+   const roofMat=new G.MeshLambertMaterial({color:rec.i%3===0?0x61534a:0x676f6b,side:G.DoubleSide});
+   const roof=new G.Mesh(roofGeo,roofMat);roof.position.y=roofY;g.add(roof);
+   // Simple gabled overlay on near-rectangular footprints: a deliberate fictional design, not LOD2 survey geometry.
+   if(pts.length===4){
+     const x0=Math.min(...pts.map(p=>p[0])),x1=Math.max(...pts.map(p=>p[0])),z0=Math.min(...pts.map(p=>p[1])),z1=Math.max(...pts.map(p=>p[1]));
+     if(x1-x0>5&&z1-z0>5){const ridge=roofY+Math.min(7,Math.min(x1-x0,z1-z0)*.24),m=(x0+x1)*.5;
+       const ar=[x0,roofY,z0, m,ridge,z0, x0,roofY,z1, x0,roofY,z1,m,ridge,z0,m,ridge,z1, m,ridge,z0,x1,roofY,z0,m,ridge,z1, m,ridge,z1,x1,roofY,z0,x1,roofY,z1];
+       const rg=new G.BufferGeometry();rg.setAttribute('position',new G.Float32BufferAttribute(ar,3));rg.computeVertexNormals();g.add(new G.Mesh(rg,roofMat));
+     }
+   }
+   // Near-camera windows follow each source footprint segment rather than world axes.
+   const winMat=new G.MeshBasicMaterial({color:0x234d5d,side:G.DoubleSide});
+   for(let k=0;k<Math.min(pts.length,6);k++){
+     const [x0,z0]=pts[k],[x1,z1]=pts[(k+1)%pts.length],dx=x1-x0,dz=z1-z0,len=Math.hypot(dx,dz);
+     if(len<13||roofY-Math.max(...terrainY)<8)continue;
+     const theta=-Math.atan2(dz,dx),nx=Math.sin(theta),nz=Math.cos(theta);
+     for(let j=1;j<=Math.min(3,Math.floor(len/15));j++){
+       const t=j/(Math.min(3,Math.floor(len/15))+1),win=new G.Mesh(new G.PlaneGeometry(Math.min(5,len*.12),4),winMat);
+       win.position.set(x0+dx*t+nx*.42,roofY-6,z0+dz*t+nz*.42);win.rotation.y=theta;g.add(win);
+     }
+   }
+ }catch(_){/* Invalid derived footprint: display walls and keep running. */}
+ g.userData.index=rec.i;return g;
+}
+function buildBuildings(){
+ buildingItems=[];
+ DATA.buildings.forEach((b,i)=>{const footprint=GEO.buildingFootprint(b,LIMIT);if(footprint)buildingItems.push({...footprint,i});});
+ buildingMesh=new G.InstancedMesh(new G.BoxGeometry(1,1,1),new G.MeshLambertMaterial({color:0xffffff}),buildingItems.length);
+ const col=new G.Color(),colors=[0xdac5a5,0xb7afa2,0xb67861,0xbdb9ad,0x969f9a,0xd7b08a];
+ buildingItems.forEach((b,i)=>buildingMesh.setColorAt(i,col.setHex(colors[b.i%colors.length])));
+ buildingMesh.instanceColor.needsUpdate=true;buildingMesh.frustumCulled=false;scene.add(buildingMesh);
+ roofInstances=new G.InstancedMesh(new G.ConeGeometry(.74,1,4),new G.MeshLambertMaterial({color:0x665b53,side:G.DoubleSide}),buildingItems.length);
+ roofInstances.frustumCulled=false;scene.add(roofInstances);
+ detailGroup=new G.Group();scene.add(detailGroup);updateBuildingLOD(true);
+}
+function updateBuildingLOD(force=false){
+ if(!buildingMesh)return;
+ if(!force&&Math.hypot(player.x-detailLast.x,player.z-detailLast.z)<42)return;
+ detailLast={...player};
+ let near=buildingItems.map((b,i)=>({i,dist:Math.hypot(b.x-player.x,b.z-player.z)})).filter(p=>p.dist<330).sort((a,b)=>a.dist-b.dist).slice(0,85);
+ const want=new Set(near.map(x=>x.i));
+ for(const [i,g] of detailBuildings){if(!want.has(i)){
+   detailGroup.remove(g);g.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();obj.material.dispose();}});detailBuildings.delete(i);
+ }}
+ const dummy=new G.Object3D();
+ buildingItems.forEach((b,i)=>{
+   const range=Math.hypot(b.x-player.x,b.z-player.z);
+   if(want.has(i)||range>1900){dummy.position.set(0,-999,0);dummy.scale.set(.001,.001,.001);}
+   else{ // Mid-distance box LOD; ground contact sinks slightly into slope, never floats above sampled corners.
+     const ground=Math.min(height(b.x-b.dx*.5,b.z-b.dz*.5),height(b.x+b.dx*.5,b.z-b.dz*.5),height(b.x-b.dx*.5,b.z+b.dz*.5),height(b.x+b.dx*.5,b.z+b.dz*.5));
+     dummy.position.set(b.x,ground+b.h*.5-.35,b.z);dummy.scale.set(b.dx,b.h,b.dz);
+   }
+   dummy.updateMatrix();buildingMesh.setMatrixAt(i,dummy.matrix);
+   if(roofInstances){if(want.has(i)||range>1900){dummy.position.set(0,-999,0);dummy.scale.set(.001,.001,.001);}
+    else{const base=Math.min(height(b.x-b.dx*.5,b.z-b.dz*.5),height(b.x+b.dx*.5,b.z+b.dz*.5),height(b.x-b.dx*.5,b.z+b.dz*.5),height(b.x+b.dx*.5,b.z-b.dz*.5));
+     dummy.position.set(b.x,base+b.h+Math.max(1.5,Math.min(b.dx,b.dz)*.16)/2-.35,b.z);
+     dummy.scale.set(b.dx*1.1,Math.max(2.5,Math.min(b.dx,b.dz)*.3),b.dz*1.1);dummy.rotation.y=Math.PI/4;}
+    dummy.updateMatrix();roofInstances.setMatrixAt(i,dummy.matrix);dummy.rotation.y=0;}
+ });buildingMesh.instanceMatrix.needsUpdate=true;if(roofInstances)roofInstances.instanceMatrix.needsUpdate=true;
+ for(const {i} of near){if(!detailBuildings.has(i)){
+   const detailed=detailedBuilding(buildingItems[i]);if(detailed){detailBuildings.set(i,detailed);detailGroup.add(detailed);}
+ }}
+}
+function buildTrees(){
+ const trees=[];
+ for(let i=0;i<1150;i++){
+  const x=(rand()-.5)*TWO,z=(rand()-.5)*TWO;
+  if(z>1160||Math.abs(x)<600&&z>-280&&z<780||C.STOPS.some(s=>Math.hypot(s.x-x,s.z-z)<115))continue;
+  trees.push({x,z,sz:5+rand()*10});
+ }const trunk=new G.InstancedMesh(new G.CylinderGeometry(.6,.95,6,5),new G.MeshLambertMaterial({color:0x73533d}),trees.length);
+ const crown=new G.InstancedMesh(new G.ConeGeometry(5,12,6),new G.MeshLambertMaterial({color:0xffffff}),trees.length);
+ const dummy=new G.Object3D(),green=new G.Color(),pal=season==='autumn'?[0x9c6b36,0xc08545,0x8c8d46]:season==='winter'?[0x7a9394,0x8f9c96]:[0x285e40,0x40764a,0x3d6340];
+ for(let i=0;i<trees.length;i++){
+  const b=trees[i],y=height(b.x,b.z),scale=b.sz/10;
+  dummy.position.set(b.x,y+3*scale,b.z);dummy.scale.set(scale,scale,scale);dummy.updateMatrix();trunk.setMatrixAt(i,dummy.matrix);
+  dummy.position.set(b.x,y+10*scale,b.z);dummy.scale.set(scale,scale,scale);dummy.updateMatrix();crown.setMatrixAt(i,dummy.matrix);green.setHex(pal[i%pal.length]);crown.setColorAt(i,green);
+ }trunk.instanceMatrix.needsUpdate=true;crown.instanceMatrix.needsUpdate=true;crown.instanceColor.needsUpdate=true;
+ scene.add(trunk,crown);treeMeshes=[trunk,crown];
+}
+function buildBeacons(){
+ beaconGroup=new G.Group();scene.add(beaconGroup);
+ for(let i=0;i<C.STOPS.length;i++){
+  const s=C.STOPS[i],group=new G.Group();group.userData.id=s.id;group.position.set(s.x,height(s.x,s.z)+10,s.z);
+  const c=i===0?0xffd778:0x9bf2d1;
+  const ring=new G.Mesh(new G.TorusGeometry(8,1.3,6,30),new G.MeshBasicMaterial({color:c}));ring.rotation.x=Math.PI/2;group.add(ring);
+  const crystal=new G.Mesh(new G.OctahedronGeometry(6,0),new G.MeshLambertMaterial({color:c,emissive:c,emissiveIntensity:.32}));crystal.position.y=9;group.add(crystal);
+  const glow=new G.Mesh(new G.CylinderGeometry(2.5,4,19,10,1,true),new G.MeshBasicMaterial({color:c,transparent:true,opacity:.12,depthWrite:false,side:G.DoubleSide}));glow.position.y=-2;group.add(glow);
+  beaconGroup.add(group);
+ }
+}
+function buildPlayer(){
+ avatar=new G.Group();const body=new G.Mesh(new G.CylinderGeometry(2.4,3,10,9),new G.MeshLambertMaterial({color:0x326c80}));body.position.y=6;avatar.add(body);
+ const head=new G.Mesh(new G.SphereGeometry(2.6,12,10),new G.MeshLambertMaterial({color:0xf0c6a0}));head.position.y=12.6;avatar.add(head);
+ const hat=new G.Mesh(new G.CylinderGeometry(3.6,3.6,1.4,12),new G.MeshLambertMaterial({color:0x654b34}));hat.position.y=15.2;avatar.add(hat);scene.add(avatar);
+ car=new G.Group();const chassis=new G.Mesh(new G.BoxGeometry(15,4,26),new G.MeshLambertMaterial({color:0xd58b5b}));chassis.position.y=4;car.add(chassis);
+ const cab=new G.Mesh(new G.BoxGeometry(12,5,13),new G.MeshLambertMaterial({color:0x264750}));cab.position.set(0,8,-1);car.add(cab);
+ const wheels=new G.Mesh(new G.CylinderGeometry(2.4,2.4,2,10),new G.MeshLambertMaterial({color:0x20272a}));
+ for(const side of [-1,1])for(const dz of [-8,8]){const w=wheels.clone();w.rotation.z=Math.PI/2;w.position.set(side*7.5,2.2,dz);car.add(w);}scene.add(car);
+ dog=new G.Group();let dbody=new G.Mesh(new G.BoxGeometry(5,3.5,7),new G.MeshLambertMaterial({color:0xbe9a72}));dbody.position.y=2.7;dog.add(dbody);
+ let dhead=new G.Mesh(new G.BoxGeometry(3,3,3.5),new G.MeshLambertMaterial({color:0xa5764d}));dhead.position.set(0,4.5,-4);dog.add(dhead);scene.add(dog);
+}
+function buildHouse(){
+ house=new G.Group();const px=-740,pz=-210;house.position.set(px,height(px,pz),pz);
+ const plank=new G.MeshLambertMaterial({color:0x91613d}),roofMat=new G.MeshLambertMaterial({color:0x604c43});
+ const walls=new G.Mesh(new G.BoxGeometry(33,23,28),plank);walls.position.y=12;house.add(walls);
+ const roof=new G.Mesh(new G.ConeGeometry(27,16,4),roofMat);roof.position.y=30;roof.rotation.y=Math.PI/4;house.add(roof);
+ const door=new G.Mesh(new G.BoxGeometry(8,13,1),new G.MeshLambertMaterial({color:0x493629}));door.position.set(0,6,-14.5);house.add(door);
+ const lantern=new G.Mesh(new G.SphereGeometry(2,8,8),new G.MeshBasicMaterial({color:0xffe39d}));lantern.position.set(9,15,-15);house.add(lantern);
+ house.visible=false;scene.add(house);
+}
+// Original self-contained low-poly glTF 2.0 environment assets. No third-party models or online fetch.
+function buildOriginalModels(){
+ const definitions=[
+  ['barn',-1285,-816,null,.9],
+  ['courthouse',92,465,null,.8],
+  ['fishing_pier',130,1184,.6,1],
+  ['riverboat',-1320,1570,.9,1.1],
+  ['oak_cottage',-740,-210,null,1]
+ ];
+ for(const [name,x,z,waterY,scale] of definitions){
+  try{
+   const b64=window.ValleyModelData?.[name];if(!b64||!MODEL)continue;
+   const group=MODEL.makeModel(G,b64);group.position.set(x,waterY??height(x,z),z);group.scale.setScalar(scale);group.userData.model=name;
+   if(name==='oak_cottage'){if(house){scene.remove(house);house.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();obj.material.dispose();}});}house=group;group.visible=false;}
+   scene.add(group);gameModels.push(group);
+  }catch(err){console.warn('Optional 3D model not available:',name,err.message);}
+ }
+}
+function updateVisuals(dt,stamp){
+ if(!renderer||view==='2d')return;
+ const radians=(time-6)/24*Math.PI*2,light=C.clamp(.25+Math.sin(radians)*.8,.06,1.05);
+ const mist=weather==='mist';scene.background.set(light<.25?'#13273e':(weather==='rain'?'#839d9d':'#9cb8b3'));
+ scene.fog.color.set(light<.25?'#3e5360':mist?'#b1c5bd':'#aec8c1');scene.fog.density=visualEffects==='lite'?.00004:(mist?.0006:weather==='rain'?.00033:.00018);
+ ambient.intensity=.6+1.8*light;sunLight.intensity=.25+2.2*light;sunLight.position.set(-200,Math.max(30,380*light),180);renderer.toneMappingExposure=.75+light*.62;
+ avatar.position.set(player.x,height(player.x,player.z),player.z);car.position.copy(avatar.position);avatar.rotation.y=playerHeading;car.rotation.y=playerHeading;avatar.visible=save.mode==='walk';car.visible=save.mode==='drive';
+ if(dog){dog.visible=save.pet&&save.mode==='walk';dog.position.set(player.x+10+Math.sin(stamp/700)*2,height(player.x+10,player.z+14),player.z+14);}
+ if(beaconGroup)beaconGroup.children.forEach((g,i)=>{g.rotation.y+=dt*.5;g.position.y=height(g.position.x,g.position.z)+8+Math.sin(stamp/450+i)*2;g.visible=!save.completed.includes(g.userData.id);});
+ if(house)house.visible=save.homestead;
+ if(waterMesh)waterMesh.material.opacity=.82+Math.sin(stamp/900)*.045;
+ if(worldGame)worldGame.update({stamp,save,activity:worldActive,huntRound:worldHuntRound,fishRound:worldFishRound,aim:worldAim,weather});
+ if(atmosphere)atmosphere.update(camera,time,weather,season,stamp);if(director3D)director3D.update(stamp,time,weather,cinemaPrefs.strength,cinemaPrefs.quality);
+ applyTerrainLOD();updateBuildingLOD();
+ const yaw=cameraYaw,dx=Math.sin(yaw)*cameraDist,dz=Math.cos(yaw)*cameraDist;
+ const tx=player.x+dx,tz=player.z+dz,ty=height(tx,tz)+Math.max(23,cameraDist*.34);
+ camera.position.lerp(new G.Vector3(tx,ty,tz),Math.min(1,dt*4.5));
+ camera.lookAt(player.x,height(player.x,player.z)+6,player.z);
+ renderer.render(scene,camera);
+}
+function update2d(){
+ const w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
+ if(atlas.width!==Math.round(w*dpr)||atlas.height!==Math.round(h*dpr)){atlas.width=Math.round(w*dpr);atlas.height=Math.round(h*dpr);atlas.style.width=w+'px';atlas.style.height=h+'px';}
+ ctx.setTransform(dpr,0,0,dpr,0,0);mapDraw(ctx,w,h,true);
+ const mid={x:w/2,y:h/2};ctx.fillStyle='rgba(5,30,28,.6)';ctx.strokeStyle='#ffe3a0';ctx.lineWidth=3;
+ ctx.beginPath();ctx.arc(mid.x,mid.y,13,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.font='20px system-ui';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(save.mode==='drive'?'🚗':'🚶',mid.x,mid.y+7);
+}
+function syncView(){const is2d=view==='2d'||!renderer;atlas.style.display=is2d?'block':'none';canvas.style.display=is2d?'none':'block';}
+function resize(){syncView();if(renderer){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/Math.max(1,innerHeight);camera.updateProjectionMatrix();}if(view==='2d'||!renderer)update2d();}
+function updateHUD(){
+ $('pantrySummary').textContent=`🌽 ${save.inventory.corn} · 🐟 ${save.inventory.fish} · 🦌 ${save.inventory.game} · 🍲 ${save.inventory.meals}`;
+ $('level').textContent=save.level;$('coins').textContent=save.coins.toLocaleString();$('stamps').textContent=save.completed.length+'/'+C.STOPS.length;
+ $('clock').textContent=C.formatTime(time);$('weatherBadge').textContent=weather==='clear'?'☀️ Clear':weather==='rain'?'🌧️ Rain':'🌫️ Mist';
+ $('timeLabel').textContent=C.formatTime(time);
+ $('walkBtn').classList.toggle('selected',save.mode==='walk');$('driveBtn').classList.toggle('selected',save.mode==='drive');$('mapBtn').classList.toggle('selected',view==='2d');
+ $('weather').value=weather;$('season').value=season;$('time').value=String(Math.round(time*4)/4);
+ $('petBtn').textContent=save.pet?'🐕 Scout: ON':'🐕 Scout: OFF';$('soundBtn').textContent=save.muted?'🔇 Muted':'🔊 Sound';
+ $('questSummary').textContent=save.completed.length===C.STOPS.length?'🏆 All six memories collected! Explore freely.':`${save.completed.length} of ${C.STOPS.length} stamps in your adventure book`;
+ $('missionList').innerHTML=C.STOPS.map(st=>{
+  let done=save.completed.includes(st.id),dist=Math.hypot(player.x-st.x,player.z-st.z);
+  return `<button data-stop="${st.id}" class="${selected===st.id?'active ':''}${done?'done':''}"><span class="dot">${st.emoji}</span><span><span class="mtitle">${st.title}${done?' ✓':''}</span><span class="msub">${done?'Memory collected':(dist/1000).toFixed(1)+' km away'}</span></span><span class="destination">${done?'✓':'›'}</span></button>`;
+ }).join('');
+}
+function toast(str){const el=$('toast');el.textContent=str;el.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.style.display='none',3500);}
+function audioChime(){if(save.muted)return;try{
+ const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+ const ac=new AC();[0,0.11,.22].forEach((t,i)=>{const osc=ac.createOscillator(),gain=ac.createGain();osc.type='sine';osc.frequency.value=[523,659,784][i];gain.gain.setValueAtTime(.0001,ac.currentTime+t);gain.gain.exponentialRampToValueAtTime(.065,ac.currentTime+t+.015);gain.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+t+.28);osc.connect(gain).connect(ac.destination);osc.start(ac.currentTime+t);osc.stop(ac.currentTime+t+.3);});setTimeout(()=>ac.close(),1200);
+ }catch(err){console.warn('Audio playback blocked',err.message);}}
+function persist(){save.position={x:player.x,z:player.z};save.time=time;save.weather=weather;save.season=season;try{localStorage.setItem(nameKey(slot),JSON.stringify(save));return true;}catch(_){return false;}}
+function readSlot(idx){try{const t=localStorage.getItem(nameKey(idx));return t?C.validateSave(JSON.parse(t)):null;}catch(_){return null;}}
+function applyState(s){save=C.validateSave(s);player={...save.position};time=save.time;weather=save.weather;season=save.season;document.body.classList.toggle('rainy',weather==='rain');document.body.classList.toggle('misty',weather==='mist');$('playerName').value=save.name;needsMap=true;updateHUD();}
+function play(resume){slot=Number($('startSlot').value)||0;$('slot').value=String(slot);const loaded=resume?readSlot(slot):null;
+ applyState(loaded||C.freshSave($('playerName').value));started=true;$('start').classList.add('hidden');
+ if(!renderer){view='2d';$('quality').value='2d';toast('2D Atlas adventure loaded. 3D requires WebGL support.');}
+ else{view='3d';$('quality').value='3d';}
+ persist();updateHUD();
+}
+function interact(){if(!started)return;
+ if(touring){stopTour();toast('Scenic tour stopped.');return;}
+ if(!near){const localSite=isWorld3D()&&WORLD?WORLD.closestSite(player,130):null;if(localSite){openWorldActivity(localSite);return;}toast('Move closer to a glowing landmark or a world activity site.');return;}
+ const st=near;if(save.completed.includes(st.id)){if(st.id==='farm'){if(isWorld3D())openWorldActivity('farm');else openFarm();return;}
+ if(st.id==='oak'){const a=C.buildHomestead(save);save=a.save;if(a.result==='built'){audioChime();toast('🏠 Your Oak Grove family cottage is built! −250 coins');persist();updateHUD();}else if(a.result==='needs-coins'){toast('🏠 Earn 250 coins from discoveries or harvesting to build your cottage.');}else{player.x=-740;player.z=-210;toast('🏠 Welcome home to your Oak Grove cottage.');}return;}
+ toast(`You already visited ${st.title}.`);return;}
+ save=C.completeStop(save,st.id,st.reward);selected=st.id;audioChime();toast(`${st.emoji} ${st.title} discovered! +${st.reward} coins • +120 XP`);persist();updateHUD();
+ if(save.completed.length===C.STOPS.length){toast('🏆 Congratulations! You completed the River Valley Adventure Book!');}
+}
+function locateNearest(){let best=null,bd=Infinity;for(const s of C.STOPS){let d=Math.hypot(s.x-player.x,s.z-player.z);if(d<bd){bd=d;best=s;}}return bd<110?best:null;}
+function checkNearby(){near=locateNearest();const pane=$('context');if(!started||!near||touring||activity){pane.style.display='none';return;}
+ pane.style.display='block';$('nearName').textContent=near.emoji+' '+near.title;$('nearDetail').textContent=near.fact;
+ $('interactBtn').textContent=save.completed.includes(near.id)?(near.id==='farm'?'🌱 Tend the family farm':near.id==='oak'?(save.homestead?'🏠 Visit your cottage':'🏠 Build your cottage (250 🪙)'):'✓ Memory in your book'):'Collect this memory ✨';}
+function teleport(id){const s=C.STOPS.find(s=>s.id===id);if(!s)return;player={x:s.x+60,z:s.z+44};toast(`📍 Fast traveled near ${s.title}`);persist();checkNearby();}
+function selectStop(id,fast=false){selected=id;const s=C.STOPS.find(s=>s.id===id);if(!s)return;
+ if(fast)teleport(id);else toast(`${s.emoji} ${s.task} — Tap the stop again to fast travel.`);
+ updateHUD();}
+function setMode(mode){save.mode=mode;updateHUD();persist();toast(mode==='drive'?'🚗 Family road trip mode':'🚶 Exploring on foot');}
+function toggleMap(){if(worldActive)closeWorldActivity();view=view==='2d'&&renderer?'3d':'2d';$('quality').value=view;resize();updateHUD();toast(view==='2d'?'🗺 Illustrated map view':'🌄 3D countryside view');}
+function setWeather(w){weather=w;save.weather=w;document.body.classList.toggle('rainy',w==='rain');document.body.classList.toggle('misty',w==='mist');persist();updateHUD();}
+function setSeason(s){season=s;save.season=s;needsMap=true;persist();updateHUD();for(const mesh of terrainMeshes){const po=mesh.geometry.attributes.position,color=mesh.geometry.attributes.color,tmp=new G.Color();for(let i=0;i<po.count;i++){let rgb=themeHeight(po.getY(i));tmp.setRGB(rgb[0]/255,rgb[1]/255,rgb[2]/255,G.SRGBColorSpace);color.setXYZ(i,tmp.r,tmp.g,tmp.b);}color.needsUpdate=true;}
+ if(treeMeshes[1]){
+  const crown=treeMeshes[1],col=new G.Color();const pal=season==='autumn'?[0x9c6b36,0xc08545,0x8c8d46]:season==='winter'?[0x7a9394,0x8f9c96]:[0x285e40,0x40764a,0x3d6340];
+  for(let i=0;i<crown.count;i++){col.setHex(pal[i%pal.length]);crown.setColorAt(i,col);}
+  crown.instanceColor.needsUpdate=true;
+ }
+}
+// Live-world activities: gameplay, 3D props and persistence share existing ValleyCore rules.
+// The accessible illustrated fallback keeps its original minigame panels.
+function isWorld3D(){return !!(worldGame&&renderer&&view==='3d');}
+function closeWorldActivity(){worldActive=null;worldHuntRound=null;worldFishRound=null;$('worldActivityHud').hidden=true;}
+function openWorldActivity(id){
+ if(!started){toast('Start your adventure first.');return;}
+ if(!isWorld3D()){openActivity(id==='farm'?'cook':id);if(id==='farm'){closeActivity();openFarm();}return;}
+ if(!WORLD.SITES[id])return;
+ closeActivity();$('farmPanel').classList.remove('open');$('panel').classList.remove('open');closeCinema();
+ const loc=WORLD.SITES[id];worldActive=id;worldHuntRound=null;worldFishRound=null;worldAim=.5;worldStatus='';
+ player.x=loc.x;player.z=loc.z-25;playerHeading=0;
+ $('worldAim').value='50';$('worldActivityHud').hidden=false;
+ showWorldActivity();persist();toast(`🌍 ${loc.title}: play right inside the 3D world.`);
+}
+function worldAction(action){
+ if(!worldActive||!isWorld3D())return;
+ const now=Date.now();let r;
+ if(worldActive==='hunt'){
+  if(action==='track'){const list=['deer','turkey','rabbit'];worldHuntRound={target:.18+rand()*.64,kind:list[Math.floor(rand()*list.length)],expiresAt:now+12000};worldStatus='Track the moving wildlife target. Slide the gold marker to align, then take your shot.';}
+  if(action==='shoot'&&worldHuntRound){r=C.huntShot(save,worldAim,worldHuntRound.target,now,worldHuntRound.expiresAt);save=r.save;worldStatus=r.result==='hit'?'🎯 Wildlife challenge complete! +1 virtual game · 35 coins · 60 XP.':r.result==='missed'?'Clean miss. Try tracking again.':'The wildlife moved on. Track again.';worldHuntRound=null;if(r.result==='hit')audioChime();}
+ }else if(worldActive==='fish'){
+  if(action==='cast'){const kinds=['bluegill','channelCatfish','bass'];worldFishRound={biteAt:now+1550+Math.floor(rand()*2400),kind:kinds[Math.floor(rand()*3)]};worldStatus='Line in the water! Watch the floating bobber for a bite.';}
+  if(action==='reel'&&worldFishRound){r=C.fishReel(save,worldFishRound.biteAt,now,worldFishRound.kind);save=r.save;worldStatus=r.result==='caught'?`🐟 Caught ${worldFishRound.kind}! +1 fish · 30 coins · 55 XP.`:r.result==='early'?'Too early. Let the bobber dip.':'The fish escaped. Cast again.';worldFishRound=null;if(r.result==='caught')audioChime();}
+ }else if(worldActive==='farm'){
+  if(action==='water')r=C.waterFarm(save,now);
+  if(action==='plot'){let p=WORLD.farmPick(save,now);r=C.farmAction(save,p.index,now);}
+  if(r){save=r.save;worldStatus=({'planted':'🌱 Seeds planted in the visible field.','harvested':'🌽 Harvested corn! +45 coins · 45 XP.','watered':'💧 Growing crops watered.','growing':'The crops are still growing.','needs-coins':'You need more coins. Collect a discovery stamp first.','none':'Plant some corn before watering.'})[r.result]||r.result;if(r.result==='harvested')audioChime();}
+ }else if(worldActive==='cook'){
+  if(C.RECIPES[action]){r=C.cookRecipe(save,action);save=r.save;worldStatus=r.result==='cooked'?`🍲 ${C.RECIPES[action].title} is ready! Added to your saved pantry.`:'You need more ingredients. Fish and farm in the world first.';if(r.result==='cooked')audioChime();}
+ }
+ showWorldActivity();updateHUD();persist();
+}
+function worldPrimaryAction(){if(!worldActive)return false;
+ if(worldActive==='hunt')worldAction(worldHuntRound?'shoot':'track');
+ if(worldActive==='fish')worldAction(worldFishRound?'reel':'cast');
+ if(worldActive==='farm')worldAction('plot');
+ if(worldActive==='cook'){const recipe=Object.keys(C.RECIPES).find(id=>Object.entries(C.RECIPES[id].ingredients).every(([k,n])=>save.inventory[k]>=n));worldAction(recipe||'fishFry');}
+ return true;
+}
+function showWorldActivity(){
+ const id=worldActive;if(!id)return;const place=WORLD.SITES[id];$('worldActivityTitle').textContent=place.label+' · '+place.title;
+ const pantry=`Pantry: 🌽 ${save.inventory.corn} · 🐟 ${save.inventory.fish} · 🦌 ${save.inventory.game} · 🍲 ${save.inventory.meals}`;
+ let text='',actions=[],aim=id==='hunt'&&!!worldHuntRound;
+ if(id==='hunt'){text='Watch a fully modeled low-poly animal in the clearing. Align the 3D gold targeting ring with the animal; no gore.';actions=worldHuntRound?[['shoot','🎯 Take shot']]:[['track','🔭 Track wildlife']];}
+ if(id==='fish'){text='Cast directly from the 3D fishing pier. Watch the animated river bobber; reel when the bite flashes.';actions=worldFishRound?[['reel','🎣 Reel now!']]:[['cast','🎣 Cast line']];}
+ if(id==='farm'){const pick=WORLD.farmPick(save,Date.now());text='Work the nine actual farm plots. Growing corn appears in 3D; harvest is saved to your pantry.';actions=[['plot',pick.action==='harvest'?'🌽 Harvest ready crop':pick.action==='plant'?'🌱 Plant next plot (15 coins)':'🌿 Check crops'],['water','💧 Water (20 coins)']];}
+ if(id==='cook'){text='Cook beside the animated campfire in your world. Gather fish and corn first; meals are saved.';actions=Object.entries(C.RECIPES).map(([id,r])=>[id,r.title+' · '+r.coins+' coins',!Object.entries(r.ingredients).every(([k,n])=>save.inventory[k]>=n)]);}
+ $('worldActivityText').textContent=text;$('worldAimLabel').hidden=!aim;
+ $('worldActionButtons').innerHTML=actions.map(([action,label,disabled],i)=>`<button ${disabled?'disabled':''} class="${i===0?'primaryAction':''}" data-worldaction="${action}">${label}</button>`).join('');
+ $('worldActivityMeter').textContent=worldStatus?worldStatus+' · '+pantry:pantry;
+}
+function updateWorldHUD(){if(!worldActive)return;const now=Date.now();const label=$('worldActivityMeter');
+ if(worldHuntRound){const left=Math.max(0,(worldHuntRound.expiresAt-now)/1000);label.textContent=`Wildlife target · ${left.toFixed(1)}s left · Aim ${(worldAim*100).toFixed(0)}%`;
+ if(left===0){worldHuntRound=null;worldStatus='Time elapsed. The animal moved away.';showWorldActivity();}}
+ else if(worldFishRound){label.textContent=now<worldFishRound.biteAt?'🌊 Watch the 3D bobber…':now<=worldFishRound.biteAt+700?'⚡ BITE! REEL NOW!':'💨 Fish gone. Reel to reset, or cast again.';}
+}
+function renderFarm(){
+ const now=Date.now();$('farmGrid').innerHTML=save.farmPlots.map((t,i)=>{
+  const ready=t>0&&t<=now, growing=t>now;
+  return `<button data-plot="${i}" title="Field ${i+1}">${ready?'🌽':growing?'🌱':'🟫'}<small>${ready?'Harvest +45':growing?Math.ceil((t-now)/1000)+'s until ready':'Plant −15 🪙'}</small></button>`;
+ }).join('');
+}
+function openFarm(){$('farmPanel').classList.add('open');renderFarm();toast('🌽 Welcome to the Valley Farm.');}
+function activityStatus(message){const el=$('activityStatus');if(el)el.textContent=message;}
+function closeActivity(){activity=null;huntRound=null;fishRound=null;$('activityPanel').classList.remove('open');if(activityInterval){clearInterval(activityInterval);activityInterval=null;}}
+function renderActivity(){
+ if(!activity)return;
+ const d=$('activityContent');
+ const heading={hunt:'🦌 Woodland Hunt',fish:'🎣 River Fishing',cook:'🍳 Campfire Kitchen'};
+ $('activityTitle').textContent=heading[activity];
+ const pantry=`<div class="activityPantry">Pantry: 🌽 ${save.inventory.corn} corn · 🐟 ${save.inventory.fish} fish · 🦌 ${save.inventory.game} game · 🍲 ${save.inventory.meals} meals</div>`;
+ if(activity==='hunt'){
+  const active=huntRound&&Date.now()<huntRound.expiresAt;
+  d.innerHTML=`<p>Spot a virtual animal on the woodland trail, carefully line up the aim marker and take one shot before the eight-second round ends. Non-graphic family game, not real hunting guidance.</p>
+  <canvas class="activityCanvas" id="activityScene" width="960" height="320" aria-label="Animated woodland target challenge"></canvas>
+  ${active?`<div class="aimLane"><span class="targetAnimal" style="left:${huntRound.target*100}%">${huntRound.kind}</span></div><label for="aimSlider">Aim along the trail</label><input id="aimSlider" type="range" min="0" max="100" value="50"><p class="roundTimer" id="roundTimer"></p><button class="actionPrimary" id="takeShot">🎯 Take shot</button>`:`<button class="actionPrimary" id="trackAnimal">🔭 Track a virtual animal</button>`}${pantry}`;
+  if(active){$('takeShot').onclick=()=>{const a=C.huntShot(save,Number($('aimSlider').value)/100,huntRound.target,Date.now(),huntRound.expiresAt);save=a.save;huntRound=null;audioChime();renderActivity();activityStatus(a.result==='hit'?'🎯 Great shot! +1 game, +35 coins and +60 XP.':a.result==='expired'?'The animal moved away. Track another.':'A clean miss. Try another track.');updateHUD();persist();};}
+  else $('trackAnimal').onclick=()=>{const species=['🦌 Deer','🦃 Turkey','🐇 Rabbit'];huntRound={target:.18+rand()*.64,expiresAt:Date.now()+8000,kind:species[Math.floor(rand()*3)]};renderActivity();activityStatus('Find the animal and line up the marker.');};
+ }else if(activity==='fish'){
+  const active=!!fishRound;
+  d.innerHTML=`<p>Cast into an imaginary Ohio River backwater. Wait until the bobber shows a bite, then tap REEL! within seven-tenths of a second. Try bluegill, channel catfish or bass.</p>
+  <canvas class="activityCanvas" id="activityScene" width="960" height="320" aria-label="Animated river fishing scene"></canvas><div class="biteMessage" id="biteMessage">${active?'Watch the float...':'A quiet morning on the river.'}</div>
+  <button class="actionPrimary" id="${active?'reelBtn':'castBtn'}">${active?'🎣 REEL!':'🎣 Cast your line'}</button>${pantry}`;
+  if(active){$('reelBtn').onclick=()=>{const a=C.fishReel(save,fishRound.biteAt,Date.now(),fishRound.kind);const kind=fishRound.kind;save=a.save;fishRound=null;renderActivity();activityStatus(a.result==='caught'?`🐟 Landed a ${kind==='channelCatfish'?'channel catfish':kind}! +1 fish, +30 coins, +55 XP.`:a.result==='early'?'Too early! The bobber was still quiet.':'Too late! The fish swam away.');if(a.result==='caught')audioChime();updateHUD();persist();};}
+  else $('castBtn').onclick=()=>{const kinds=['bluegill','channelCatfish','bass'];fishRound={biteAt:Date.now()+1700+Math.floor(rand()*2300),kind:kinds[Math.floor(rand()*3)]};renderActivity();activityStatus('Watch the bobber closely.');};
+ }else{
+  d.innerHTML=`<p>Turn your own harvested corn and your catches into comfort food. Cooking consumes ingredients and earns coins and experience.</p><canvas class="activityCanvas" id="activityScene" width="960" height="320" aria-label="Animated campfire kitchen scene"></canvas>${Object.entries(C.RECIPES).map(([id,r])=>{
+   const ingredients=Object.entries(r.ingredients).map(([k,n])=>`${n} ${k}`).join(' + ');
+   const can=Object.entries(r.ingredients).every(([k,n])=>save.inventory[k]>=n);
+   return `<button class="recipe" data-recipe="${id}" ${can?'':'disabled'}><b>${r.title}</b><small>${ingredients} → +${r.coins} 🪙 · +${r.xp} XP ${can?'':'· ingredients needed'}</small></button>`;
+  }).join('')}${pantry}`;
+  d.querySelectorAll('[data-recipe]').forEach(b=>b.addEventListener('click',()=>{const r=C.cookRecipe(save,b.dataset.recipe);save=r.save;renderActivity();activityStatus(r.result==='cooked'?'🍲 Delicious! Your meal is ready and your family earned rewards.':'Gather more ingredients first.');if(r.result==='cooked')audioChime();updateHUD();persist();}));
+ }
+ if(!$('activityStatus'))d.insertAdjacentHTML('beforeend','<div id="activityStatus" role="status" class="activityStatus"></div>');
+}
+function openActivity(id){if(!started){toast('Start your adventure first.');return;}$('farmPanel').classList.remove('open');$('panel').classList.remove('open');activity=id;huntRound=null;fishRound=null;$('activityPanel').classList.add('open');renderActivity();
+ if(activityInterval)clearInterval(activityInterval);activityInterval=setInterval(()=>{
+ if(activity==='hunt'&&huntRound){const secs=Math.max(0,(huntRound.expiresAt-Date.now())/1000);const timer=$('roundTimer');if(timer)timer.textContent=`Time left: ${secs.toFixed(1)} seconds`;if(secs===0){huntRound=null;renderActivity();activityStatus('The animal has moved on. Track again.');}}
+ if(activity==='fish'&&fishRound){const t=Date.now(),msg=$('biteMessage');if(msg){msg.textContent=t<fishRound.biteAt?'🌊 Waiting for a bite...':t<=fishRound.biteAt+700?'⚡ BITE! REEL NOW!':'💨 The fish has gone — try another cast.';msg.classList.toggle('bite',t>=fishRound.biteAt&&t<=fishRound.biteAt+700);}}
+ },85);
+}
+function screenshot(){if(!started)return;
+ try{if(renderer&&view==='3d')renderer.render(scene,camera);else update2d();const a=document.createElement('a');a.download=`River-Valley-Family-${Date.now()}.png`;a.href=(view==='2d'||!renderer?atlas:canvas).toDataURL('image/png');document.body.appendChild(a);a.click();a.remove();toast('📷 Photo saved to your device (if supported by your browser).');}
+ catch(err){toast('Photo unavailable in this browser. Try your device screenshot controls.');}
+}
+function startTour(){if(!started)return;if(touring){stopTour();return;}closeWorldActivity();touring=true;tourAt=0;tourTimer=0;tourFrom={...player};
+ if(G&&G.CatmullRomCurve3){const points=[new G.Vector3(player.x,0,player.z),...C.STOPS.map(st=>new G.Vector3(st.x,0,st.z))];tourCurve=new G.CatmullRomCurve3(points,false,'centripetal',.25);}else tourCurve=null;
+ $('tourBtn').classList.add('selected');toast('🎬 Smooth scenic fly-through started. Tap Tour to stop.');}
+function stopTour(){touring=false;$('tourBtn').classList.remove('selected');}
+function stepTour(dt){if(!touring)return;
+ if(tourCurve){tourTimer+=dt;const t=C.clamp(tourTimer/34,0,1),p=tourCurve.getPoint(t),tangent=tourCurve.getTangent(t);
+  player.x=p.x;player.z=p.z;cameraYaw=Math.atan2(-tangent.x,-tangent.z);cameraDist=105;
+  if(t>=1){stopTour();toast('🎬 Scenic tour completed.');}
+  return;
+ }
+ let dst=C.STOPS[tourAt%C.STOPS.length];tourTimer+=dt;let t=C.clamp(tourTimer/4,0,1),s=t*t*(3-2*t);
+ player.x=tourFrom.x+(dst.x-tourFrom.x)*s;player.z=tourFrom.z+(dst.z-tourFrom.z)*s;cameraYaw+=dt*.06;
+ if(t>=1){tourAt++;tourTimer=0;tourFrom={...player};if(tourAt>=C.STOPS.length){stopTour();toast('🎬 Scenic tour completed.');}}
+}
+function update(dt,stamp){
+ if(!started)return;
+ if(activity)return;
+ if(touring)stepTour(dt);else{
+  let x=0,z=0;
+  if(keys.has('w')||keys.has('arrowup')||keys.has('up'))z-=1;
+  if(keys.has('s')||keys.has('arrowdown')||keys.has('down'))z+=1;
+  if(keys.has('a')||keys.has('arrowleft')||keys.has('left'))x-=1;
+  if(keys.has('d')||keys.has('arrowright')||keys.has('right'))x+=1;
+  if(x||z){const length=Math.hypot(x,z),speed=save.mode==='drive'?230:(keys.has('shift')?105:72);
+   const wx=(x*Math.cos(cameraYaw)+z*Math.sin(cameraYaw))/length,wz=(z*Math.cos(cameraYaw)-x*Math.sin(cameraYaw))/length;
+   player.x+=wx*speed*dt;player.z+=wz*speed*dt;playerHeading=Math.atan2(-wx,-wz);
+   const p=C.clampPosition(player);player.x=p.x;player.z=p.z;
+  }
+ }
+ time=(time+dt*.003)%24;
+ if(stamp-lastUI>280){checkNearby();updateWorldHUD();updateHUD();mapDraw(mapCtx,mapCanvas.width,mapCanvas.height,false);if($('farmPanel').classList.contains('open'))renderFarm();lastUI=stamp;}
+ if(stamp-lastPersist>12000){persist();lastPersist=stamp;}
+}
+function loadCinemaPrefs(){try{cinemaPrefs=DIR.cleanSettings(JSON.parse(localStorage.getItem('river-valley-vfx-director')||'{}'));}catch(_){cinemaPrefs=DIR.cleanSettings({});} syncCinemaControls();}
+function saveCinemaPrefs(){try{localStorage.setItem('river-valley-vfx-director',JSON.stringify(cinemaPrefs));}catch(_){} }
+function syncCinemaControls(){if(!DIR)return;cinemaPrefs=DIR.cleanSettings(cinemaPrefs);$('cineLook').value=cinemaPrefs.look;$('cineQuality').value=cinemaPrefs.quality;$('cineStrength').value=Math.round(cinemaPrefs.strength*100);$('cineStrengthLabel').textContent=Math.round(cinemaPrefs.strength*100)+'%';$('cineGrain').checked=cinemaPrefs.grain;$('cineStats').checked=cinemaPrefs.showStats;const grade=DIR.pickLook(cinemaPrefs.look).grade;document.body.style.setProperty('--cine-grade',grade);document.body.classList.toggle('cine-grade',grade!=='none');$('perfHUD').classList.toggle('visible',cinemaPrefs.showStats);}
+function chooseCinemaLook(id){if(!DIR)return;cinemaPrefs.look=id;const shot=DIR.pickLook(id);time=shot.time;$('time').value=String(time);$('timeLabel').textContent=C.formatTime(time);setWeather(shot.weather);syncCinemaControls();saveCinemaPrefs();persist();toast('🎥 '+shot.title+' shot ready.');}
+function openCinema(){closeActivity();$('panel').classList.remove('open');$('cinemaPanel').classList.add('open');}
+function closeCinema(){$('cinemaPanel').classList.remove('open');}
+function applyShot(index){
+ shotIndex=((index%SHOTS.length)+SHOTS.length)%SHOTS.length;
+ const shot=SHOTS[shotIndex];backdropLocation=shot.scene;$('stageScene').value=shot.scene;
+ chooseCinemaLook(shot.look);$('stageShotLabel').textContent=shot.title;
+ $('stageShotCount').textContent=(shotIndex+1)+' / '+SHOTS.length;backdropLast=0;
+}
+function startStopShotTour(){
+ shotPlaying=!shotPlaying;
+ $('stageTour').textContent=shotPlaying?'⏸ Pause tour':'▶ Play scenic tour';
+ if(shotPlaying){applyShot(shotIndex);shotStart=performance.now();}
+}
+function exportShotBoard(){
+ if(!STORY)return;
+ try{
+  const board=document.createElement('canvas');board.width=1280;board.height=2250;
+  const ctx=board.getContext('2d');if(!ctx)return;
+  ctx.fillStyle='#071d25';ctx.fillRect(0,0,board.width,board.height);
+  ctx.fillStyle='#f1d49e';ctx.font='bold 37px Georgia';ctx.fillText('RIVER VALLEY · DIRECTOR SHOT BOARD',40,56);
+  const frame=document.createElement('canvas');
+  SHOTS.forEach((shot,i)=>{
+   STORY.render(frame,shot.scene,shot.look,0,'balanced');
+   const x=i%2*626+22,y=Math.floor(i/2)*695+90;
+   ctx.drawImage(frame,x,y,606,342);
+   ctx.fillStyle='#f7e6bd';ctx.font='bold 19px system-ui';ctx.fillText(shot.title,x+8,y+373);
+   ctx.fillStyle='#93b8b0';ctx.font='14px system-ui';ctx.fillText('Scenic 2D concept · '+shot.look,x+8,y+396);
+  });
+  ctx.fillStyle='#b4c4bf';ctx.font='15px system-ui';ctx.fillText('Original procedural look development · not hardware-rendered 3D',28,2220);
+  const link=document.createElement('a');link.download='River_Valley_Director_Shot_Board.png';link.href=board.toDataURL('image/png');document.body.appendChild(link);link.click();link.remove();toast('🎬 Your five-shot board has been exported.');
+ }catch(_){toast('Storyboard export was blocked in this browser.');}
+}
+function openBackdrop(){if(!STORY)return;backdropOpen=true;shotPlaying=false;shotIndex=0;closeCinema();$('stagePanel').classList.add('open');$('stageTour').textContent='▶ Play scenic tour';applyShot(0);backdropLast=0;}
+function closeBackdrop(){backdropOpen=false;shotPlaying=false;$('stagePanel').classList.remove('open');}
+function captureBackdrop(){if(!STORY||!backdropOpen)return;try{const a=document.createElement('a');a.download='river-valley-'+backdropLocation+'-'+cinemaPrefs.look+'.png';a.href=$('stageCanvas').toDataURL('image/png');document.body.appendChild(a);a.click();a.remove();toast('📷 Your original cinematic postcard is ready.');}catch(_){toast('The browser blocked image downloads. Try desktop Chrome/Edge.');}}
+function updateCinema(stamp){if(!DIR)return;const budget=DIR.pickQuality(cinemaPrefs.quality),dt=1000/budget.maxFPS;if(stamp-directorLastFX>=dt){DIR.draw2D($('cinemaFX'),cinemaPrefs,stamp,{weather,time,season,width:innerWidth,height:innerHeight});directorLastFX=stamp;}perfFrames++;if(!perfSince)perfSince=stamp;if(stamp-perfSince>850){perfFPS=Math.round(perfFrames*1000/Math.max(1,stamp-perfSince));perfSince=stamp;perfFrames=0;if(cinemaPrefs.showStats){const r=renderer?.info?.render||{};$('perfHUD').textContent='FPS '+perfFPS+' · '+(renderer&&view==='3d'?'3D':'2D')+'\nDraw calls '+(r.calls||0)+' · Tris '+(r.triangles||0)+'\nTerrain '+terrainStats.tiles+' tiles · Effects '+budget.particles;}}}
+function renderMinigameScene(stamp){
+ if(!activity||!VFX)return;
+ const aim=$('aimSlider')?Number($('aimSlider').value)/100:.5;
+ VFX.render($('activityScene'),activity,stamp,{aim,target:huntRound?.target,kind:huntRound?.kind,biting:!!(fishRound&&Date.now()>=fishRound.biteAt&&Date.now()<=fishRound.biteAt+700)});
+}
+function loop(stamp){
+ const dt=Math.min(.065,Math.max(.001,(stamp-lastFrame)/1000||.016));lastFrame=stamp;
+ if(started){update(dt,stamp);if(renderer&&view==='3d')updateVisuals(dt,stamp);else update2d();}
+ else if(renderer&&view!=='2d'){updateVisuals(dt,stamp);}
+ renderMinigameScene(stamp);updateCinema(stamp);if(backdropOpen&&STORY&&stamp-backdropLast>66){if(shotPlaying&&stamp-shotStart>=SHOT_DURATION){applyShot(shotIndex+1);shotStart=stamp;}STORY.render($('stageCanvas'),backdropLocation,cinemaPrefs.look,stamp,cinemaPrefs.quality);backdropLast=stamp;}requestAnimationFrame(loop);
+}
+function bindUI(){
+ $('playBtn').addEventListener('click',()=>play(false));$('resumeBtn').addEventListener('click',()=>play(true));
+ $('walkBtn').addEventListener('click',()=>setMode('walk'));$('driveBtn').addEventListener('click',()=>setMode('drive'));
+ $('mapBtn').addEventListener('click',toggleMap);$('tourBtn').addEventListener('click',startTour);$('photoBtn').addEventListener('click',screenshot);
+ $('huntBtn').addEventListener('click',()=>openWorldActivity('hunt'));$('fishBtn').addEventListener('click',()=>openWorldActivity('fish'));$('farmWorldBtn').addEventListener('click',()=>openWorldActivity('farm'));$('cookBtn').addEventListener('click',()=>openWorldActivity('cook'));$('closeActivity').addEventListener('click',closeActivity);$('worldClose').addEventListener('click',closeWorldActivity);$('worldActionButtons').addEventListener('click',e=>{const b=e.target.closest('[data-worldaction]');if(b)worldAction(b.dataset.worldaction);});$('worldAim').addEventListener('input',e=>{worldAim=Number(e.target.value)/100;});
+ $('settingsBtn').addEventListener('click',()=>{closeCinema();$('panel').classList.toggle('open');});
+ $('closePanel').addEventListener('click',()=>$('panel').classList.remove('open'));
+ $('openCinema').addEventListener('click',openCinema);$('closeCinema').addEventListener('click',closeCinema);$('openStage').addEventListener('click',openBackdrop);$('closeStage').addEventListener('click',closeBackdrop);$('stageScene').addEventListener('change',e=>{shotPlaying=false;$('stageTour').textContent='▶ Play scenic tour';backdropLocation=e.target.value;$('stageShotLabel').textContent='Custom · '+STORY.SCENES[backdropLocation];$('stageShotCount').textContent='Custom';backdropLast=0;});$('stageCapture').addEventListener('click',captureBackdrop);$('stageNext').addEventListener('click',()=>{shotPlaying=false;$('stageTour').textContent='▶ Play scenic tour';applyShot(shotIndex+1);});$('stagePrev').addEventListener('click',()=>{shotPlaying=false;$('stageTour').textContent='▶ Play scenic tour';applyShot(shotIndex-1);});$('stageTour').addEventListener('click',startStopShotTour);$('stageBoard').addEventListener('click',exportShotBoard);
+ $('cineLook').addEventListener('change',e=>chooseCinemaLook(e.target.value));
+ $('cineGolden').addEventListener('click',()=>chooseCinemaLook('golden'));$('cineNight').addEventListener('click',()=>chooseCinemaLook('lantern'));$('cineReset').addEventListener('click',()=>chooseCinemaLook('natural'));
+ $('cineQuality').addEventListener('change',e=>{cinemaPrefs.quality=e.target.value;syncCinemaControls();saveCinemaPrefs();toast('Graphics effect budget: '+cinemaPrefs.quality);});
+ $('cineStrength').addEventListener('input',e=>{cinemaPrefs.strength=Number(e.target.value)/100;syncCinemaControls();saveCinemaPrefs();});
+ for(const [id,key] of [['cineGrain','grain'],['cineStats','showStats']])$(id).addEventListener('change',e=>{cinemaPrefs[key]=e.target.checked;syncCinemaControls();saveCinemaPrefs();});
+ $('weather').addEventListener('change',e=>setWeather(e.target.value));$('season').addEventListener('change',e=>setSeason(e.target.value));
+ $('time').addEventListener('input',e=>{time=Number(e.target.value);save.time=time;$('timeLabel').textContent=C.formatTime(time);});$('time').addEventListener('change',()=>persist());
+ $('terrainDetail').addEventListener('change',e=>{terrainDetail=e.target.value;applyTerrainLOD(true);});
+ $('visualEffects').addEventListener('change',e=>{visualEffects=e.target.value;applyTerrainLOD(true);toast(visualEffects==='full'?'✨ Cinematic lighting enabled.':'⚡ Reduced atmosphere for performance.');});
+ $('quality').addEventListener('change',e=>{if(worldActive)closeWorldActivity();view=e.target.value;if(view==='3d'&&!renderer){view='2d';e.target.value='2d';toast('3D is not available without WebGL.');}resize();});
+ $('slot').addEventListener('change',e=>{slot=Number(e.target.value);$('startSlot').value=String(slot);toast(`Selected family save ${slot+1}. Use Continue to load it.`);});
+ $('startSlot').addEventListener('change',e=>{slot=Number(e.target.value);$('slot').value=String(slot);const had=readSlot(slot);$('resumeBtn').disabled=!had;$('resumeBtn').title=had?'Resume this slot':'No saved adventure in this slot yet';});
+ $('petBtn').addEventListener('click',()=>{save.pet=!save.pet;updateHUD();persist();});$('soundBtn').addEventListener('click',()=>{save.muted=!save.muted;updateHUD();persist();});
+ $('installOfflineBtn').addEventListener('click',async()=>{
+   const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+   if(location.protocol==='file:'){
+     toast(ios?'On iPhone, open the HTTPS site in Safari and use Share → Add to Home Screen. Files preview cannot run a full local game.':'Desktop offline: open this HTML in Chrome or Edge. Saves remain in that browser.');
+   }else if(window.deferredInstallPrompt){window.deferredInstallPrompt.prompt();}
+   else toast(ios?'Safari: Share → Add to Home Screen, then open the installed game once while online.':'For offline use, install this game from the browser menu after its assets finish caching.');
+ });
+ $('saveBtn').addEventListener('click',()=>toast(persist()?'💾 Adventure saved on this device.':'Local storage is blocked in this browser.'));
+ $('newBtn').addEventListener('click',()=>{if(!confirm('Start a new adventure in this save slot? Your existing progress in this slot will be replaced.'))return;applyState(C.freshSave(save.name));persist();toast('🌿 New family adventure started.');});
+ $('returnBtn').addEventListener('click',()=>{closeWorldActivity();closeActivity();persist();stopTour();started=false;$('start').classList.remove('hidden');$('panel').classList.remove('open');});
+ $('interactBtn').addEventListener('click',interact);$('touchInteract').addEventListener('pointerdown',e=>{e.preventDefault();if(!worldPrimaryAction())interact();});
+ $('farmGrid').addEventListener('click',e=>{const b=e.target.closest('button[data-plot]');if(!b)return;const action=C.farmAction(save,Number(b.dataset.plot),Date.now());save=action.save;const result=action.result;
+ $('farmNotice').textContent=({'planted':'🌱 Planted! Come back when your corn is ripe.','growing':'🌿 Growing strong. Give it a moment.','harvested':'🌽 Harvest complete! +45 coins • +45 XP','needs-coins':'Collect a discovery stamp to earn seed money.','invalid':'That field is unavailable.'})[result]||result;
+ if(result==='harvested')audioChime();renderFarm();updateHUD();persist();});
+ $('waterFarm').addEventListener('click',()=>{const a=C.waterFarm(save,Date.now());save=a.save;$('farmNotice').textContent=a.result==='watered'?'💧 The growing crops will be ready sooner.':a.result==='needs-coins'?'Not enough coins to water.':'Plant some seeds first.';renderFarm();updateHUD();persist();});
+ const closeFarm=()=>$('farmPanel').classList.remove('open');$('closeFarm').addEventListener('click',closeFarm);$('farmDone').addEventListener('click',closeFarm);
+ $('toggleMissions').addEventListener('click',()=>{const hidden=$('missionList').hidden; $('missionList').hidden=!hidden;$('questSummary').hidden=!hidden;$('toggleMissions').textContent=hidden?'−':'+';});
+ $('missionList').addEventListener('click',e=>{const b=e.target.closest('button[data-stop]');if(!b)return;const id=b.dataset.stop,fast=selected===id;selectStop(id,fast);});
+ mapCanvas.addEventListener('click',e=>{const rect=mapCanvas.getBoundingClientRect(),x=(e.clientX-rect.left)/rect.width*TWO-LIMIT,z=(e.clientY-rect.top)/rect.height*TWO-LIMIT;const dst=C.STOPS.find(s=>Math.hypot(s.x-x,s.z-z)<180);if(dst)selectStop(dst.id,true);});
+ document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,select,textarea'))return;
+  const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();keys.add(k);
+  if(!started)return;
+  if(k==='e'||k===' '){if(!activity&&!worldPrimaryAction())interact();}
+  if(k==='h')openWorldActivity('hunt');if(k==='f')openWorldActivity('fish');if(k==='g')openWorldActivity('farm');if(k==='k')openWorldActivity('cook');if(k==='m'&&!activity&&!backdropOpen)toggleMap();if(k==='p')screenshot();if(k==='c'&&!activity){$('cinemaPanel').classList.contains('open')?closeCinema():openCinema();}if(k==='escape'){if(worldActive)closeWorldActivity();else if(backdropOpen)closeBackdrop();else if(activity)closeActivity();else if($('cinemaPanel').classList.contains('open'))closeCinema();else $('panel').classList.toggle('open');}
+ });document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>keys.clear());
+ canvas.addEventListener('pointerdown',e=>{pointerDown=true;pointerX=e.clientX;pointerY=e.clientY;});
+ window.addEventListener('pointerup',()=>pointerDown=false);
+ canvas.addEventListener('pointermove',e=>{if(!pointerDown||!renderer||view==='2d')return;cameraYaw+=(e.clientX-pointerX)*.005;cameraDist=C.clamp(cameraDist+(e.clientY-pointerY)*.2,42,310);pointerX=e.clientX;pointerY=e.clientY;});
+ for(const surface of [canvas,atlas])surface.addEventListener('wheel',e=>{e.preventDefault();if(renderer&&view==='3d')cameraDist=C.clamp(cameraDist+e.deltaY*.2,42,310);else mapZoom=C.clamp(mapZoom-e.deltaY*.002,.45,5);},{passive:false});
+ let pinch=0;atlas.addEventListener('touchstart',e=>{if(e.touches.length===2)pinch=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);},{passive:true});
+ atlas.addEventListener('touchmove',e=>{if(e.touches.length===2){e.preventDefault();const distance=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pinch>0)mapZoom=C.clamp(mapZoom*distance/pinch,.45,5);pinch=distance;}},{passive:false});
+ atlas.addEventListener('touchend',()=>{pinch=0;});
+ for(const b of document.querySelectorAll('#touchControls [data-key]')){
+  function set(on){const k=b.dataset.key;if(on)keys.add(k);else keys.delete(k);b.classList.toggle('pressed',on);}
+  b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);set(true);});
+  for(const evt of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(evt,()=>set(false));
+ }
+ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.deferredInstallPrompt=e;const el=$('offlineStatus');if(el)el.textContent='Install available — tap Install / Offline help';});
+ window.addEventListener('resize',resize);
+}
+function init(){
+ bindUI();loadCinemaPrefs();
+ if(innerWidth<781){$('missionList').hidden=true;$('questSummary').hidden=true;$('toggleMissions').textContent='+';}slot=Number($('slot').value)||0;
+ const had=readSlot(slot);$('resumeBtn').disabled=!had;$('resumeBtn').title=had?'Resume your saved adventure':'No saved adventure yet';
+ if('ontouchstart'in window||navigator.maxTouchPoints>0)$('touchControls').style.display='flex';
+ if(!tryRenderer()){view='2d';$('quality').value='2d';}else view='3d';
+ resize();updateHUD();mapDraw(mapCtx,mapCanvas.width,mapCanvas.height,false);
+ requestAnimationFrame(loop);
+ window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
+}
+init();
+})();

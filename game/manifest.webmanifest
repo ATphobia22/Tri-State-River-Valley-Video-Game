@@ -1,0 +1,10 @@
+{
+  "name":"River Valley — A Family Adventure",
+  "short_name":"River Valley",
+  "description":"Private, family-friendly offline river valley exploration game",
+  "start_url":"./index.html",
+  "display":"standalone",
+  "background_color":"#0b1c22",
+  "theme_color":"#0b1c22",
+  "icons":[{"src":"assets/icon192.png","sizes":"192x192","type":"image/png"},{"src":"assets/icon512.png","sizes":"512x512","type":"image/png"}]
+}

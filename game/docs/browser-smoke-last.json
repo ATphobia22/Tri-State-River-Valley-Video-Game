@@ -1,0 +1,67 @@
+{
+  "title": "River Valley — A Family Adventure",
+  "hero_visible": true,
+  "three_present": true,
+  "data_buildings": 4429,
+  "data_roads": 719,
+  "debug": {
+    "started": false,
+    "mode": "walk",
+    "stamps": 0,
+    "x": 16,
+    "z": 504,
+    "renderMode": "2d"
+  },
+  "started": {
+    "started": true,
+    "mode": "walk",
+    "stamps": 0,
+    "x": 16,
+    "z": 504,
+    "renderMode": "2d"
+  },
+  "map_mode": "2d",
+  "context_visible": true,
+  "mission_after": {
+    "started": true,
+    "mode": "walk",
+    "stamps": 1,
+    "x": 76,
+    "z": 548,
+    "renderMode": "2d"
+  },
+  "farm_open": true,
+  "farm_sowed": true,
+  "settings_visible": true,
+  "saved": true,
+  "errors": [
+    [
+      "console",
+      "THREE.WebGLRenderer: A WebGL context could not be created. Reason:  Could not create a WebGL context, VENDOR = 0xffff, DEVICE = 0xffff, Sandboxed = no, Optimus = no, AMD switchable = no, Reset notification strategy = 0x0000, ErrorMessage = BindToCurrentSequence failed: ."
+    ],
+    [
+      "console",
+      "THREE.WebGLRenderer: A WebGL context could not be created. Reason:  Could not create a WebGL context, VENDOR = 0xffff, DEVICE = 0xffff, Sandboxed = no, Optimus = no, AMD switchable = no, Reset notification strategy = 0x0000, ErrorMessage = BindToCurrentSequence failed: ."
+    ],
+    [
+      "console",
+      "THREE.WebGLRenderer: A WebGL context could not be created. Reason:  Could not create a WebGL context, VENDOR = 0xffff, DEVICE = 0xffff, Sandboxed = no, Optimus = no, AMD switchable = no, Reset notification strategy = 0x0000, ErrorMessage = BindToCurrentSequence failed: ."
+    ],
+    [
+      "console",
+      "THREE.WebGLRenderer: A WebGL context could not be created. Reason:  Could not create a WebGL context, VENDOR = 0xffff, DEVICE = 0xffff, Sandboxed = no, Optimus = no, AMD switchable = no, Reset notification strategy = 0x0000, ErrorMessage = BindToCurrentSequence failed: ."
+    ],
+    [
+      "console",
+      "THREE.WebGLRenderer: A WebGL context could not be created. Reason:  Could not create a WebGL context, VENDOR = 0xffff, DEVICE = 0xffff, Sandboxed = no, Optimus = no, AMD switchable = no, Reset notification strategy = 0x0000, ErrorMessage = BindToCurrentSequence failed: ."
+    ],
+    [
+      "console",
+      "THREE.WebGLRenderer: A WebGL context could not be created. Reason:  Could not create a WebGL context, VENDOR = 0xffff, DEVICE = 0xffff, Sandboxed = no, Optimus = no, AMD switchable = no, Reset notification strategy = 0x0000, ErrorMessage = BindToCurrentSequence failed: ."
+    ],
+    [
+      "console",
+      "THREE.WebGLRenderer: Error creating WebGL context."
+    ]
+  ]
+}
