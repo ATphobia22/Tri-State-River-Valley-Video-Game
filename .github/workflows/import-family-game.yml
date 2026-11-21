@@ -1,0 +1,107 @@
+name: Import River Valley Family Adventure v1.7
+on:
+  push:
+    paths:
+      - .github/workflows/import-family-game.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: family-game-import
+  cancel-in-progress: false
+jobs:
+  import-game:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fetch SHA-256 pinned game release
+        env:
+          SOURCE_URL: https://media.base44.com/files/public/6b0206f1718ffb2e3e955781/555b277e8_River_Valley_Family_Adventure_v1_7_Repository_FINAL.zip
+          SOURCE_SHA256: be75a38b3c2a363e42008e9ae97253d9781e64fd480c038e14036ed2334e44e3
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 180 -o /tmp/river-game-source.zip "$SOURCE_URL"
+          printf '%s  %s\n' "$SOURCE_SHA256" /tmp/river-game-source.zip | sha256sum -c -
+      - name: Archive old engineering files and unpack the game
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import subprocess
+          preserved={'.github/workflows/import-family-game.yml'}
+          tracked=[Path(p.decode()) for p in subprocess.check_output(['git','ls-files','-z']).split(b'\0') if p]
+          legacy=[p for p in tracked if p.as_posix() not in preserved]
+          Path('legacy').mkdir(exist_ok=True)
+          with ZipFile('legacy/engineering-source-before-game-import.zip','w') as archive:
+              for p in legacy:
+                  if p.is_file(): archive.write(p,arcname=p.as_posix())
+          for p in legacy:
+              if p.is_file(): p.unlink()
+          with ZipFile('/tmp/river-game-source.zip','r') as release:
+              items=release.infolist()
+              assert len(items)>80, 'Incomplete game project'
+              names={i.filename for i in items}
+              required={'index.html','game.html','River_Valley_Family_Adventure_OFFLINE.html','src/core.js','src/game.js','src/open-world.js','src/quadtree.js','data/valley-data.js','vendor/three.js','tests/inworld_real_webgl_e2e.py','tests/test-local-sw.cjs','README.md','CREDITS_AND_DATA.txt','game-sw.js','sw.js','package.json'}
+              assert required<=names, 'Missing: '+str(required-names)
+              assert release.testzip() is None, 'Archive CRC error'
+              assert sum(i.file_size for i in items)<100_000_000
+              for item in items:
+                  p=Path(item.filename)
+                  assert not p.is_absolute() and '..' not in p.parts, 'Unsafe path'
+                  assert ((item.external_attr>>16)&0o170000)!=0o120000, 'Symlink not allowed'
+              Path('game').mkdir(exist_ok=True)
+              release.extractall('game')
+          Path('README.md').write_text('''# Tri-State River Valley Video Game
+          
+          **River Valley Family Adventure v1.7** — offline-first 3D family exploration game inspired by Mount Vernon, Indiana and the Ohio–Wabash River Valley.
+          
+          - [Game source and setup](game/README.md)
+          - [Playable static game](game/index.html)
+          - [Single-file offline game](game/River_Valley_Family_Adventure_OFFLINE.html)
+          - [Live website](https://river-valley-family-adventure-3e955781.base44.app/game.html)
+          - [Validation details](game/docs/OPEN_WORLD_V1_7_RELEASE.md)
+          
+          The previous digital-twin code is archived in legacy/engineering-source-before-game-import.zip; it is not part of the active game runtime. This game is separate from Tri-State Systems Manager.
+          
+          Build and test: cd game; python -m pip install -r requirements.txt; npm test; npm run build.
+          
+          GitHub Pages can serve the root index.html as a launcher if enabled. The offline HTML runs in a browser and is not a native Windows/iPhone executable.
+          '''.replace('          ','').lstrip())
+          Path('index.html').write_text('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>River Valley Family Adventure</title><meta http-equiv="refresh" content="0; url=game/index.html"></head><body><a href="game/index.html">Play River Valley Family Adventure</a></body></html>')
+          Path('.gitignore').write_text('node_modules/\n__pycache__/\n*.pyc\n.DS_Store\nplaywright-report/\ntest-results/\n')
+          print('Imported',len(items),'game files, archived',len(legacy),'legacy files')
+          PY
+      - name: Verify gameplay and assemble offline build
+        run: |
+          python -m pip install -r game/requirements.txt
+          cd game
+          npm test
+          npm run build
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          path=Path('River_Valley_Family_Adventure_OFFLINE.html')
+          assert path.stat().st_size>1_000_000
+          assert 'RiverValleyDebug' in path.read_text()
+          print('Verified',path.stat().st_size,hashlib.sha256(path.read_bytes()).hexdigest())
+          PY
+      - name: Commit verified game to main
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          if ! git diff --cached --quiet; then
+            git commit -m "feat(game): import tested River Valley 3D family adventure v1.7"
+            git push origin HEAD:main
+          fi
