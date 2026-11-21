@@ -60,6 +60,14 @@ jobs:
                   assert ((item.external_attr>>16)&0o170000)!=0o120000, 'Symlink not allowed'
               Path('game').mkdir(exist_ok=True)
               release.extractall('game')
+          # Normalize the one inherited Unity starter line with trailing whitespace.
+          unity=Path('game/unity-starter/README.md')
+          unity.write_text('\n'.join(line.rstrip() for line in unity.read_text().splitlines())+'\n')
+          # Recompute the closed manifest after that formatting-only repair.
+          from hashlib import sha256
+          game=Path('game')
+          paths=sorted(p for p in game.rglob('*') if p.is_file() and p.name!='CHECKSUMS.sha256' and '__pycache__' not in p.parts and not p.name.endswith('.pyc'))
+          (game/'CHECKSUMS.sha256').write_text('\n'.join(sha256(p.read_bytes()).hexdigest()+'  '+str(p.relative_to(game)) for p in paths)+'\n')
           Path('README.md').write_text('''# Tri-State River Valley Video Game
           
           **River Valley Family Adventure v1.7** — offline-first 3D family exploration game inspired by Mount Vernon, Indiana and the Ohio–Wabash River Valley.
