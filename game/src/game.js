@@ -431,7 +431,7 @@ function openWorldActivity(id){
  if(!WORLD.SITES[id])return;
  closeActivity();$('farmPanel').classList.remove('open');$('panel').classList.remove('open');closeCinema();
  const loc=WORLD.SITES[id];worldActive=id;worldHuntRound=null;worldFishRound=null;worldAim=.5;worldStatus='';
- player.x=loc.x;player.z=loc.z-25;playerHeading=0;
+ const approach=WORLD.approachSite(id,cameraYaw,34);player.x=approach.x;player.z=approach.z;playerHeading=cameraYaw;cameraDist=Math.min(cameraDist,43);
  $('worldAim').value='50';$('worldActivityHud').hidden=false;
  showWorldActivity();persist();toast(`🌍 ${loc.title}: play right inside the 3D world.`);
 }

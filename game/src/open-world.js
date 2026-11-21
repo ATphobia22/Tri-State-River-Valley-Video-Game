@@ -10,6 +10,7 @@ const SITES=Object.freeze({
  cook:{x:-740,z:-210,title:'Oak Grove Camp Kitchen',label:'🍳 Country Kitchen',kind:'kitchen'}
 });
 function closestSite(p,radius=130){let match=null,d=Infinity;for(const [id,s] of Object.entries(SITES)){const ds=Math.hypot(p.x-s.x,p.z-s.z);if(ds<radius&&ds<d){d=ds;match=id;}}return match;}
+function approachSite(id,yaw=0,distance=34){const site=SITES[id];if(!site)return null;const a=Number.isFinite(yaw)?yaw:0,d=Number.isFinite(distance)?Math.max(0,Math.min(distance,100)):34;return {x:site.x+Math.sin(a)*d,z:site.z+Math.cos(a)*d};}
 function farmPick(save,now){const a=save.farmPlots||[],ready=a.findIndex(t=>t>0&&t<=now);if(ready>=0)return {index:ready,action:'harvest'};const empty=a.findIndex(t=>t===0);if(empty>=0)return {index:empty,action:'plant'};return {index:0,action:'growing'};}
 function sceneWorld(T,scene,ground){
  const root=new T.Group();root.name='River Valley in-world activities';scene.add(root);
@@ -79,5 +80,5 @@ function sceneWorld(T,scene,ground){
  };
  return world;
 }
-return {SITES,closestSite,farmPick,sceneWorld};
+return {SITES,closestSite,approachSite,farmPick,sceneWorld};
 });

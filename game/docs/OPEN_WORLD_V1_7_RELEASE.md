@@ -13,7 +13,7 @@
 
 ## Test evidence — November 21, 2026
 
-- `node --test tests/test-*.cjs`: **41 tests passed** including PWA relative paths, gameplay, LOD, geometry and asset validation (re-run after changes).
+- `node --test tests/test-*.cjs`: **44 tests passed** including PWA relative paths, gameplay, LOD, geometry and asset validation (re-run after changes).
 - `xvfb-run -a python tests/inworld_real_webgl_e2e.py`: **13 checks passed** with no page errors. Chromium rendered with Mesa software OpenGL, not a simulated Three.js renderer. The checks cover scene initialization, all four sites, harvesting, hunting, catching, cooking, driving and save rehydration with test localStorage.
 - Screenshot `docs/v17-inworld-browser-verified.png` is a real Chromium software-OpenGL frame. No claim is made about a dedicated consumer GPU.
 - Hosted `game-sw.js` now uses a relative base path so deployments under a repository subdirectory can cache the correct HTML and manifest.
@@ -32,3 +32,5 @@
 - From the repository, open `game/index.html` through a static server or the generated one-file `game/River_Valley_Family_Adventure_OFFLINE.html` in Chrome/Edge. Launch from GitHub Pages when enabled for PWA install on iPhone.
 - Start Exploring → Hunt / Fish / Farm / Cook buttons quick-travel to physical locations. E acts, WASD moves, mouse drag orbits, Shift sprints, M map, Esc close, and Drive changes movement speed.
 - In Windows, `Open_River_Valley_Windows.cmd` opens the game using the local machine's default browser; it is not a native Windows game.
+
+Camera repair: activity quick-travel positions the player on the visible side of each site; follow-camera zoom is capped near 43 local units. New tests/test-world-site-camera.cjs covers all four sites and several camera angles.
