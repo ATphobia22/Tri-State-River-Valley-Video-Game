@@ -1,0 +1,53 @@
+name: River Valley Game CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-game:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Python HTML bundler dependency
+        run: python -m pip install -r game/requirements.txt
+      - name: Check Python syntax
+        run: python -m compileall -q game
+      - name: Validate gameplay, terrain, models and offline cache
+        run: npm --prefix game test
+      - name: Rebuild independent offline and hosted game
+        run: npm --prefix game run build
+      - name: Verify bundled game is self-contained and complete
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from bs4 import BeautifulSoup
+          root=Path('game')
+          html=root/'River_Valley_Family_Adventure_OFFLINE.html'
+          soup=BeautifulSoup(html.read_text(),'html.parser')
+          scripts=soup.find_all('script',src=True)
+          assert not scripts, f'External script dependencies found: {scripts}'
+          assert html.stat().st_size>1_000_000
+          assert len(list((root/'assets/models').glob('*.glb')))==5
+          assert (root/'src/open-world.js').exists()
+          assert (root/'docs/OPEN_WORLD_V1_7_RELEASE.md').exists()
+          print('PASS: self-contained offline HTML, 5 GLBs, gameplay source and release evidence')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: river-valley-offline-game
+          path: |
+            game/River_Valley_Family_Adventure_OFFLINE.html
+            game/docs/OPEN_WORLD_V1_7_RELEASE.md
+            game/docs/v17-inworld-browser-verified.png
+          if-no-files-found: error
