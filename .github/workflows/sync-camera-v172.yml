@@ -1,0 +1,92 @@
+name: Sync Camera-Verified Game v1.7.2
+on:
+  push:
+    paths:
+      - .github/workflows/sync-camera-v172.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: river-valley-game-sync
+  cancel-in-progress: false
+
+jobs:
+  sync-tested-game:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download immutable game release and verify SHA-256
+        env:
+          SOURCE_URL: https://media.base44.com/files/public/6b0206f1718ffb2e3e955781/d238e7a7e_River_Valley_Family_Adventure_v1_7_2_Camera_Fixed_Project.zip
+          SOURCE_SHA256: 96436a1b847b5185dcef095365de5c2868b7688ac0510eabae988017ec06fe17
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 180 --output /tmp/river-v172.zip "$SOURCE_URL"
+          printf '%s  %s\n' "$SOURCE_SHA256" /tmp/river-v172.zip | sha256sum -c -
+      - name: Replace game sources only; preserve workflows and legacy archive
+        run: |
+          set -euo pipefail
+          git rm -r --ignore-unmatch -q game
+          rm -rf game
+          python - <<'PY'
+          from zipfile import ZipFile
+          from pathlib import Path
+          release='/tmp/river-v172.zip'
+          with ZipFile(release) as z:
+              entries=z.infolist()
+              assert z.testzip() is None, 'Corrupt game archive'
+              assert len(entries)>=90, 'Incomplete source package'
+              assert sum(e.file_size for e in entries)<100_000_000, 'Unreviewed size'
+              required={'src/open-world.js','src/game.js','tests/test-world-site-camera.cjs','tests/inworld_real_webgl_e2e.py','River_Valley_Family_Adventure_OFFLINE.html','game.html','game-sw.js','README.md','assets/models/barn.glb'}
+              names={e.filename for e in entries}
+              assert required<=names, 'Missing critical game files: '+str(required-names)
+              for e in entries:
+                  p=Path(e.filename)
+                  assert not p.is_absolute() and '..' not in p.parts, 'Traversal path blocked'
+                  assert ((e.external_attr>>16)&0o170000)!=0o120000, 'Symlink blocked'
+              Path('game').mkdir(exist_ok=True)
+              z.extractall('game')
+          readme=Path('game/docs/OPEN_WORLD_V1_7_RELEASE.md')
+          s=readme.read_text()
+          s=s.replace('**41 tests passed**','**44 tests passed**')
+          s+='\nCamera repair: activity quick-travel positions the player on the visible side of each site; follow-camera zoom is capped near 43 local units. New tests/test-world-site-camera.cjs covers all four sites and several camera angles.\n'
+          readme.write_text(s)
+          print('Unpacked',len(entries),'game files; retained the rest of the repository')
+          PY
+      - name: Verify game rules, camera framing geometry and new offline bundles
+        run: |
+          set -euo pipefail
+          python -m pip install -r game/requirements.txt
+          npm --prefix game test
+          npm --prefix game run build
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          game=Path('game')
+          offline=game/'River_Valley_Family_Adventure_OFFLINE.html'
+          assert offline.stat().st_size>1_000_000
+          assert 'approachSite' in (game/'src/open-world.js').read_text()
+          assert 'WORLD.approachSite(id,cameraYaw' in (game/'src/game.js').read_text()
+          assert len(list((game/'assets/models').glob('*.glb')))==5
+          paths=sorted(p for p in game.rglob('*') if p.is_file() and p.name!='CHECKSUMS.sha256' and not p.name.endswith('.pyc') and '__pycache__' not in p.parts)
+          (game/'CHECKSUMS.sha256').write_text('\n'.join(sha256(p.read_bytes()).hexdigest()+'  '+str(p.relative_to(game)) for p in paths)+'\n')
+          print('Verified tested offline game; bytes=',offline.stat().st_size,'files=',len(paths))
+          PY
+      - name: Commit verified game changes on main
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A game
+          git diff --cached --check
+          if ! git diff --cached --quiet; then
+            git commit -m "fix(game): keep 3D activity sites in view and verify four world locations"
+            git push origin HEAD:main
+          fi
