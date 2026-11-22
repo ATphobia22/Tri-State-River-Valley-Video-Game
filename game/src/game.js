@@ -514,7 +514,7 @@ function updateVisuals(dt,stamp){
  ambient.intensity=.6+1.8*light;sunLight.intensity=.25+2.2*light;sunLight.position.set(-200,Math.max(30,380*light),180);renderer.toneMappingExposure=.75+light*.62;
  avatar.position.set(player.x,height(player.x,player.z),player.z);car.position.copy(avatar.position);avatar.rotation.y=playerHeading;car.rotation.y=playerHeading;avatar.visible=save.mode==='walk'||heroInspection;car.visible=save.mode==='drive'&&!heroInspection;
  heroState=chooseHeroState(stamp);
- if(heroController)heroController.update({state:heroState,stamp,dt});
+ if(heroController)heroController.update({state:heroState,stamp,dt,groundAt:height,heading:playerHeading});
  if(driverController)driverController.update({state:'drive',stamp,dt});
  if(dog){dog.visible=save.pet&&save.mode==='walk';dog.position.set(player.x+10+Math.sin(stamp/700)*2,height(player.x+10,player.z+14),player.z+14);}
  if(beaconGroup)beaconGroup.children.forEach((g,i)=>{g.rotation.y+=dt*.5;g.position.y=height(g.position.x,g.position.z)+8+Math.sin(stamp/450+i)*2;g.visible=!save.completed.includes(g.userData.id);});
