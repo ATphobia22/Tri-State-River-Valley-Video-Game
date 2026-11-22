@@ -1,6 +1,6 @@
 /* River Valley family game: relative-scope offline cache for the hosted PWA.
    Works at origin root and project subpaths (e.g. /RepoName/game/). */
-const CACHE='rva-game-1.10.1';
+const CACHE='rva-game-1.10.2';
 const ROOT=new URL('./',self.location.href);
 const SHELL=new URL('game.html',ROOT).pathname;
 const ALIAS=new URL('game',ROOT).pathname;
