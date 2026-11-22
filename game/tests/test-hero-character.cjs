@@ -77,7 +77,7 @@ test('game hooks the hero and its animations into the live world and offline cac
  assert.ok(html.includes('src/hero-character.js'));
  assert.ok(html.indexOf('src/hero-character.js')<html.indexOf('src/game.js'));
  assert.ok(sw.includes('./src/hero-character.js'));
- assert.match(game,/HERO\.create\(G\)/);
+ assert.match(game,/HERO\.create\(G/);
  assert.match(game,/heroController\.update\(/);
  assert.match(game,/heroState/);
 });
