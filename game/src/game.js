@@ -878,7 +878,8 @@ function openHeroStudio(){
  if(activity)closeActivity();
  closeCinema();$('panel').classList.remove('open');
  previousHeroCamera={distance:cameraDist,yaw:cameraYaw};
- heroInspection=true;heroPreviewPose='idle';
+ heroInspection=true;heroPreviewPose='idle';$('heroStudio').classList.remove('is-minimized');
+ $('heroStudioToggle').textContent='Hide tools';$('heroStudioToggle').setAttribute('aria-expanded','true');
  cameraDist=30;cameraYaw=playerHeading+Math.PI;
  $('heroPose').value='idle';
  $('heroStudio').hidden=false;
@@ -1014,7 +1015,12 @@ function loop(stamp){
  renderMinigameScene(stamp);updateCinema(stamp);if(backdropOpen&&STORY&&stamp-backdropLast>66){if(shotPlaying&&stamp-shotStart>=SHOT_DURATION){applyShot(shotIndex+1);shotStart=stamp;}STORY.render($('stageCanvas'),backdropLocation,cinemaPrefs.look,stamp,cinemaPrefs.quality);backdropLast=stamp;}requestAnimationFrame(loop);
 }
 function bindUI(){
- $('heroStudioOpen').addEventListener('click',openHeroStudio);$('heroStudioClose').addEventListener('click',closeHeroStudio);$('heroStudioDone').addEventListener('click',closeHeroStudio);$('heroPhoto').addEventListener('click',screenshot);$('heroPose').addEventListener('change',e=>{if(HERO.STATES.includes(e.target.value))heroPreviewPose=e.target.value;});$('heroFocus').addEventListener('change',e=>heroPreviewStage?.setFocus(e.target.value));
+ $('heroStudioOpen').addEventListener('click',openHeroStudio);$('heroStudioToggle').addEventListener('click',()=>{
+  const panel=$('heroStudio'),collapsed=panel.classList.toggle('is-minimized'),toggle=$('heroStudioToggle');
+  toggle.textContent=collapsed?'Show tools':'Hide tools';
+  toggle.setAttribute('aria-expanded',String(!collapsed));
+  toggle.setAttribute('aria-label',collapsed?'Show character studio tools':'Hide character studio tools');
+ });$('heroStudioClose').addEventListener('click',closeHeroStudio);$('heroStudioDone').addEventListener('click',closeHeroStudio);$('heroPhoto').addEventListener('click',screenshot);$('heroPose').addEventListener('change',e=>{if(HERO.STATES.includes(e.target.value))heroPreviewPose=e.target.value;});$('heroFocus').addEventListener('change',e=>heroPreviewStage?.setFocus(e.target.value));
  $('playBtn').addEventListener('click',()=>play(false));$('resumeBtn').addEventListener('click',()=>play(true));
  $('walkBtn').addEventListener('click',()=>setMode('walk'));$('driveBtn').addEventListener('click',()=>setMode('drive'));
  $('countyBtn').addEventListener('click',openCounty);$('countyClose').addEventListener('click',closeCounty);
