@@ -16,7 +16,7 @@ test('original self-contained GLB is independently reproducible with real skin, 
  assert.equal(doc.asset.version,'2.0');
  assert.equal(doc.skins.length,1);
  assert.equal(doc.skins[0].joints.length,27);
- assert.equal(doc.animations.length,9);
+ assert.equal(doc.animations.length,13);
  assert.ok(doc.materials.length>=14);
  assert.ok(doc.materials.some(m=>m.name==='River lens'&&m.alphaMode==='BLEND'));
  assert.ok(doc.meshes[0].primitives.length>=12);
@@ -60,6 +60,8 @@ test('runtime decodes SkinnedMeshes and drives actual shoulder, knee and hand at
   assert.equal(hero.meshes.length,doc.meshes[0].primitives.length);
   assert.ok(hero.meshes.every(mesh=>mesh.isSkinnedMesh&&mesh.skeleton.bones.length===27));
   assert.ok(hero.clips.includes('FishingCast'));
+  assert.ok(hero.clips.includes('Jump'));
+  assert.equal(hero.clipMixerReady,true);
   for(const side of ['Left','Right'])for(const digit of ['Thumb','Index','Middle','Ring','Pinky'])
    assert.ok(hero.joints[side+digit],side+digit);
   assert.ok('left' in hero.footContacts && 'right' in hero.footContacts);
@@ -72,6 +74,7 @@ test('runtime decodes SkinnedMeshes and drives actual shoulder, knee and hand at
   for(const [state,prop] of [['fish','rod'],['cook','spoon'],['hunt','binoculars']]){
    hero.update({state,stamp:1500,dt:.045});
    assert.ok(hero.props[prop].visible,state);
+   assert.ok(hero.activeClip,'GLB animation mixer inactive');
    assert.equal(hero.props[prop].parent,hero.joints.RightHand);
    assert.ok(Number.isFinite(hero.joints.RightHand.rotation.x));
    assert.ok(Number.isFinite(hero.joints.LeftHand.rotation.x));
