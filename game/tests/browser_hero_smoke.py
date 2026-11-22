@@ -36,7 +36,7 @@ def inspect(page, *, mobile: bool):
     assert state()["renderMode"] == "webgl", "WebGL fallback cannot validate hero stage"
     assert state()["heroParts"] >= 10
     assert state()["heroSkinned"] is True, "Rigged GLB did not instantiate: procedural fallback used"
-    assert state()["heroBoneCount"] >= 17
+    assert state()["heroBoneCount"] >= 27
     assert state()["heroClipCount"] >= 9
     assert state()["heroTexturedMeshes"] >= 6, "Procedural cloth maps missing from WebGL character"
     assert state()["heroFootContacts"] is not None, "Terrain contact solver missing"
