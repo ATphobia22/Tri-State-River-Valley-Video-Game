@@ -42,6 +42,7 @@ const streamingGovernor=STREAM?STREAM.createGovernor({maxTiles:innerWidth<781?11
 let currentTravelSpeed=0;
 const G=window.THREE;
 const POLISH=window.ValleyVisualPolish,BIOME=window.ValleyBiomeStreamer,LODPLAN=window.ValleyLODTransition;
+const RIVER_WATER=window.ValleyRiverWater;
 const HERO=window.ValleyHero;let heroController=null,driverController=null,heroOneShot=null,heroOneShotUntil=0,heroState='idle';const STAGE=window.ValleyHeroStage;let heroPreviewStage=null;let heroInspection=false,heroPreviewPose='idle',previousHeroCamera=null;
 let facadePalette=null,biomeStreamer=null,lastVegetationTime=0,terrainTransition=null,retiringTerrain=null;
 
@@ -309,7 +310,7 @@ function buildRiver(){
   if(i<n){const k=i*2;inds.push(k,k+1,k+2,k+1,k+3,k+2);}
  }
  const geo=new G.BufferGeometry();geo.setAttribute('position',new G.Float32BufferAttribute(pos,3));geo.setIndex(inds);geo.computeVertexNormals();
- waterMesh=new G.Mesh(geo,new G.MeshPhongMaterial({color:0x468ea1,transparent:true,opacity:.87,shininess:75,side:G.DoubleSide}));scene.add(waterMesh);
+ waterMesh=RIVER_WATER?RIVER_WATER.create(G,geo,{quality:visualEffects}).mesh:new G.Mesh(geo,new G.MeshPhongMaterial({color:0x468ea1,transparent:true,opacity:.87,shininess:75,side:G.DoubleSide}));scene.add(waterMesh);
 }
 function buildRoads(){
  // Sample both *edges* of each ribbon on the SAME displayed terrain triangles.
@@ -617,7 +618,7 @@ function updateVisuals(dt,stamp){
   }
  if(beaconGroup)beaconGroup.children.forEach((g,i)=>{g.rotation.y+=dt*.5;g.position.y=height(g.position.x,g.position.z)+8+Math.sin(stamp/450+i)*2;g.visible=!save.completed.includes(g.userData.id);});
  if(house)house.visible=save.homestead;
- if(waterMesh)waterMesh.material.opacity=.82+Math.sin(stamp/900)*.045;
+ if(waterMesh){if(RIVER_WATER&&waterMesh.material.uniforms)RIVER_WATER.update(waterMesh.material,stamp,weather,time,visualEffects);else waterMesh.material.opacity=.82+Math.sin(stamp/900)*.045;}
  if(roadMesh?.material){roadMesh.material.color.setHex(weather==='rain'?0x3b464b:0x62686a);
   roadMesh.material.needsUpdate=false;}
  if(worldGame)worldGame.update({stamp,save,activity:worldActive,huntRound:worldHuntRound,fishRound:worldFishRound,aim:worldAim,weather});
