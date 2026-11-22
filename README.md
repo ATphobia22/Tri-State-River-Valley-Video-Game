@@ -2,7 +2,7 @@
 
 **A free, offline-first, family-friendly 3D exploration game** set in a stylized Ohio–Wabash River Valley inspired by Mount Vernon and Posey County, Indiana. Explore on foot or by car, fish, track wildlife, grow crops, cook by the campfire, discover regional destinations, and adventure with Scout the dog. Game progress lives in **three local browser save slots**; no sign-in or gameplay server is required.
 
-**Current playable release: v1.10.1** · Three.js / WebGL · Browser and downloadable offline HTML · Windows and iPhone browser controls
+**Current playable release: v1.10.2** · Three.js / WebGL · Browser and downloadable offline HTML · Windows and iPhone browser controls
 
 [**Play on GitHub Pages**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Direct game page](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/game.html) · [Download single-file offline game](game/River_Valley_Family_Adventure_OFFLINE.html) · [Game technical guide](game/README.md)
 
@@ -97,6 +97,10 @@ The v1.10.0 gameplay release and the later **offline-replay gate hardening (PR #
 | [`game/tests/`](game/tests/) | Game logic, geometry, offline build and browser acceptance tests |
 | [`game/tools/`](game/tools/) | Deterministic asset construction, packaging and audits |
 | [`game/docs/`](game/docs/) | Release notes, source provenance, graphics research and verification |
+
+## River Explorer reference art pass — v1.10.2
+
+The original **27-joint River Explorer** was refined using three supplied concept sheets. His short sleeves now expose skinned forearms, the skull gaiter print and translucent eyewear are finer, fingerless gloves have individual covered bases and exposed tips, and cargo/boot/pack straps have more readable finishing details. His idle arms rest closer to the body. Character Studio now supports a **Gaiter and glasses close-up** alongside hand grips and boots. All improvements use the original GLB generator and PBR material palette—**not** the old 17-bone upload. [Reference-based implementation and acceptance limits](game/docs/RIVER_ART_REFINEMENT_v1.10.2.md).
 
 ## Mobile rendering and performance upgrade — v1.10.1
 
