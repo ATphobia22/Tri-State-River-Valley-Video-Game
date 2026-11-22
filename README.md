@@ -2,7 +2,7 @@
 
 **A free, offline-first, family-friendly 3D exploration game** set in a stylized Ohio–Wabash River Valley inspired by Mount Vernon and Posey County, Indiana. Explore on foot or by car, fish, track wildlife, grow crops, cook by the campfire, discover regional destinations, and adventure with Scout the dog. Game progress lives in **three local browser save slots**; no sign-in or gameplay server is required.
 
-**Current playable release: v1.12.0** · Three.js / WebGL · Browser and downloadable offline HTML · Windows and iPhone browser controls
+**Current playable release: v1.12.1** · Three.js / WebGL · Browser and downloadable offline HTML · Windows and iPhone browser controls
 
 [**Play on GitHub Pages**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Direct game page](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/game.html) · [Download single-file offline game](game/River_Valley_Family_Adventure_OFFLINE.html) · [Game technical guide](game/README.md)
 
