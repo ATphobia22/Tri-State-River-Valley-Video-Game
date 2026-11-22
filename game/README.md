@@ -44,6 +44,7 @@ This `game/` directory contains the **playable family adventure**. It is separat
 | [`src/soundscape.js`](src/soundscape.js) / [`src/frame-probe.js`](src/frame-probe.js) | Synthesized audio and device-side frame-time recording |
 | [`reference/mount-vernon/`](reference/mount-vernon/) | Official-origin reference inputs, registration and checksums |
 | [`tests/`](tests/) | Node tests; Python source/packaging tests; Chromium WebGL and offline replay tests |
+| [`unreal-starter/`](unreal-starter/README.md) | Optional Unreal Engine 5.8 Blueprint-only River asset art lab; editor inventory check only, not the playable game |
 
 The **engine runs locally**. External open-source projects documented in research notes are design references unless a dependency or asset has been explicitly reviewed, admitted and shipped. Do not imply that a third-party physics engine, motion-capture set or recording library has been installed merely because it appears in a research guide.
 

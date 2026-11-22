@@ -1,0 +1,16 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.8",
+  "Category": "River Valley Art Pipeline",
+  "Description": "Optional UE 5.8 editor-only River character/material animation review. Not the playable browser game.",
+  "Plugins": [
+    {
+      "Name": "PythonScriptPlugin",
+      "Enabled": true
+    },
+    {
+      "Name": "EditorScriptingUtilities",
+      "Enabled": true
+    }
+  ]
+}
