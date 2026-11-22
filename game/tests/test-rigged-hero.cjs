@@ -18,6 +18,7 @@ test('original self-contained GLB is independently reproducible with real skin, 
  assert.equal(doc.skins[0].joints.length,17);
  assert.equal(doc.animations.length,9);
  assert.ok(doc.materials.length>=14);
+ assert.ok(doc.materials.some(m=>m.name==='River lens'&&m.alphaMode==='BLEND'));
  assert.ok(doc.meshes[0].primitives.length>=12);
  assert.equal(doc.buffers.length,1);
  assert.equal(doc.buffers[0].uri,undefined);
@@ -83,4 +84,5 @@ test('game boot, cache and headless ground sampler all point to the real rig',()
  for(const file of ['./data/hero-model.js','./src/rigged-hero.js'])assert.ok(sw.includes(file));
  assert.match(game,/groundAt:height,heading:playerHeading/);
  assert.match(game,/heroSkinned:!!heroController\?\.skinned/);
+ assert.match(game,/heroTexturedMeshes:/);
 });
