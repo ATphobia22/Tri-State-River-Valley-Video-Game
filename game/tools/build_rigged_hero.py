@@ -146,27 +146,15 @@ for side,hip,shin,foot in [(-1,11,12,13),(1,14,15,16)]:
 
 loft_y('gaiter',[(0,12.15,-.17,1.1,1.10),(0,13.00,-.15,1.32,1.13),(0,13.72,-.19,1.36,1.08)],0,0,rigid(3))
 uv_ball('skin',(0,14.28,0),(1.54,1.72,1.3),rigid(4))
-box('gaiter',(0,13.78,-1.16),(2.43,1.6,.34),rigid(4))
-# Small skull-nose bridge and cheek strokes. Geometry stays bound to head.
-tube('mask',(-.25,14.16,-1.393),(0,13.88,-1.45),.085,rigid(4),6)
-tube('mask',(.25,14.16,-1.393),(0,13.88,-1.45),.085,rigid(4),6)
-for side in [-1,1]:
- tube('mask',(side*.70,14.04,-1.435),(side*1.08,13.67,-1.39),.062,rigid(4),6)
-# Smaller curved skull print, following the gaiter fabric rather than
-# building a blocky white row over the face.
-for i in range(10):
- x=(i-4.5)*.205
- box('mask',(x,13.38+.045*math.cos((i-4.5)*.29),-1.391),(.125,.17,.033),rigid(4))
-tube('mask',(-1.00,13.58,-1.383),(1.00,13.58,-1.383),.030,rigid(4),6)
-for side in (-1,1):
- tube('mask',(side*.75,13.61,-1.382),(side*.98,13.86,-1.381),.035,rigid(4),6)
+# Soft rounded cloth front is bound to Head; the flat original skull decal
+# is drawn as an offline procedural CanvasTexture on a curved face mesh.
+uv_ball('gaiter',(0,13.72,-.78),(1.34,.88,.76),rigid(4),10,16)
 for side in [-1,1]:
  # Eyes and pupils remain readable behind the much clearer glasses.
  uv_ball('mask',(side*.65,14.87,-1.385),(.22,.145,.050),rigid(4),6,10)
  uv_ball('glasses',(side*.59,14.87,-1.453),(.066,.072,.023),rigid(4),5,8)
  tube('hair',(side*.27,15.45,-1.20),(side*1.12,15.49,-1.11),.08,rigid(4),7)
  box('lens',(side*.68,14.82,-1.455),(.88,.66,.021),rigid(4))
- uv_ball('mask',(side*.65,14.17,-1.42),(.44,.20,.08),rigid(4),6,10)
  uv_ball('glasses',(side*.65,14.78,-1.41),(.22,.24,.07),rigid(4),6,9)
  for dy in [-.39,.39]:tube('glasses',(side*.20,14.85+dy,-1.45),(side*1.19,14.85+dy,-1.45),.075,rigid(4),6)
  for xx in [side*.2,side*1.19]:tube('glasses',(xx,14.46,-1.45),(xx,15.24,-1.45),.068,rigid(4),6)
