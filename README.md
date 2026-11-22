@@ -1,3 +1,7 @@
+# River Valley v1.9.2 — Verified Character Studio
+
+The previous Character Studio startup crash and terrain-occluded camera have been fixed. River now appears on a dedicated lit stage with 12 in-game poses, a portrait-aware UI, photo capture and return to normal gameplay. A full headless Chromium WebGL smoke test covers desktop and mobile; its screenshots are preserved as CI artifacts. See [the v1.9.2 release notes](game/docs/HERO_STUDIO_v1.9.2_RELEASE.md).
+
 # River Valley v1.9.1 — Character Studio
 
 The game now includes an in-world Character Studio under Options -> Inspect the Explorer. It moves the camera close to the hero, provides 12 animated pose previews, enables character photos and restores the previous camera on exit. It does not modify local saves. See game/docs/HERO_STUDIO_v1.9.1.md.

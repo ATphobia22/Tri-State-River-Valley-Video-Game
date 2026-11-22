@@ -1,3 +1,7 @@
+# v1.9.2 — Corrected Character Studio and verified WebGL launch
+
+The inspector now renders the same articulated hero inside a separate, well-lit 3D preview scene instead of allowing terrain to cover the camera. Its buttons are parsed before the game script starts; both a source regression and automated desktop/mobile Chromium WebGL tests protect that fix. On phones the preview leaves the hero visible above its compact controls. See docs/HERO_STUDIO_v1.9.2_RELEASE.md.
+
 # v1.9.1 Character Studio
 
 Open Options -> Inspect the Explorer in 3D mode. Choose idle, walk/run/sprint, jump/land, picking up, farming, fishing, wildlife tracking, cooking or driving. Take a character photo and close to resume the same game camera. No gameplay data or save slots are changed. See docs/HERO_STUDIO_v1.9.1.md.

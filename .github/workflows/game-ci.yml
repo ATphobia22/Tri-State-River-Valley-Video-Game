@@ -10,7 +10,7 @@ permissions:
 jobs:
   browser-game:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -72,6 +72,19 @@ jobs:
           assert (root/'docs/OPEN_WORLD_V1_7_RELEASE.md').exists()
           print('PASS: self-contained offline HTML, 5 GLBs, gameplay source and release evidence')
           PY
+      - name: Install Chromium for real WebGL character tests
+        run: |
+          python -m pip install "playwright>=1.50,<2"
+          python -m playwright install --with-deps chromium
+      - name: Test playable 3D hero on desktop and phone-sized Chromium
+        run: python game/tests/browser_hero_smoke.py
+      - name: Preserve real browser screenshots and pose-inspection evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: river-valley-hero-browser-evidence
+          path: /tmp/river-hero-visual-qa/
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: river-valley-offline-game

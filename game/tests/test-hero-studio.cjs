@@ -32,6 +32,16 @@ test('studio returns camera and player control after close',()=>{
  assert.match(game,/heroStudioClose/);
 });
 
+test('all Character Studio controls are parsed before the blocking game script',()=>{
+ const html=read('index.html');
+ const gameScript=html.indexOf('<script src="src/game.js"></script>');
+ assert.ok(gameScript>0);
+ for(const id of ['heroStudio','heroStudioOpen','heroStudioClose','heroStudioDone','heroPose','heroPhoto']){
+  const element=html.indexOf('id="'+id+'"');
+  assert.ok(element>=0&&element<gameScript,'Late-loaded control '+id);
+ }
+});
+
 test('the hero studio has a usable fallback when WebGL is unavailable',()=>{
  const game=read('src/game.js');
  assert.match(game,/if\(!renderer\|\|view==='2d'\)/);
