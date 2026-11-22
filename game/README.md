@@ -1,3 +1,7 @@
+# v1.9.7 — Footprint collision and suspension
+
+The playable world now checks the avatar's horizontal capsule disc against concave building polygon footprints, preserves step/grade traversal, and samples four wheels for damped vehicle pitch and roll. See [physics boundaries and iPhone acceptance](docs/PHYSICS_CHARACTER_HARDWARE_v1.9.7.md). It remains a deterministic offline 2.5D collision/visual vehicle system, not a certified full rigid-body engine.
+
 # v1.9.6 — World collision, better character rig, painted roofs, field stones, biome sound and FPS exports
 
 Added hashed building collision and slope checks, 27-joint finger-aware River rig with 13 authored animation clips, local roof shingle materials, two instanced terrain-detail layers, procedurally generated biomes/footsteps, and a user-exportable per-device performance report. All systems reuse the existing offline Three.js game; no third-party assets are silently installed. Physical iPhone validation and precise mesh/vehicle physics are still outstanding. [Full evidence and limitations](docs/WORLD_REFINEMENT_v1.9.6.md).
