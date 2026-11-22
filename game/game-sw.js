@@ -1,4 +1,4 @@
-/* River Valley family game: relative-scope offline cache for the hosted PWA.
+/* River water VFX release: worker byte change triggers refresh of bundled hosted game HTML.\n * River Valley family game: relative-scope offline cache for the hosted PWA.
    Works at origin root and project subpaths (e.g. /RepoName/game/). */
 const CACHE='rva-game-1.11.0';
 const ROOT=new URL('./',self.location.href);
