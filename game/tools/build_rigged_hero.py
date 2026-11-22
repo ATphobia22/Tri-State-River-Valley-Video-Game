@@ -72,7 +72,7 @@ def torso_skin(v):
 def leg_skin(hi,lo):return lambda v:blend(hi,lo,(3.65-v[1])/.9+.5)
 
 def loft_y(mat,rings,sx,sz,weight):
- verts=[];faces=[];n=16
+ verts=[];faces=[];n=24
  for x,y,z,rx,rz in rings:
   for k in range(n):
    th=2*math.pi*k/n
@@ -85,6 +85,33 @@ def loft_y(mat,rings,sx,sz,weight):
  offset=(len(rings)-1)*n
  faces.extend([(offset,offset+j,offset+(j+1)%n) for j in range(1,n-1)])
  add(mat,verts,faces,weight)
+
+def loft_z(mat,rings,weight):
+ """Organic boot toe with tapered heel, round cap, and controlled skinned topology."""
+ n=24;verts=[];faces=[]
+ for x,y,z,rx,ry in rings:
+  for k in range(n):
+   a=2*math.pi*k/n
+   verts.append((x+rx*math.cos(a),y+ry*math.sin(a),z))
+ for j in range(len(rings)-1):
+  for k in range(n):
+   a=j*n+k;b=j*n+(k+1)%n;c=(j+1)*n+k;d=(j+1)*n+(k+1)%n
+   faces.extend([(a,c,b),(b,c,d)])
+ add(mat,verts,faces,weight)
+
+def lens_surface(side):
+ """Thin curved lenses with actual surface shading, not large box panes."""
+ nx,ny=12,8;v=[];f=[]
+ for j in range(ny+1):
+  t=j/ny*2-1
+  for i in range(nx+1):
+   u=i/nx*2-1
+   v.append((side*.68+u*.46,14.82+t*.33,-1.51+.06*u*u+.018*t*t))
+ for j in range(ny):
+  for i in range(nx):
+   a=j*(nx+1)+i;b=a+1;c=a+nx+1;d=c+1
+   f.extend([(a,c,b),(b,c,d)])
+ add('lens',v,f,rigid(4))
 
 def uv_ball(mat,center,radii,weight,lat=9,lon=14):
  cx,cy,cz=center;rx,ry,rz=radii;v=[];f=[]
@@ -134,15 +161,19 @@ for side,hip,shin,foot in [(-1,11,12,13),(1,14,15,16)]:
  for yseam in [4.20,5.25]:
   tube('pocket',(x+side*.96,yseam,.25),(x+side*.96,yseam+.30,.25),.030,rigid(hip),5)
  loft_y('boots',[(x,.28,0,.96,1.03),(x,.72,0,.94,.99),(x,1.27,0,.86,.85)],0,0,rigid(foot))
- box('boots',(x,.50,-.75),(2.04,.85,2.45),rigid(foot))
- box('sole',(x,.23,-.86),(2.15,.43,2.70),rigid(foot))
+ loft_z('boots',[(x,.73,-2.12,.52,.25),(x,.73,-1.91,.94,.43),
+  (x,.73,-1.43,1.00,.51),(x,.73,-.82,.97,.49),
+  (x,.79,-.17,.84,.48),(x,.91,.54,.68,.38)],rigid(foot))
+ loft_z('sole',[(x,.22,-2.20,.53,.20),(x,.22,-2.03,1.04,.25),
+  (x,.22,-1.35,1.10,.26),(x,.22,-.50,.99,.24),
+  (x,.24,.60,.73,.21)],rigid(foot))
  # Outsole tread and crossed laces are visible from the gameplay camera.
  for yy in [.65,.86,1.07]:
   tube('strap',(x-.56,yy,-1.84),(x+.56,yy,-1.84),.065,rigid(foot),5)
  for yy in [.66,.91]:
   tube('strap',(x-.46,yy,-1.86),(x+.46,yy+.20,-1.87),.043,rigid(foot),5)
- for treadZ in [-1.85,-1.35,-.82,-.32]:
-  box('sole',(x,.06,treadZ),(2.20,.15,.18),rigid(foot))
+ for treadZ in [-1.95,-1.62,-1.28,-.92,-.58,-.20]:
+  tube('sole',(x-.64,.035,treadZ),(x+.64,.035,treadZ),.055,rigid(foot),7)
 
 loft_y('gaiter',[(0,12.15,-.17,1.1,1.10),(0,13.00,-.15,1.32,1.13),(0,13.72,-.19,1.36,1.08)],0,0,rigid(3))
 uv_ball('skin',(0,14.28,0),(1.54,1.72,1.3),rigid(4))
@@ -151,22 +182,25 @@ uv_ball('skin',(0,14.28,0),(1.54,1.72,1.3),rigid(4))
 uv_ball('gaiter',(0,13.72,-.78),(1.34,.88,.76),rigid(4),10,16)
 for side in [-1,1]:
  # Eyes and pupils remain readable behind the much clearer glasses.
- uv_ball('mask',(side*.65,14.87,-1.385),(.22,.145,.050),rigid(4),6,10)
- uv_ball('glasses',(side*.59,14.87,-1.453),(.066,.072,.023),rigid(4),5,8)
- tube('hair',(side*.27,15.45,-1.20),(side*1.12,15.49,-1.11),.08,rigid(4),7)
- box('lens',(side*.68,14.82,-1.455),(.88,.66,.021),rigid(4))
- uv_ball('glasses',(side*.65,14.78,-1.41),(.22,.24,.07),rigid(4),6,9)
+ # Warm eyelids and realistic tiny irises replace oversized white circles.
+ uv_ball('skin',(side*.65,14.87,-1.385),(.18,.095,.046),rigid(4),9,12)
+ uv_ball('glasses',(side*.61,14.86,-1.446),(.068,.069,.032),rigid(4),8,10)
+ tube('hair',(side*.27,15.45,-1.20),(side*1.12,15.49,-1.11),.048,rigid(4),9)
+ lens_surface(side)
+ uv_ball('skin',(side*.65,14.66,-1.37),(.18,.08,.06),rigid(4),8,10)
  for dy in [-.39,.39]:tube('glasses',(side*.20,14.85+dy,-1.45),(side*1.19,14.85+dy,-1.45),.075,rigid(4),6)
  for xx in [side*.2,side*1.19]:tube('glasses',(xx,14.46,-1.45),(xx,15.24,-1.45),.068,rigid(4),6)
  tube('glasses',(side*1.23,14.8,-1.36),(side*1.53,14.84,.06),.07,rigid(4),6)
 tube('glasses',(-.18,14.86,-1.47),(.18,14.86,-1.47),.09,rigid(4),6)
 uv_ball('hair',(0,15.22,.08),(1.53,.96,1.3),rigid(4))
-for row in range(4):
- for col in range(7):
-  x=(col-3)*.43+math.sin(row*3+col*2)*.07
-  z=-1.07+row*.59
-  y=15.84+math.sin(row*1.7+col*.8)*.19+(1-abs(col-3)/4)*.28
-  uv_ball('hair',(x,y,z),(.33,.40,.33),rigid(4),6,8)
+# Many fine, slightly irregular locks replace giant smooth spherical hair beads.
+for row in range(5):
+ for col in range(10):
+  x=(col-4.5)*.290+math.sin(row*3.7+col*2.2)*.036
+  z=-1.06+row*.48+.035*math.sin(col*2+row)
+  y=15.87+.13*math.sin(row*1.8+col*.77)+(1-abs(col-4.5)/5)*.23
+  r=.17+.05*(.5+.5*math.sin(col*5.3+row*2.6))
+  uv_ball('hair',(x,y,z),(r,r*1.45,r*1.11),rigid(4),10,12)
 
 def arm_tube(mat,side,upper,lower,hand):
  y=11.98;n=12;verts=[]
@@ -218,10 +252,16 @@ for i in range(18):
 for side in [-1,1]:
  tube('strap',(side*2.08,11.86,-1.25),(side*1.72,9.10,-1.21),.19,rigid(2),8)
  box('metal',(side*1.8,10.7,-1.41),(.38,.53,.13),rigid(2))
-box('pack',(0,10.25,2.08),(4.2,4.45,2.1),rigid(2))
-box('pocket',(0,9.36,3.23),(3.0,1.5,.43),rigid(2))
-box('strap',(0,12.43,2.05),(3.96,.45,2.43),rigid(2))
-box('gold',(0,9.9,3.54),(.46,.35,.1),rigid(2))
+# Tapered oval rucksack with inset lower pocket, curved flap and hardware.
+loft_y('pack',[(0,7.87,2.0,1.3,.68),(0,8.22,2.16,1.91,1.05),
+ (0,9.10,2.23,2.15,1.24),(0,10.52,2.18,2.25,1.29),
+ (0,11.60,2.03,2.09,1.12),(0,12.12,1.96,1.43,.79)],0,0,rigid(2))
+loft_y('pocket',[(0,8.32,3.06,1.04,.18),(0,8.60,3.20,1.42,.42),
+ (0,9.22,3.34,1.55,.45),(0,9.77,3.20,1.38,.38)],0,0,rigid(2))
+tube('strap',(-1.54,12.12,2.45),(1.54,12.12,2.45),.15,rigid(2),10)
+for z in [2.88,3.08,3.28]:
+ tube('strap',(-1.5,10.98,z),(1.5,10.98,z),.039,rigid(2),7)
+box('gold',(0,9.9,3.54),(.38,.27,.11),rigid(2))
 for side in [-1,1]:
  tube('pocket',(side*2.03,9.15,-.75),(side*2.27,10.8,-.97),.044,rigid(2),5)
  tube('pocket',(side*.93,7.45,-1.15),(side*.93,6.72,-1.07),.048,rigid(0),5)
@@ -313,7 +353,7 @@ for name,(factor,rough,metal) in PALETTE.items():
  m={'name':'River '+name,'pbrMetallicRoughness':{'baseColorFactor':factor,'metallicFactor':metal,'roughnessFactor':rough},'doubleSided':False}
  if factor[3]<1:m['alphaMode']='BLEND';m['doubleSided']=True
  materials.append(m)
-model={'asset':{'version':'2.0','generator':'River Valley original deterministic rig builder 1.0','copyright':'Original game asset'},
+model={'asset':{'version':'2.0','generator':'River Valley original deterministic sculpt rig builder 2.0','copyright':'Original game asset'},
  'scenes':[{'nodes':[0]}],'scene':0,'nodes':nodes,'skins':[{'name':'RiverHumanoid','joints':list(range(2,2+len(BONES))),'inverseBindMatrices':ibm,'skeleton':2}],
  'meshes':[{'name':'RiverExplorerSkinned','primitives':prim}], 'materials':materials,'animations':animations,
  'buffers':[{'byteLength':len(blob)}],'bufferViews':views,'accessors':accessors}
