@@ -2,7 +2,7 @@
 
 **A free, offline-first, family-friendly 3D exploration game** set in a stylized Ohio–Wabash River Valley inspired by Mount Vernon and Posey County, Indiana. Explore on foot or by car, fish, track wildlife, grow crops, cook by the campfire, discover regional destinations, and adventure with Scout the dog. Game progress lives in **three local browser save slots**; no sign-in or gameplay server is required.
 
-**Current playable release: v1.10.0** · Three.js / WebGL · Browser and downloadable offline HTML · Windows and iPhone browser controls
+**Current playable release: v1.10.1** · Three.js / WebGL · Browser and downloadable offline HTML · Windows and iPhone browser controls
 
 [**Play on GitHub Pages**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Direct game page](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/game.html) · [Download single-file offline game](game/River_Valley_Family_Adventure_OFFLINE.html) · [Game technical guide](game/README.md)
 
@@ -97,6 +97,10 @@ The v1.10.0 gameplay release and the later **offline-replay gate hardening (PR #
 | [`game/tests/`](game/tests/) | Game logic, geometry, offline build and browser acceptance tests |
 | [`game/tools/`](game/tools/) | Deterministic asset construction, packaging and audits |
 | [`game/docs/`](game/docs/) | Release notes, source provenance, graphics research and verification |
+
+## Mobile rendering and performance upgrade — v1.10.1
+
+The existing skinned 27-joint River Explorer now excludes generated zero-area triangles, with deterministic GLB/embedded-data/hash regeneration. Windows are batched per detailed building, and quadtree seam skirts are batched across the active terrain surface. Driving mode uses bounded high-detail building and terrain-tessellation budgets. The exportable frame report now includes event timestamps, positional scene labels, draw calls, P95/P99 cohorts, and slow-frame records. A scripted 24-condition desktop/mobile-friendly software-WebGL matrix is available; it is **not** a substitute for physical iPhone FPS testing. [Implementation, measured baseline and instructions](game/docs/MOBILE_PERFORMANCE_AND_RIG_v1.10.1.md).
 
 ## Known limitations and next work
 
