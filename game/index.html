@@ -60,7 +60,7 @@
  </section>
  <section id="scoutPanel" class="hud glass" role="dialog" aria-label="Scout companion commands" aria-modal="false" hidden>
  <div class="countyHeader"><h2>🐕 Scout, Your Faithful Pal</h2><button id="scoutClose" class="closeX" aria-label="Close Scout commands">×</button></div>
- <p id="scoutStatus">Scout is ready to explore.</p>
+ <p id="scoutStatus">Scout is ready to explore.</p><div class="field"><label for="customScoutFile">Use your own Scout dog GLB</label><input id="customScoutFile" type="file" accept=".glb,model/gltf-binary"><small id="customScoutStatus" role="status">Original static vertex-color model; body follows your companion, but uploaded file has no articulated leg animation.</small><button id="clearCustomScout" type="button">Restore animated built-in Scout</button></div>
  <div class="countyActions"><button data-scout="pet">💛 Pet Scout</button><button data-scout="fetch">🦴 Fetch</button><button data-scout="sit">🐾 Sit</button><button data-scout="come">📣 Come</button></div>
  <small>Scout follows your adventures; petting and completing fetch earn a small bonding reward with cooldowns.</small>
  </section>
