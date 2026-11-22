@@ -125,14 +125,18 @@ function extractEmbeddedImage(parsed,textureIndex){
  if(image.mimeType==='image/png'&&(bytes[0]!==137||bytes[1]!==80||bytes[2]!==78||bytes[3]!==71))throw Error('Invalid embedded PNG signature');
  return {bytes,mimeType:image.mimeType,source:'GLB_BIN',name:image.name||''};
 }
-function create(THREE,{seated=false,samplePose}={}){
+function create(THREE,{seated=false,samplePose,lod='LOD0'}={}){
  if(!THREE?.SkinnedMesh||!THREE?.Bone||!THREE?.Skeleton||typeof samplePose!=='function')throw Error('Skinned Three.js and pose sampler required');
  const global=typeof globalThis!=='undefined'?globalThis:{};
- const base64=global.ValleyRiggedHeroData,source=global.ValleyModelLoader;
+ const selectedLOD=['LOD0','LOD1','LOD2'].includes(lod)?lod:'LOD0';
+ const fallback=global.ValleyRiggedHeroData;
+ const candidate=selectedLOD==='LOD1'?global.ValleyRiggedHeroLOD1Data:selectedLOD==='LOD2'?global.ValleyRiggedHeroLOD2Data:fallback;
+ const base64=candidate||fallback,source=global.ValleyModelLoader;
+ const actualLOD=candidate?selectedLOD:'LOD0';
  if(typeof base64!=='string'||!source?.parseGLB||!source?.dataAccessor)throw Error('Embedded River GLB not present');
  const parsed=source.parseGLB(source.decodeBase64(base64)),doc=parsed.json;
  if(!doc.skins?.length||doc.skins[0].joints.length<15)throw Error('Expected an actual skinned humanoid GLB');
- const scene=new THREE.Group();scene.name='River Explorer / rigged GLB';scene.userData.heroId='river-explorer';scene.userData.asset='river_explorer_rigged.glb';
+ const scene=new THREE.Group();scene.name='River Explorer / rigged GLB';scene.userData.heroId='river-explorer';scene.userData.asset=actualLOD==='LOD0'?'river_explorer_rigged.glb':'river_explorer_'+actualLOD.toLowerCase()+'.glb';scene.userData.lod=actualLOD;
  const plantLibrary=global.ValleyFootPlant||(typeof module==='object'&&module.exports?require('./foot-plant.js'):null);
  if(!plantLibrary?.create)throw Error('Offline foot-contact solver must load before rigged hero');
  const footContacts=plantLibrary.create({reach:5.5});
@@ -324,7 +328,7 @@ function create(THREE,{seated=false,samplePose}={}){
  }
  if(seated)update({state:'drive',stamp:100,dt:.5});
  function dispose(){scene.userData.disposed=true;for(const url of pendingBlobUrls)URL.revokeObjectURL(url);pendingBlobUrls.clear();if(mixer)mixer.stopAllAction();footContacts.reset();if(gaiterPrint){gaiterPrint.geometry.dispose();gaiterPrint.material.map?.dispose();gaiterPrint.material.dispose();gaiterPrint.parent?.remove(gaiterPrint);}for(const m of meshes){m.geometry.dispose();m.parent?.remove(m)}for(const g of propsGeo)g.dispose();for(const m of materials){m.map?.dispose();m.bumpMap?.dispose();m.dispose();}for(const texture of gpuTextureMaps)texture.dispose();gpuTextureMaps.clear();for(const p of Object.values(props))p.parent?.remove(p);scene.clear();}
- return {root:scene,joints,props,meshes,skinned:true,gaiterDecalReady:!!gaiterPrint,get activeClip(){return activeClipName},get clipMixerReady(){return !!mixer&&clipActions.size>=9},get embeddedTextures(){return {...embeddedTextureState}},get footContacts(){return footContacts.snapshot()},clips:(doc.animations||[]).map(a=>a.name),update,dispose,features:['curly-hair','glasses','skull-gaiter','black-shirt','gold-chain','cargo-pants','adventure-boots','backpack'],get state(){return currentState},get pose(){return lastPose}};
+ return {root:scene,joints,props,meshes,skinned:true,lod:actualLOD,gaiterDecalReady:!!gaiterPrint,get activeClip(){return activeClipName},get clipMixerReady(){return !!mixer&&clipActions.size>=9},get embeddedTextures(){return {...embeddedTextureState}},get footContacts(){return footContacts.snapshot()},clips:(doc.animations||[]).map(a=>a.name),update,dispose,features:['curly-hair','glasses','skull-gaiter','black-shirt','gold-chain','cargo-pants','adventure-boots','backpack'],get state(){return currentState},get pose(){return lastPose}};
 }
 return Object.freeze({create,extractEmbeddedImage});
 });
