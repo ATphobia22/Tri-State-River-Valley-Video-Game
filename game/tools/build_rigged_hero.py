@@ -3,11 +3,14 @@
 Original geometry, 27-bone skin, blended body weights, PBR, finger joints and 13 clips.
 Coordinates: right-handed, Y up, forward -Z, game world scale (approx 17 units high).
 """
-import base64, hashlib, json, math, struct, zlib
+import base64, hashlib, json, math, os, struct, zlib
 from pathlib import Path
 
 OUT = Path(__file__).resolve().parents[1] / "assets" / "models"
 DATA = Path(__file__).resolve().parents[1] / "data"
+LOD=os.environ.get('RIVER_CHARACTER_LOD','LOD0').upper()
+if LOD not in ('LOD0','LOD1','LOD2'):raise ValueError('Invalid character LOD')
+QUALITY={'LOD0':1.0,'LOD1':.68,'LOD2':.43}[LOD]
 OUT.mkdir(parents=True, exist_ok=True)
 DATA.mkdir(parents=True, exist_ok=True)
 PALETTE = {
@@ -72,7 +75,7 @@ def torso_skin(v):
 def leg_skin(hi,lo):return lambda v:blend(hi,lo,(3.65-v[1])/.9+.5)
 
 def loft_y(mat,rings,sx,sz,weight):
- verts=[];faces=[];n=24
+ verts=[];faces=[];n=32 if LOD=='LOD0' else 20 if LOD=='LOD1' else 12
  for x,y,z,rx,rz in rings:
   for k in range(n):
    th=2*math.pi*k/n
@@ -88,7 +91,7 @@ def loft_y(mat,rings,sx,sz,weight):
 
 def loft_z(mat,rings,weight):
  """Organic boot toe with tapered heel, round cap, and controlled skinned topology."""
- n=24;verts=[];faces=[]
+ n=30 if LOD=='LOD0' else 18 if LOD=='LOD1' else 10;verts=[];faces=[]
  for x,y,z,rx,ry in rings:
   for k in range(n):
    a=2*math.pi*k/n
@@ -101,7 +104,7 @@ def loft_z(mat,rings,weight):
 
 def lens_surface(side):
  """Thin curved lenses with actual surface shading, not large box panes."""
- nx,ny=12,8;v=[];f=[]
+ nx,ny=(16,10) if LOD=='LOD0' else (10,6) if LOD=='LOD1' else (6,4);v=[];f=[]
  for j in range(ny+1):
   t=j/ny*2-1
   for i in range(nx+1):
@@ -114,6 +117,7 @@ def lens_surface(side):
  add('lens',v,f,rigid(4))
 
 def uv_ball(mat,center,radii,weight,lat=9,lon=14):
+ lat=max(6,round(lat*QUALITY));lon=max(8,round(lon*QUALITY))
  cx,cy,cz=center;rx,ry,rz=radii;v=[];f=[]
  for j in range(lat+1):
   phi=math.pi*j/lat
@@ -194,16 +198,17 @@ for side in [-1,1]:
 tube('glasses',(-.18,14.86,-1.47),(.18,14.86,-1.47),.09,rigid(4),6)
 uv_ball('hair',(0,15.22,.08),(1.53,.96,1.3),rigid(4))
 # Many fine, slightly irregular locks replace giant smooth spherical hair beads.
-for row in range(5):
- for col in range(10):
-  x=(col-4.5)*.290+math.sin(row*3.7+col*2.2)*.036
-  z=-1.06+row*.48+.035*math.sin(col*2+row)
-  y=15.87+.13*math.sin(row*1.8+col*.77)+(1-abs(col-4.5)/5)*.23
+hair_rows,hair_cols=(7,13) if LOD=='LOD0' else (5,10) if LOD=='LOD1' else (3,7)
+for row in range(hair_rows):
+ for col in range(hair_cols):
+  x=((col/(hair_cols-1))-.5)*2.62+math.sin(row*3.7+col*2.2)*.033
+  z=-1.06+row*1.92/(hair_rows-1)+.035*math.sin(col*2+row)
+  y=15.87+.13*math.sin(row*1.8+col*.77)+(1-abs((col/(hair_cols-1))-.5)*2)*.23
   r=.17+.05*(.5+.5*math.sin(col*5.3+row*2.6))
   uv_ball('hair',(x,y,z),(r,r*1.45,r*1.11),rigid(4),10,12)
 
 def arm_tube(mat,side,upper,lower,hand):
- y=11.98;n=12;verts=[]
+ y=11.98;n=16 if LOD=='LOD0' else 12 if LOD=='LOD1' else 8;verts=[]
  locations=[2.25,2.7,4.25,4.73,5.09,5.47,6.5,7.18,7.45]
  radii=[.86,.82,.73,.68,.67,.66,.55,.51,.56]
  for dd,rad in zip(locations,radii):
@@ -265,6 +270,44 @@ box('gold',(0,9.9,3.54),(.38,.27,.11),rigid(2))
 for side in [-1,1]:
  tube('pocket',(side*2.03,9.15,-.75),(side*2.27,10.8,-.97),.044,rigid(2),5)
  tube('pocket',(side*.93,7.45,-1.15),(side*.93,6.72,-1.07),.048,rigid(0),5)
+
+
+# LOD0 art refinement from the user's front/side/back turnaround images:
+# jacket weave relief, seams, front pack hardware, cargo gussets and boot hooks.
+# Every piece inherits an existing skin joint and existing PBR material draw call.
+if LOD=='LOD0':
+ for side in (-1,1):
+  # Curved shirt sleeve stitching / shoulder reinforcement.
+  for z in (-.36,-.12,.14,.40):
+   tube('pocket',(side*2.12,11.94,z),(side*3.09,11.95,z),.022,rigid(2),7)
+  # Cargo flap trim, reinforced knee and exterior trouser seams.
+  hip,shin,foot=(11,12,13) if side==-1 else (14,15,16)
+  x=side*1.35
+  for y in (4.14,4.22,5.48,5.55):
+   tube('strap',(x+side*1.015,y,-.35),(x+side*1.01,y,.92),.028,rigid(hip),7)
+  for y in (2.94,3.08,3.20):
+   tube('pocket',(x-.77,y,-.77),(x+.77,y,-.77),.030,rigid(shin),8)
+  for y in (1.00,1.19):
+   tube('sole',(x-.79,y,-.91),(x+.79,y,-.91),.041,rigid(foot),8)
+  # Lace hardware and boot side panels retain the original foot skin weights.
+  for y in (.60,.75,.90,1.06):
+   for sign in (-1,1):
+    uv_ball('metal',(x+sign*.54,y,-1.88),(.064,.055,.035),rigid(foot),7,9)
+  tube('strap',(x+side*.89,.47,-1.12),(x+side*.89,1.18,-.61),.055,rigid(foot),7)
+  # Shoulder-strap webbing, adjustment ladder, and sewn binding.
+  for y in (9.57,9.82,10.07,10.32):
+   tube('pocket',(side*1.69,y,-1.41),(side*2.16,y,-1.23),.037,rigid(2),8)
+  # Backpack rear elastic cord and hand-tensioning tabs.
+  for y in (8.70,9.10,9.50,9.90,10.30,10.70):
+   tube('strap',(side*1.76,y,3.15),(side*1.28,y+.12,3.52),.041,rigid(2),7)
+ # Tight frame around the facemask, not a disconnected floating mesh.
+ tube('gaiter',(-1.24,13.60,-1.20),(-.75,13.82,-1.29),.051,rigid(4),8)
+ tube('gaiter',(.75,13.82,-1.29),(1.24,13.60,-1.20),.051,rigid(4),8)
+ # Functional upper and lower pack seams / zipper teeth (small, instanced by material).
+ for x in (-1.10,-.88,-.66,-.44,-.22,0,.22,.44,.66,.88,1.10):
+  tube('metal',(x,9.70,3.63),(x,9.76,3.65),.036,rigid(2),6)
+ for y in (8.65,9.75,10.95):
+  tube('pocket',(-1.55,y,3.31),(1.55,y,3.31),.032,rigid(2),9)
 
 blob=bytearray();views=[];accessors=[]
 def push(raw,target=None):
@@ -381,7 +424,7 @@ materials=[]
 for name,(factor,rough,metal) in PALETTE.items():
  m={'name':'River '+name,'pbrMetallicRoughness':{'baseColorFactor':factor,'metallicFactor':metal,'roughnessFactor':rough},'doubleSided':False}
  if name in texture_materials:
-  raw_image=make_png(name)
+  raw_image=make_png(name,size=256 if LOD=='LOD0' else 128 if LOD=='LOD1' else 64)
   image_view=push(raw_image)
   images.append({'bufferView':image_view,'mimeType':'image/png','name':'Original River '+name+' microdetail'})
   textures.append({'sampler':0,'source':len(images)-1})
@@ -396,9 +439,12 @@ model={'asset':{'version':'2.0','generator':'River Valley original deterministic
 js=json.dumps(model,separators=(',',':')).encode();js+=b' ' * (-len(js)%4);blob.extend(b'\0'*(-len(blob)%4))
 header=struct.pack('<III',0x46546c67,2,12+8+len(js)+8+len(blob))
 raw=header+struct.pack('<II',len(js),0x4e4f534a)+js+struct.pack('<II',len(blob),0x004e4942)+blob
-OUT.joinpath('river_explorer_rigged.glb').write_bytes(raw)
-DATA.joinpath('hero-model.js').write_text('/* Original rigged River Explorer; generated by build_rigged_hero.py. */\nwindow.ValleyRiggedHeroData='+json.dumps(base64.b64encode(raw).decode())+';\n')
+output_name='river_explorer_rigged.glb' if LOD=='LOD0' else 'river_explorer_'+LOD.lower()+'.glb'
+OUT.joinpath(output_name).write_bytes(raw)
+data_name='hero-model.js' if LOD=='LOD0' else 'hero-model-'+LOD.lower()+'.js'
+var_name='ValleyRiggedHeroData' if LOD=='LOD0' else 'ValleyRiggedHero'+LOD+'Data'
+DATA.joinpath(data_name).write_text('/* River Explorer '+LOD+' original rigged GLB; generated locally. */\nwindow.'+var_name+'='+json.dumps(base64.b64encode(raw).decode())+';\n')
 receipt={'name':'RiverExplorer','format':'glTF 2.0 GLB','license':'Project-original, no third-party asset','bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest(),
- 'boneCount':len(BONES),'vertexCount':sum(len(p['pos']) for p in parts.values()),'triangleCount':sum(len(p['indices'])//3 for p in parts.values()),'primitives':len(prim),'materials':len(materials),'embeddedTextureImages':len(images),'degenerateTrianglesRemoved':skipped_degenerate_triangles,'clips':[a['name'] for a in animations],'footGroundY':[WORLD[13][1],WORLD[16][1]],'usesExternalResources':False}
-OUT.joinpath('river_explorer_manifest.json').write_text(json.dumps(receipt,indent=2)+'\n')
+ 'lod':LOD,'source':'original reference-guided procedural reconstruction','boneCount':len(BONES),'vertexCount':sum(len(p['pos']) for p in parts.values()),'triangleCount':sum(len(p['indices'])//3 for p in parts.values()),'primitives':len(prim),'materials':len(materials),'embeddedTextureImages':len(images),'degenerateTrianglesRemoved':skipped_degenerate_triangles,'clips':[a['name'] for a in animations],'footGroundY':[WORLD[13][1],WORLD[16][1]],'usesExternalResources':False}
+OUT.joinpath('river_explorer_manifest.json' if LOD=='LOD0' else 'river_explorer_'+LOD.lower()+'_manifest.json').write_text(json.dumps(receipt,indent=2)+'\n')
 print(json.dumps(receipt,indent=2))
