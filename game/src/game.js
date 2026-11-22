@@ -586,6 +586,7 @@ function buildOriginalModels(){
 }
 function updateVisuals(dt,stamp){
  if(!renderer||view==='2d')return;
+ updateHeroRuntimeStatus();
  if(heroInspection&&heroPreviewStage){
   heroPreviewStage.resize(innerWidth,innerHeight);
   heroPreviewStage.update({state:heroPreviewPose,stamp,dt});
@@ -657,7 +658,21 @@ function update2d(){
 }
 function syncView(){const is2d=view==='2d'||!renderer;atlas.style.display=is2d?'block':'none';canvas.style.display=is2d?'none':'block';}
 function resize(){syncView();if(renderer){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/Math.max(1,innerHeight);camera.updateProjectionMatrix();}if(view==='2d'||!renderer)update2d();}
+function updateHeroRuntimeStatus(){
+ const output=$('heroRuntimeStatus');if(!output)return;
+ let label;
+ if(!renderer)label='WebGL unavailable or initialization failed — 2D atlas only; this device cannot display the 3D character or skeleton.';
+ else if(view==='2d')label='2D atlas active — choose 3D countryside under World view to see the skinned character.';
+ else if(!heroController?.skinned)label='3D mode active, but the skinned River rig failed to load; showing compatibility character.';
+ else{
+  const t=heroController?.embeddedTextures,clips=heroController?.clips?.length||0,bones=Object.keys(heroController?.joints||{}).length;
+  const detail=t?(t.loaded+'/'+t.expected+' embedded textures ready'+(t.failed?' · '+t.failed+' failed':'')):'embedded textures not available';
+  label='3D River Explorer active · '+bones+' joints · '+clips+' clips · '+detail;
+ }
+ if(output.textContent!==label)output.textContent=label;
+}
 function updateHUD(){
+ updateHeroRuntimeStatus();
  if(GEOREF && window.OpenLocationCode && save.countyRegion==='mount-vernon'){
   const [lon,lat]=GEOREF.worldToLonLat(player.x,player.z);
   $('locationCode').textContent='Approximate local Mount Vernon game location · '+OpenLocationCode.encode(lat,lon);
@@ -1064,7 +1079,7 @@ function bindUI(){
   if($('graphicsQualityStatus'))$('graphicsQualityStatus').textContent='Instanced meadow '+(grassLayer?.snapshot().instances||0)+' clumps · original character retained';
   toast(visualEffects==='lite'?'⚡ Performance graphics selected.':visualEffects==='cinematic'?'✨ Showcase foliage selected.':'🌿 Balanced graphics selected.');
  });
- $('quality').addEventListener('change',e=>{if(worldActive)closeWorldActivity();view=e.target.value;if(view==='3d'&&!renderer){view='2d';e.target.value='2d';toast('3D is not available without WebGL.');}resize();});
+ $('quality').addEventListener('change',e=>{if(worldActive)closeWorldActivity();view=e.target.value;if(view==='3d'&&!renderer){view='2d';e.target.value='2d';toast('3D is not available without WebGL.');}resize();updateHeroRuntimeStatus();});
  $('slot').addEventListener('change',e=>{slot=Number(e.target.value);$('startSlot').value=String(slot);toast(`Selected family save ${slot+1}. Use Continue to load it.`);});
  $('startSlot').addEventListener('change',e=>{slot=Number(e.target.value);$('slot').value=String(slot);const had=readSlot(slot);$('resumeBtn').disabled=!had;$('resumeBtn').title=had?'Resume this slot':'No saved adventure in this slot yet';});
  $('petBtn').addEventListener('click',()=>{save.pet=!save.pet;updateHUD();persist();});$('soundBtn').addEventListener('click',()=>{save.muted=!save.muted; if(!save.muted)soundscape.unlock();soundscape.setMuted(save.muted);updateHUD();persist();});
