@@ -225,3 +225,49 @@ action (idle, locomotion, fishing, driving, etc.); produce and inspect
 runtime LODs; compare four camera views; run existing GLB static gate,
 browser rendering matrix, mobile and offline replay tests. Editor plugin
 enablement alone satisfies none of these release gates.
+
+## Implemented plugin admission tool (background downloads, cameras, build and editor inventory)
+
+`Content/Python/plugin_policy.py` is a **read-only plugin descriptor auditor**.
+It reads actual local `.uplugin` metadata and this lab's `.uproject`, records
+enabled versus candidate plugins, and rejects inappropriate Shipping dependencies.
+It never downloads, enables or builds a plugin. Its candidate names are
+**unverified until resolved against the installed UE 5.8 engine**.
+
+```powershell
+python game/unreal-starter/Content/Python/plugin_policy.py --profile all --engine-plugins "C:\Program Files\Epic Games\UE_5.8\Engine\Plugins" --output game/unreal-starter/Saved/RiverQA/plugin-receipt.json
+python -m unittest discover -s game/unreal-starter/tests -p "test_*.py" -v
+```
+
+Run `--target shipping --strict` only when auditing an actual native target
+**without Editor plugins**; the optional Editor lab is expected to fail that
+Shipping profile. If the plugin directory cannot be inspected, the receipt
+must say `engineVerified:false` and the Shipping build remains unverified.
+
+### New requested plugin families and project decisions
+
+| Family | High-value application | Selection and prerequisite |
+| --- | --- | --- |
+| Blendspace Motion Analysis | Character gait blend cleanup | Animation comparison requires real UE skeleton, matching bone map and original animation assets |
+| Gameplay Cameras, Camera Shake Previewer, Engine Cameras | Third-person controller, driving camera and cinematic shake | Enable per feature; prototype and measure motion comfort |
+| PCG and Geometry Script interop; World Partition HLOD Utilities | Procedural farms, vegetation, roads and distant buildings | Editor authoring only until cooked Unreal world and performance proof |
+| Modeling Tools Editor, Mesh Painting, Skeletal Mesh Simplifier, TextureGraph, Material Analyzer | Boots, face gaiter, hair silhouette, PBR maps and LOD review | Prefer nondestructive edits to original hero assets; preserve authored textures |
+| Data Validation, Asset Referencing Restrictions, Asset Registry Export, Plugin Audit | Deterministic asset release checks | Use alongside existing manifest/GLB gate; don't confuse catalog integrity with live rendering |
+| SQLite / SQLite Support | Optional local saves or persistent world state | Existing browser game already uses local storage; do not add a server database |
+| Dataprep Editor / Geometry Operations, Content Browser sources | Asset ingest and geometry cleanup | Editor-only, no dependency in Shipping |
+| Oodle Texture, NFORDenoise / OpenImageDenoise | Native asset compression and offline cinematic denoising | Benchmark and verify platform, SDK and redistributable licensing |
+| Composure, HoldoutComposite, OpenCV Lens Distortion | Optional compositing, camera match and VFX review | Not necessary for playable runtime; verify engine availability |
+| AMD/NVIDIA/Windows/video codecs (AMF, NV, WMF, AVCodecs, LibVpx, VT) | Optional video capture exports | Avoid runtime dependency on vendor-specific encoder hardware |
+| FASTBuild/UBA/XGE Controllers | CI compilation speedups | Requires supported build farm/toolchain and license; no claim that GitHub runners provide it |
+| Android Fetch Background Download, Android device profile/GooglePAD | Future Android distribution | Out of scope for current Windows/browser project; preserve offline operation |
+| Analytics, remote database, cloud multi-user editing, marketplace Bridge | Not necessary for this game release | Excluded from default runtime and automated packaging |
+
+Plugins under **Editor** (including Level Sequence Editor, GameplayTagsEditor,
+GPU Lightmass, ChaosEditor, PCG editor extensions, Dataflow, TEDS and Template
+Sequence) are investigated as authoring tools only. None is installed,
+enabled or asserted to exist merely because this table mentions it.
+
+Release evidence still requires separately: source character import;
+skeletal and facial asset inspection; true UE Editor validation; performance
+profiling, cook/Shipping packaging; network-disabled Windows launch; and the
+browser game's own visual and gameplay regression tests.
