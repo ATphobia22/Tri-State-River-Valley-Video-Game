@@ -577,6 +577,8 @@ function updateVisuals(dt,stamp){
  if(beaconGroup)beaconGroup.children.forEach((g,i)=>{g.rotation.y+=dt*.5;g.position.y=height(g.position.x,g.position.z)+8+Math.sin(stamp/450+i)*2;g.visible=!save.completed.includes(g.userData.id);});
  if(house)house.visible=save.homestead;
  if(waterMesh)waterMesh.material.opacity=.82+Math.sin(stamp/900)*.045;
+ if(roadMesh?.material){roadMesh.material.color.setHex(weather==='rain'?0x3b464b:0x62686a);
+  roadMesh.material.needsUpdate=false;}
  if(worldGame)worldGame.update({stamp,save,activity:worldActive,huntRound:worldHuntRound,fishRound:worldFishRound,aim:worldAim,weather});
  if(atmosphere)atmosphere.update(camera,time,weather,season,stamp);if(director3D)director3D.update(stamp,time,weather,cinemaPrefs.strength,cinemaPrefs.quality);
  applyTerrainLOD();
@@ -601,9 +603,12 @@ function update2d(){
 function syncView(){const is2d=view==='2d'||!renderer;atlas.style.display=is2d?'block':'none';canvas.style.display=is2d?'none':'block';}
 function resize(){syncView();if(renderer){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/Math.max(1,innerHeight);camera.updateProjectionMatrix();}if(view==='2d'||!renderer)update2d();}
 function updateHUD(){
- if(GEOREF && window.OpenLocationCode){
+ if(GEOREF && window.OpenLocationCode && save.countyRegion==='mount-vernon'){
   const [lon,lat]=GEOREF.worldToLonLat(player.x,player.z);
-  $('locationCode').textContent='Approximate game location · '+OpenLocationCode.encode(lat,lon);
+  $('locationCode').textContent='Approximate local Mount Vernon game location · '+OpenLocationCode.encode(lat,lon);
+ }else if(save.countyRegion!=='mount-vernon'){
+  const region=COUNTY_DATA?.places?.find(p=>p.id===save.countyRegion);
+  $('locationCode').textContent=(region?.name||'Regional')+' gameplay vignette · NOT georeferenced 3D terrain';
  }
  $('pantrySummary').textContent=`🌽 ${save.inventory.corn} · 🐟 ${save.inventory.fish} · 🦌 ${save.inventory.game} · 🍲 ${save.inventory.meals}`;
  $('level').textContent=save.level;$('coins').textContent=save.coins.toLocaleString();$('stamps').textContent=save.completed.length+'/'+C.STOPS.length;
@@ -693,7 +698,7 @@ function locateNearest(){let best=null,bd=Infinity;for(const s of C.STOPS){let d
 function checkNearby(){near=locateNearest();const pane=$('context');if(!started||!near||touring||activity){pane.style.display='none';return;}
  pane.style.display='block';$('nearName').textContent=near.emoji+' '+near.title;$('nearDetail').textContent=near.fact;
  $('interactBtn').textContent=save.completed.includes(near.id)?(near.id==='farm'?'🌱 Tend the family farm':near.id==='oak'?(save.homestead?'🏠 Visit your cottage':'🏠 Build your cottage (250 🪙)'):'✓ Memory in your book'):'Collect this memory ✨';}
-function teleport(id){const s=C.STOPS.find(s=>s.id===id);if(!s)return;scout?.reset();suspension.reset();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;player={x:s.x+60,z:s.z+44};toast(`📍 Fast traveled near ${s.title}`);persist();checkNearby();}
+function teleport(id){const s=C.STOPS.find(s=>s.id===id);if(!s)return;save.countyRegion='mount-vernon';scout?.reset();suspension.reset();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;player={x:s.x+60,z:s.z+44};toast(`📍 Fast traveled near ${s.title}`);persist();checkNearby();}
 function selectStop(id,fast=false){selected=id;const s=C.STOPS.find(s=>s.id===id);if(!s)return;
  if(fast)teleport(id);else toast(`${s.emoji} ${s.task} — Tap the stop again to fast travel.`);
  updateHUD();}
@@ -715,7 +720,7 @@ function openWorldActivity(id){
  if(!WORLD.SITES[id])return;
  closeActivity();$('farmPanel').classList.remove('open');$('panel').classList.remove('open');closeCinema();
  if(save.mode==='drive'){save.mode='walk';updateHUD();}
- const loc=WORLD.SITES[id];worldActive=id;worldHuntRound=null;worldFishRound=null;worldAim=.5;worldStatus='';
+ const loc=WORLD.SITES[id];save.countyRegion='mount-vernon';worldActive=id;worldHuntRound=null;worldFishRound=null;worldAim=.5;worldStatus='';
  const approach=WORLD.approachSite(id,cameraYaw,34);motion.reset({facing:cameraYaw});heroHeightOffset=0;motionState=motion.snapshot();player.x=approach.x;player.z=approach.z;playerHeading=cameraYaw;cameraDist=Math.min(cameraDist,43);
  $('worldAim').value='50';$('worldActivityHud').hidden=false;
  showWorldActivity();persist();toast(`🌍 ${loc.title}: play right inside the 3D world.`);
