@@ -1,3 +1,7 @@
+# v1.9.1 Character Studio
+
+Open Options -> Inspect the Explorer in 3D mode. Choose idle, walk/run/sprint, jump/land, picking up, farming, fishing, wildlife tracking, cooking or driving. Take a character photo and close to resume the same game camera. No gameplay data or save slots are changed. See docs/HERO_STUDIO_v1.9.1.md.
+
 # River Valley v1.9.0 — original articulated hero
 
 The player now has a detailed procedural character built from the supplied hero reference sheets, with curls, glasses, skull gaiter, gold chain, black outdoor outfit, cargo pants, boots and backpack. The previous cylinder/hat avatar is replaced by pose-driven scene-graph geometry; a seated copy rides in the vehicle. Animations include walking, sprinting, cosmetic jump, fishing, wildlife tracking, farming and campfire cooking.

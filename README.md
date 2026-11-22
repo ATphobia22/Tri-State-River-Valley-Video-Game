@@ -1,3 +1,7 @@
+# River Valley v1.9.1 — Character Studio
+
+The game now includes an in-world Character Studio under Options -> Inspect the Explorer. It moves the camera close to the hero, provides 12 animated pose previews, enables character photos and restores the previous camera on exit. It does not modify local saves. See game/docs/HERO_STUDIO_v1.9.1.md.
+
 # River Valley — A Family Adventure
 
 **An offline-first, family-friendly 3D open-world game** inspired by the Ohio–Wabash River Valley near Mount Vernon, Indiana. Walk and drive through a stylized river town, fish, enjoy non-graphic wildlife challenges, farm, cook, explore, take photos and build a family cottage. Progress stays in three local browser save slots.
