@@ -58,6 +58,16 @@ def inspect(page, *, mobile: bool):
         timeout=15_000,
     )
     page.locator("#settingsBtn").click(timeout=12_000)
+    # Quality settings must swap the actual playable skinned GLB, not merely its label.
+    target = "LOD1" if mobile else "LOD0"
+    assert state()["heroLOD"] == target, "Incorrect default gameplay character LOD"
+    for quality,expected in (("cinematic","LOD0"),("lite","LOD2"),("full",target)):
+        page.locator("#visualEffects").select_option(quality,timeout=15_000)
+        page.wait_for_function(
+            "(expected) => window.RiverValleyDebug.getState().heroLOD === expected",
+            arg=expected,timeout=20_000,
+        )
+        assert state()["heroSkinned"] is True, "LOD swap activated the blocky procedural fallback"
     page.locator("#heroStudioOpen").click(timeout=12_000)
     page.wait_for_function(
         "() => { const state = window.RiverValleyDebug.getState(); "
