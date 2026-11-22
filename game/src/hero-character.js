@@ -67,16 +67,22 @@
   }
   return p;
  }
- function create(THREE,{seated=false}={}){
+ function create(THREE,{seated=false,lod='LOD0'}={}){
   if(!THREE||typeof THREE.Group!=='function')throw new TypeError('THREE scene-graph implementation required');
   // Prefer a locally built skinned glTF model. Keep the original procedural
   // character as an offline, WebGL and browser compatibility fallback.
   const rig=typeof globalThis!=='undefined'?globalThis.ValleyRiggedHero:null;
   if(rig&&globalThis.ValleyRiggedHeroData){
-   try{return rig.create(THREE,{seated,samplePose});}
-   catch(error){if(typeof console!=='undefined')console.warn('Rigged River fallback:',error.message);}
+   try{
+    const model=rig.create(THREE,{seated,samplePose,lod});
+    if(typeof globalThis!=='undefined')globalThis.ValleyHeroRigFailure=null;
+    return model;
+   }catch(error){
+    if(typeof globalThis!=='undefined')globalThis.ValleyHeroRigFailure=String(error.message);
+    if(typeof console!=='undefined')console.error('River Explorer rigged GLB failed; procedural fallback is active:',error);
+   }
   }
-  const root=new THREE.Group();root.name='River Explorer';
+  const root=new THREE.Group();root.name='River Explorer';root.userData.asset='procedural-fallback';root.userData.fallback=true;
   root.userData.heroId=PROFILE.id;
   const joints={};
   function group(parent,name,x=0,y=0,z=0){
