@@ -11,6 +11,7 @@ PROFILES = {
     "accessibility": ["TextToSpeech"],
     "database": ["SQLiteSupport"],
     "optimization": ["OodleTexture"],
+    "ml": ["NNERuntimeCoreML", "NNERuntimeIREE", "NNERuntimeORT", "NNERuntimeRDG"],
     "editor": ["PythonScriptPlugin", "EditorScriptingUtilities"],
 }
 # Suggested identifiers require validation against the locally installed engine.
