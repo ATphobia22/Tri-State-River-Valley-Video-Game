@@ -92,6 +92,19 @@ def inspect(page, *, mobile: bool):
             page.wait_for_timeout(160)
             page.screenshot(path=str(OUT / f"{prefix}-rig-sprint-boots-clean.png"))
             page.evaluate("document.getElementById('heroStudio').style.opacity=''")
+    # Visually inspect the CURRENT skinned, self-contained GLB against the
+    # user-supplied face-covering and glasses reference sheets.
+    page.locator("#heroFocus").select_option("face")
+    page.locator("#heroPose").select_option("idle")
+    page.wait_for_function(
+        "() => window.RiverValleyDebug.getState().heroPreviewFocus === 'face'",
+        timeout=10000,
+    )
+    page.screenshot(path=str(OUT / f"{prefix}-river-face-covering.png"))
+    page.evaluate("document.getElementById('heroStudio').style.opacity='0'")
+    page.wait_for_timeout(160)
+    page.screenshot(path=str(OUT / f"{prefix}-river-face-clean.png"))
+    page.evaluate("document.getElementById('heroStudio').style.opacity=''")
     page.locator("#heroFocus").select_option("full")
     page.locator("#heroPose").select_option("idle")
     page.wait_for_timeout(350)
