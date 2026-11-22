@@ -2,7 +2,7 @@
    No network endpoints, no trackers, no external audio, and no repository integration. */
 (function(){
 'use strict';
-const WORLD=window.ValleyOpenWorld, C=window.ValleyCore, DATA=window.VALLEY_DATA, GEOREF=window.ValleyGeoReference, REF=window.ValleyReference, GEO=window.ValleyGeometry, VFX=window.ValleyVisuals, QT=window.ValleyTerrain, MODEL=window.ValleyModelLoader, ATM=window.ValleyAtmosphere, DIR=window.ValleyDirector, STORY=window.ValleyStoryscape;
+const WORLD=window.ValleyOpenWorld, COUNTY=window.ValleyCountyAtlas, COUNTY_DATA=window.ValleyPoseyCounty, COUNTY_SCENES=window.ValleyCountyScenes, COMPANION=window.ValleyCompanion, C=window.ValleyCore, DATA=window.VALLEY_DATA, GEOREF=window.ValleyGeoReference, REF=window.ValleyReference, GEO=window.ValleyGeometry, VFX=window.ValleyVisuals, QT=window.ValleyTerrain, MODEL=window.ValleyModelLoader, ATM=window.ValleyAtmosphere, DIR=window.ValleyDirector, STORY=window.ValleyStoryscape;
 const $=id=>document.getElementById(id);
 const canvas=$('world'),atlas=$('atlas'),mapCanvas=$('minimap');
 const ctx=atlas.getContext('2d',{alpha:false}); // separate 2D surface; WebGL uses its own canvas
@@ -12,6 +12,7 @@ let slot=0,save=C.freshSave('Family Explorer'),started=false,touring=false,tourA
 let player={x:16,z:504},near=null,selected='riverfront',view='auto',renderer=null,scene=null,camera=null,avatar=null,car=null,dog=null,beaconGroup=null,terrainMesh=null,treeMeshes=[],sunLight=null,ambient=null,waterMesh=null,house=null;
 let activity=null,huntRound=null,fishRound=null,activityInterval=null;
 let worldGame=null,worldActive=null,worldHuntRound=null,worldFishRound=null,worldAim=.5,worldStatus="",lastWorldHUD=0,playerHeading=0;
+let countyVignettes=null,countySelected='mount-vernon',dogParts=null,scout=COMPANION?.create();
 let backdropOpen=false,backdropLocation='riverfront',backdropLast=0;
 let shotPlaying=false,shotStart=0,shotIndex=0;
 const SHOTS=Object.freeze([{scene:'riverfront',look:'natural',title:'01 · Ohio River · Arrival'},{scene:'farm',look:'golden',title:'02 · Valley Farm · Golden Fields'},{scene:'woods',look:'lantern',title:'03 · Oak Grove · Firefly Night'},{scene:'riverfront',look:'storm',title:'04 · Ohio River · Summer Storm'},{scene:'riverfront',look:'blue',title:'05 · Riverfront · Blue Hour'}]);
@@ -134,7 +135,10 @@ function tryRenderer(){
   camera=new G.PerspectiveCamera(60,Math.max(1,innerWidth)/Math.max(1,innerHeight),.2,10500);
   ambient=new G.HemisphereLight(0xd5e6ff,0x404e36,2.3);scene.add(ambient);
   sunLight=new G.DirectionalLight(0xffe1a8,2.3);sunLight.position.set(100,220,-180);scene.add(sunLight);
-  facadePalette=POLISH?POLISH.make(G):null;buildTerrain();buildRiver();buildRoads();buildBuildings();buildTrees();if(PAINT)terrainDecor=PAINT.scatter(G,scene,height,{mobile:innerWidth<781,limit:LIMIT});buildBeacons();buildPlayer();buildHouse();buildOriginalModels();if(WORLD)worldGame=WORLD.sceneWorld(G,scene,height);if(ATM)atmosphere=ATM.create(G,scene,height,LIMIT);if(DIR)director3D=DIR.makeWorldFX(G,scene,height,LIMIT);
+  facadePalette=POLISH?POLISH.make(G):null;buildTerrain();buildRiver();buildRoads();buildBuildings();buildTrees();if(PAINT)terrainDecor=PAINT.scatter(G,scene,height,{mobile:innerWidth<781,limit:LIMIT});buildBeacons();buildPlayer();buildHouse();buildOriginalModels();
+  if(COUNTY_SCENES&&COUNTY){countyVignettes=COUNTY_SCENES.create(G,scene,height,COUNTY);
+    collisionWorld=COLLISION.create([...buildingItems,...countyVignettes.colliders],{radius:1.7,stepHeight:2.8});}
+  if(WORLD)worldGame=WORLD.sceneWorld(G,scene,height);if(ATM)atmosphere=ATM.create(G,scene,height,LIMIT);if(DIR)director3D=DIR.makeWorldFX(G,scene,height,LIMIT);
   return true;
  }catch(err){console.warn('WebGL unavailable; 2D atlas gameplay remains active.',err.message); if(renderer){try{renderer.dispose();}catch(_){}}renderer=null;scene=null;return false;}
 }
@@ -457,11 +461,29 @@ function buildPlayer(){
  driverController.root.scale.setScalar(.53);
  driverController.root.position.set(-2.45,1.5,-1.0);
  car.add(driverController.root);scene.add(car);
- dog=new G.Group();
- const dbody=new G.Mesh(new G.BoxGeometry(5,3.5,7),new G.MeshLambertMaterial({color:0xbe9a72}));
- dbody.position.y=2.7;dog.add(dbody);
- const dhead=new G.Mesh(new G.BoxGeometry(3,3,3.5),new G.MeshLambertMaterial({color:0xa5764d}));
- dhead.position.set(0,4.5,-4);dog.add(dhead);scene.add(dog);
+ dog=new G.Group();dog.name='Scout / animated faithful companion';
+ const fur=new G.MeshStandardMaterial({color:0xb99872,roughness:.98}),dark=new G.MeshStandardMaterial({color:0x554338,roughness:.93}),
+  cream=new G.MeshStandardMaterial({color:0xe1c9a5,roughness:.96}),collar=new G.MeshStandardMaterial({color:0x467b80,roughness:.73});
+ const dbody=new G.Mesh(new G.BoxGeometry(4.7,3.4,7.2),fur);dbody.position.y=3.5;dog.add(dbody);
+ const chest=new G.Mesh(new G.BoxGeometry(3.7,2.3,1.4),cream);chest.position.set(0,3,-3.2);dog.add(chest);
+ const head=new G.Group();head.position.set(0,5.1,-4.4);dog.add(head);
+ const dhead=new G.Mesh(new G.BoxGeometry(3.1,2.9,3.4),fur);head.add(dhead);
+ const muzzle=new G.Mesh(new G.BoxGeometry(2.1,1.25,2.2),cream);muzzle.position.set(0,-.75,-2);head.add(muzzle);
+ const nose=new G.Mesh(new G.BoxGeometry(1,.65,.55),dark);nose.position.set(0,-.2,-3.1);head.add(nose);
+ const legs=[];
+ for(const side of [-1,1])for(const zz of [-2.6,2.5]){
+  const pivot=new G.Group();pivot.position.set(side*1.6,2.8,zz);
+  const leg=new G.Mesh(new G.BoxGeometry(1.15,2.8,1.35),fur);leg.position.y=-1.35;pivot.add(leg);
+  const paw=new G.Mesh(new G.BoxGeometry(1.55,.65,2),cream);paw.position.set(0,-2.6,-.15);pivot.add(paw);dog.add(pivot);legs.push(pivot);
+ }
+ for(const side of [-1,1]){
+  const ear=new G.Mesh(new G.BoxGeometry(.9,2.1,1),dark);ear.position.set(side*1.47,.15,.3);ear.rotation.z=side*.27;head.add(ear);
+  const eye=new G.Mesh(new G.SphereGeometry(.25,8,6),dark);eye.position.set(side*.85,.35,-1.68);head.add(eye);
+ }
+ const tag=new G.Mesh(new G.TorusGeometry(.65,.17,6,12),collar);tag.position.set(0,4.5,-2.75);tag.rotation.x=Math.PI/2;dog.add(tag);
+ const tail=new G.Group();tail.position.set(0,4.5,3.5);dog.add(tail);
+ const tailMesh=new G.Mesh(new G.ConeGeometry(.75,4,7),fur);tailMesh.position.z=1.8;tailMesh.rotation.x=Math.PI/2;tail.add(tailMesh);
+ dogParts={legs,head,tail};scene.add(dog);
 }
 function cueHero(state,durationMs=650){
  heroOneShot=state;heroOneShotUntil=performance.now()+durationMs;
@@ -536,7 +558,19 @@ function updateVisuals(dt,stamp){
  heroState=chooseHeroState(stamp);
  if(heroController)heroController.update({state:heroState,stamp,dt,groundAt:height,heading:playerHeading});
  if(driverController)driverController.update({state:'drive',stamp,dt});
- if(dog){dog.visible=save.pet&&save.mode==='walk';dog.position.set(player.x+10+Math.sin(stamp/700)*2,height(player.x+10,player.z+14),player.z+14);}
+ if(dog&&scout){
+   const state=scout.update({dt,player,heading:playerHeading,groundAt:height,stamp,
+    enabled:save.pet&&save.mode==='walk',activity:worldActive});
+   dog.visible=state.action!=='hidden'&&!heroInspection;
+   dog.position.set(state.x,state.y+.08+Math.sin(state.phase*2)*Math.min(.17,state.pace*.006),state.z);
+   dog.rotation.y=state.heading;
+   if(dogParts){dogParts.tail.rotation.y=state.tailWag;
+     dogParts.head.rotation.x=state.action==='sit'?.16:Math.sin(stamp*.001)*.055;
+     dogParts.legs.forEach((leg,i)=>leg.rotation.x=state.action==='sit'?(i<2?.28:-.48):
+       Math.sin(state.phase*2+(i%3)*Math.PI)*Math.min(.55,state.pace*.028));}
+   if(state.completedFetch){const earned=COMPANION.rewardBond(save,'fetch',Date.now());save=earned.save;
+     if(earned.result==='bonded'){persist();toast('🐕 Scout brought the toy back! Bond +2 · 12 XP.');}}
+  }
  if(beaconGroup)beaconGroup.children.forEach((g,i)=>{g.rotation.y+=dt*.5;g.position.y=height(g.position.x,g.position.z)+8+Math.sin(stamp/450+i)*2;g.visible=!save.completed.includes(g.userData.id);});
  if(house)house.visible=save.homestead;
  if(waterMesh)waterMesh.material.opacity=.82+Math.sin(stamp/900)*.045;
@@ -588,7 +622,7 @@ function audioChime(){if(save.muted)return;try{
  }catch(err){console.warn('Audio playback blocked',err.message);}}
 function persist(){save.position={x:player.x,z:player.z};save.time=time;save.weather=weather;save.season=season;try{localStorage.setItem(nameKey(slot),JSON.stringify(save));return true;}catch(_){return false;}}
 function readSlot(idx){try{const t=localStorage.getItem(nameKey(idx));return t?C.validateSave(JSON.parse(t)):null;}catch(_){return null;}}
-function applyState(s){save=C.validateSave(s);player={...save.position};suspension.reset();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;time=save.time;weather=save.weather;season=save.season;document.body.classList.toggle('rainy',weather==='rain');document.body.classList.toggle('misty',weather==='mist');$('playerName').value=save.name;needsMap=true;updateHUD();}
+function applyState(s){save=C.validateSave(s);countySelected=save.countyRegion;scout?.reset();player={...save.position};suspension.reset();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;time=save.time;weather=save.weather;season=save.season;document.body.classList.toggle('rainy',weather==='rain');document.body.classList.toggle('misty',weather==='mist');$('playerName').value=save.name;needsMap=true;updateHUD();}
 function play(resume){soundscape.unlock();frameProbe.reset();lastGpuTune=0;soundscape.setMuted(save.muted);slot=Number($('startSlot').value)||0;$('slot').value=String(slot);const loaded=resume?readSlot(slot):null;
  applyState(loaded||C.freshSave($('playerName').value));soundscape.setMuted(save.muted);started=true;$('start').classList.add('hidden');
  if(!renderer){view='2d';$('quality').value='2d';toast('2D Atlas adventure loaded. 3D requires WebGL support.');}
@@ -608,11 +642,11 @@ function locateNearest(){let best=null,bd=Infinity;for(const s of C.STOPS){let d
 function checkNearby(){near=locateNearest();const pane=$('context');if(!started||!near||touring||activity){pane.style.display='none';return;}
  pane.style.display='block';$('nearName').textContent=near.emoji+' '+near.title;$('nearDetail').textContent=near.fact;
  $('interactBtn').textContent=save.completed.includes(near.id)?(near.id==='farm'?'🌱 Tend the family farm':near.id==='oak'?(save.homestead?'🏠 Visit your cottage':'🏠 Build your cottage (250 🪙)'):'✓ Memory in your book'):'Collect this memory ✨';}
-function teleport(id){const s=C.STOPS.find(s=>s.id===id);if(!s)return;suspension.reset();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;player={x:s.x+60,z:s.z+44};toast(`📍 Fast traveled near ${s.title}`);persist();checkNearby();}
+function teleport(id){const s=C.STOPS.find(s=>s.id===id);if(!s)return;scout?.reset();suspension.reset();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;player={x:s.x+60,z:s.z+44};toast(`📍 Fast traveled near ${s.title}`);persist();checkNearby();}
 function selectStop(id,fast=false){selected=id;const s=C.STOPS.find(s=>s.id===id);if(!s)return;
  if(fast)teleport(id);else toast(`${s.emoji} ${s.task} — Tap the stop again to fast travel.`);
  updateHUD();}
-function setMode(mode){save.mode=mode;suspension.reset();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;updateHUD();persist();toast(mode==='drive'?'🚗 Family road trip mode':'🚶 Exploring on foot');}
+function setMode(mode){save.mode=mode;scout?.reset();suspension.reset();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;updateHUD();persist();toast(mode==='drive'?'🚗 Family road trip mode':'🚶 Exploring on foot');}
 function toggleMap(){if(worldActive)closeWorldActivity();view=view==='2d'&&renderer?'3d':'2d';$('quality').value=view;resize();updateHUD();toast(view==='2d'?'🗺 Illustrated map view':'🌄 3D countryside view');}
 function setWeather(w){weather=w;save.weather=w;document.body.classList.toggle('rainy',w==='rain');document.body.classList.toggle('misty',w==='mist');persist();updateHUD();}
 function setSeason(s){season=s;save.season=s;needsMap=true;persist();updateHUD();for(const mesh of terrainMeshes){const po=mesh.geometry.attributes.position,color=mesh.geometry.attributes.color,tmp=new G.Color();for(let i=0;i<po.count;i++){let rgb=themeHeight(po.getY(i));tmp.setRGB(rgb[0]/255,rgb[1]/255,rgb[2]/255,G.SRGBColorSpace);color.setXYZ(i,tmp.r,tmp.g,tmp.b);}color.needsUpdate=true;}
@@ -942,7 +976,7 @@ function init(){
  if(!tryRenderer()){view='2d';$('quality').value='2d';}else view='3d';
  resize();updateHUD();mapDraw(mapCtx,mapCanvas.width,mapCanvas.height,false);
  requestAnimationFrame(loop);
- window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,heroPreviewReady:!!heroPreviewStage,heroInspection,heroPreviewPose,heroState,heroModel:!!heroController,heroProfile:HERO?.PROFILE?.id||null,heroSkinned:!!heroController?.skinned,collision:collisionWorld.snapshot(),vehicleSuspension:suspension.snapshot(),worldPaint:terrainDecor?.counts||null,lastCollision,audio:soundscape.snapshot(),performance:frameProbe.summary(),pixelRatio:activePixelRatio,heroHeightOffset,groundShadowReady:!!groundShadow,motionState:motion.snapshot(),heroTexturedMeshes:heroController?.meshes?.filter(m=>!!m.material?.map).length||0,heroFootContacts:heroController?.footContacts||null,heroBoneCount:heroController?.skinned?Object.keys(heroController.joints).length:0,heroClipCount:heroController?.clips?.length||0,heroParts:heroController?Object.keys(heroController.joints).length:0,terrainTransition:terrainTransition?.status()||null,vegetation:biomeStreamer?.snapshot()||null,facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,imageryYear:REF?.metadata?.downtownTileYear||null},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
+ window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,heroPreviewReady:!!heroPreviewStage,heroInspection,heroPreviewPose,heroState,heroModel:!!heroController,heroProfile:HERO?.PROFILE?.id||null,heroSkinned:!!heroController?.skinned,scout:scout?.snapshot()||null,scoutBond:save.scoutBond,countyRegion:save.countyRegion,countyVisited:[...save.countyVisited],countyBoundaryVertices:COUNTY_DATA?.boundary?.length||0,countyVignettes:countyVignettes?.counts||null,collision:collisionWorld.snapshot(),vehicleSuspension:suspension.snapshot(),worldPaint:terrainDecor?.counts||null,lastCollision,audio:soundscape.snapshot(),performance:frameProbe.summary(),pixelRatio:activePixelRatio,heroHeightOffset,groundShadowReady:!!groundShadow,motionState:motion.snapshot(),heroTexturedMeshes:heroController?.meshes?.filter(m=>!!m.material?.map).length||0,heroFootContacts:heroController?.footContacts||null,heroBoneCount:heroController?.skinned?Object.keys(heroController.joints).length:0,heroClipCount:heroController?.clips?.length||0,heroParts:heroController?Object.keys(heroController.joints).length:0,terrainTransition:terrainTransition?.status()||null,vegetation:biomeStreamer?.snapshot()||null,facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,imageryYear:REF?.metadata?.downtownTileYear||null},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
 }
 init();
 })();
