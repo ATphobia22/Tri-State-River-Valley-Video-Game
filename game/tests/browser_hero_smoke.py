@@ -72,6 +72,17 @@ def inspect(page, *, mobile: bool):
             arg=pose,
             timeout=15_000,
         )
+        if pose in ("fish", "cook", "hunt"):
+            page.locator("#heroFocus").select_option("right-hand")
+            page.wait_for_function(
+                "() => window.RiverValleyDebug.getState().heroPreviewFocus === 'right-hand'",
+                timeout=10_000,
+            )
+            page.screenshot(path=str(OUT / f"{prefix}-rig-{pose}-right-hand.png"))
+        elif pose == "sprint":
+            page.locator("#heroFocus").select_option("boots")
+            page.screenshot(path=str(OUT / f"{prefix}-rig-sprint-boots.png"))
+    page.locator("#heroFocus").select_option("full")
     page.locator("#heroPose").select_option("idle")
     page.wait_for_timeout(350)
     page.screenshot(path=str(OUT / f"{prefix}-studio-reset.png"))
