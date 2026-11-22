@@ -1,3 +1,7 @@
+# v1.9.3 — Original skinned River Explorer GLB
+
+The game now builds an offline glTF 2.0 River Explorer with **17 deforming joints**, nine named animation clips, metallic/roughness outfit materials, and bone-parented fishing, tracking and cooking gear. The game and Character Studio prefer real Three.js skinned meshes while preserving the previous procedural fallback. Walking and running use a terrain-sampled two-bone knee/ankle solver; no paid rigging or remote downloads are needed. The GLB and base64 offline payload are deterministic build artifacts. See [full rigging documentation](docs/HERO_RIGGED_v1.9.3.md).
+
 # v1.9.2 — Corrected Character Studio and verified WebGL launch
 
 The inspector now renders the same articulated hero inside a separate, well-lit 3D preview scene instead of allowing terrain to cover the camera. Its buttons are parsed before the game script starts; both a source regression and automated desktop/mobile Chromium WebGL tests protect that fix. On phones the preview leaves the hero visible above its compact controls. See docs/HERO_STUDIO_v1.9.2_RELEASE.md.
