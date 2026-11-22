@@ -1,0 +1,135 @@
+name: Import Mount Vernon registered overhead reference v1.8
+on:
+  push:
+    paths:
+      - .github/workflows/import-mount-vernon-map.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mount-vernon-reference-v18
+  cancel-in-progress: false
+
+jobs:
+  acquire-validate-integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download and independently hash-check proposed source patch
+        env:
+          PATCH_URL: https://media.base44.com/files/public/6b0206f1718ffb2e3e955781/9d32c9131_River_Valley_v1_8_Georeferenced_Game_Patch.zip
+          PATCH_SHA256: 378861f30575ae1e568e3ad24d6b00ba154b55388c25fc4c13d475e3f816d0dc
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 180 --output /tmp/mount-vernon-patch.zip "$PATCH_URL"
+          printf '%s  %s\n' "$PATCH_SHA256" /tmp/mount-vernon-patch.zip | sha256sum -c -
+      - name: Validate isolated game patch paths; retain previous game and engineering archive
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          z=ZipFile('/tmp/mount-vernon-patch.zip')
+          assert z.testzip() is None, 'Patch integrity failure'
+          files=z.infolist()
+          assert len(files)>=18 and len(files)<50
+          required={'src/reference-map.js','src/game.js','data/reference-bundle.js','tools/acquire_mount_vernon_reference.py','tests/test-reference-map.cjs','docs/MOUNT_VERNON_GEOREFERENCE_V1_8.md','index.html','sw.js','requirements.txt'}
+          assert required.issubset({f.filename for f in files}), 'Patch lacks essential game files'
+          assert sum(f.file_size for f in files)<8_000_000, 'Unreviewed payload size'
+          for item in files:
+              p=Path(item.filename)
+              assert not p.is_absolute() and '..' not in p.parts and p.as_posix()!='.', 'Directory traversal rejected'
+              assert not str(p).startswith(('.github/','legacy/')), 'Patch cannot edit GitHub configuration or legacy archive'
+              assert ((item.external_attr>>16)&0o170000)!=0o120000, 'Symlink rejected'
+          z.extractall('game')
+          print('Imported',len(files),'verified game-source files; original repository history preserved')
+          PY
+      - name: Install game GIS processing dependencies
+        run: python -m pip install -r game/requirements.txt
+      - name: Acquire real original Indiana aerial and digitized vector references
+        working-directory: game
+        run: python tools/acquire_mount_vernon_reference.py --out reference/mount-vernon
+      - name: Verify official capture content, image vintage, feature completeness and horizontal control
+        working-directory: game
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, hashlib, io
+          from PIL import Image
+          root=Path('reference/mount-vernon')
+          r=json.loads((root/'registration.json').read_text())
+          roads=json.loads((root/'roads.geojson').read_text())
+          buildings=json.loads((root/'buildings.geojson').read_text())
+          stops=json.loads((root/'control-points.geojson').read_text())
+          assert r['identifiedDowntownTileYear']=='2023', 'Downtown imagery vintage changed; review manually'
+          assert r['roadLineCount']==709 and len(roads['features'])==709, 'Road inventory changed; review manually'
+          assert r['buildingFootprintCount']==4819 and len(buildings['features'])==4819, 'Building inventory changed; review manually'
+          assert r['buildingsRenderedInGame']>=4000
+          assert r['verticalDatumVerified'] is False and r['allStopCoordinatesSurveyVerified'] is False
+          b=r['bboxReturnedWGS84']
+          assert -87.930<b[0]<-87.920 and -87.86<b[2]<-87.84
+          assert 37.905<b[1]<37.915 and 37.95<b[3]<37.97
+          assert len(stops['features'])==6
+          im=Image.open(root/'overhead.jpg')
+          assert im.size==(2048,1393)
+          assert (root/'digitized-overview.png').stat().st_size>200_000
+          assert (Path('data/reference-bundle.js').stat().st_size)>450_000
+          for name in ('roads','buildings'):
+              ids=[int(f['properties']['objectid']) for f in (roads if name=='roads' else buildings)['features']]
+              assert len(ids)==len(set(ids)), f'Duplicated original {name} GIS source IDs'
+          for f in stops['features']:
+              assert f['properties']['kind']=='nearest-public-road-to-game-stop'
+              assert f['properties']['distanceFromCurrentGameStopMeters']>=0
+          print('IGIO reference PASS: 2023 downtown aerial / 709 roads / 4819 buildings / six non-survey road controls')
+          PY
+      - name: Rebuild offline game with captured orthophoto, roads and buildings
+        working-directory: game
+        run: |
+          npm run build
+          npm test
+          python -m unittest discover -s tests -p 'test_reference_python.py' -v
+      - name: Record immutable source hashes and update game repository overview
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          root=Path('game')
+          paths=sorted(p for p in root.rglob('*') if p.is_file() and p.name!='CHECKSUMS.sha256' and '__pycache__' not in p.parts and p.suffix!='.pyc')
+          (root/'CHECKSUMS.sha256').write_text('\n'.join(sha256(p.read_bytes()).hexdigest()+'  '+p.relative_to(root).as_posix() for p in paths)+'\n')
+          main=Path('README.md')
+          old=main.read_text()
+          marker='### Georeferenced Mount Vernon reference (v1.8)'
+          if marker not in old:
+              main.write_text(old+'\n'+marker+'\n\nActual 2023 downtown orthophotography, Indiana GIO road centerlines, building outlines, original unmodified GeoJSON, SHA-256 receipts, registered preview map, and game-packed layers: see [game georeferencing documentation](game/docs/MOUNT_VERNON_GEOREFERENCE_V1_8.md), [captured imagery/vector reference](game/reference/mount-vernon/), and [digital reference overlay](game/reference/mount-vernon/digitized-overview.png). Horizontal reference only: source game terrain elevations, building roofs, river levels, and landmark locations are not survey-verified.\n')
+          print('Wrote SHA-256 manifest for',len(paths),'game files')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mount-vernon-registered-game-map-v1-8
+          path: |
+            game/reference/mount-vernon/digitized-overview.png
+            game/reference/mount-vernon/registration.json
+            game/reference/mount-vernon/SHA256SUMS.json
+            game/docs/MOUNT_VERNON_GEOREFERENCE_V1_8.md
+          if-no-files-found: error
+      - name: Commit validated game and source references on main
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md game
+          git diff --cached --check
+          if ! git diff --cached --quiet; then
+            git commit -m "feat(game): register Mount Vernon aerial, 709 roads and 4819 buildings (v1.8)"
+            git push origin HEAD:main
+          fi
