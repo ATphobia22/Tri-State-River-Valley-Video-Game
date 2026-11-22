@@ -18,7 +18,7 @@ PALETTE = {
  'gold':([.72,.42,.12,1],.24,.84), 'pack':([.23,.19,.13,1],.93,0),
  'strap':([.38,.27,.16,1],.85,0), 'boots':([.078,.088,.087,1],.91,.03),
  'sole':([.035,.042,.041,1],.97,0), 'metal':([.26,.28,.27,1],.4,.65),
- 'lens':([.27,.37,.39,.22],.12,.1)
+ 'lens':([.29,.35,.37,.10],.10,.08)
 }
 BONES = [
  ('Hips',None,(0,6.65,0)),('Spine',0,(0,1.5,0)),('Chest',1,(0,3.15,0)),
@@ -130,10 +130,19 @@ for side,hip,shin,foot in [(-1,11,12,13),(1,14,15,16)]:
  loft_y('cargo',rings,0,0,leg_skin(hip,shin))
  box('pocket',(x+side*.95,4.9,.35),(.43,1.5,1.48),rigid(hip))
  box('pocket',(x+side*.98,5.54,.36),(.52,.32,1.62),rigid(hip))
+ box('pocket',(x,3.44,-.85),(1.5,.42,.20),rigid(shin))
+ for yseam in [4.20,5.25]:
+  tube('pocket',(x+side*.96,yseam,.25),(x+side*.96,yseam+.30,.25),.030,rigid(hip),5)
  loft_y('boots',[(x,.28,0,.96,1.03),(x,.72,0,.94,.99),(x,1.27,0,.86,.85)],0,0,rigid(foot))
  box('boots',(x,.50,-.75),(2.04,.85,2.45),rigid(foot))
  box('sole',(x,.23,-.86),(2.15,.43,2.70),rigid(foot))
- for yy in [.65,.86,1.07]:tube('strap',(x-.56,yy,-1.84),(x+.56,yy,-1.84),.065,rigid(foot),5)
+ # Outsole tread and crossed laces are visible from the gameplay camera.
+ for yy in [.65,.86,1.07]:
+  tube('strap',(x-.56,yy,-1.84),(x+.56,yy,-1.84),.065,rigid(foot),5)
+ for yy in [.66,.91]:
+  tube('strap',(x-.46,yy,-1.86),(x+.46,yy+.20,-1.87),.043,rigid(foot),5)
+ for treadZ in [-1.85,-1.35,-.82,-.32]:
+  box('sole',(x,.06,treadZ),(2.20,.15,.18),rigid(foot))
 
 loft_y('gaiter',[(0,12.15,-.17,1.1,1.10),(0,13.00,-.15,1.32,1.13),(0,13.72,-.19,1.36,1.08)],0,0,rigid(3))
 uv_ball('skin',(0,14.28,0),(1.54,1.72,1.3),rigid(4))
@@ -143,8 +152,19 @@ tube('mask',(-.25,14.16,-1.393),(0,13.88,-1.45),.085,rigid(4),6)
 tube('mask',(.25,14.16,-1.393),(0,13.88,-1.45),.085,rigid(4),6)
 for side in [-1,1]:
  tube('mask',(side*.70,14.04,-1.435),(side*1.08,13.67,-1.39),.062,rigid(4),6)
-for i in range(8):box('mask',((i-3.5)*.245,13.42,-1.39),(.20,.38,.10),rigid(4))
+# Smaller curved skull print, following the gaiter fabric rather than
+# building a blocky white row over the face.
+for i in range(10):
+ x=(i-4.5)*.205
+ box('mask',(x,13.38+.045*math.cos((i-4.5)*.29),-1.391),(.125,.17,.033),rigid(4))
+tube('mask',(-1.00,13.58,-1.383),(1.00,13.58,-1.383),.030,rigid(4),6)
+for side in (-1,1):
+ tube('mask',(side*.75,13.61,-1.382),(side*.98,13.86,-1.381),.035,rigid(4),6)
 for side in [-1,1]:
+ # Eyes and pupils remain readable behind the much clearer glasses.
+ uv_ball('mask',(side*.65,14.87,-1.385),(.22,.145,.050),rigid(4),6,10)
+ uv_ball('glasses',(side*.59,14.87,-1.453),(.066,.072,.023),rigid(4),5,8)
+ tube('hair',(side*.27,15.45,-1.20),(side*1.12,15.49,-1.11),.08,rigid(4),7)
  box('lens',(side*.68,14.82,-1.455),(.88,.66,.021),rigid(4))
  uv_ball('mask',(side*.65,14.17,-1.42),(.44,.20,.08),rigid(4),6,10)
  uv_ball('glasses',(side*.65,14.78,-1.41),(.22,.24,.07),rigid(4),6,9)
@@ -161,22 +181,26 @@ for row in range(4):
   uv_ball('hair',(x,y,z),(.33,.40,.33),rigid(4),6,8)
 
 def arm_tube(mat,side,upper,lower,hand):
- y=11.98;n=12;verts=[];faces=[]
+ y=11.98;n=12;verts=[]
  locations=[2.25,2.7,4.25,4.73,5.09,5.47,6.5,7.18,7.45]
  radii=[.86,.82,.73,.68,.67,.66,.55,.51,.56]
  for dd,rad in zip(locations,radii):
   for i in range(n):
    th=2*math.pi*i/n
    verts.append((side*dd,y+rad*math.cos(th),rad*.87*math.sin(th)))
- for row in range(len(locations)-1):
-  for i in range(n):
-   a=row*n+i;b=row*n+(i+1)%n;c=(row+1)*n+i;d=(row+1)*n+(i+1)%n
-   faces.extend([(a,c,b),(b,c,d)])
  def skin(v):
   x=abs(v[0])
   if x<4.96:return blend(upper,lower,(x-4.52)/.8+.5)
   return blend(lower,hand,(x-7.05)/.52+.5)
- add(mat,verts,faces,skin)
+ # Actual short sleeve -> exposed forearm -> black glove cuff.
+ # Adjacent rings meet without skin or pose seams, with skinned weights.
+ for lo,hi,fabric in [(0,3,'shirt'),(3,6,'skin'),(6,8,'gaiter')]:
+  local=verts[lo*n:(hi+1)*n];faces=[]
+  for row in range(hi-lo):
+   for i in range(n):
+    a=row*n+i;b=row*n+(i+1)%n;c=(row+1)*n+i;d=(row+1)*n+(i+1)%n
+    faces.extend([(a,c,b),(b,c,d)])
+  add(fabric,local,faces,skin)
 for side,upper,lower,hand in [(-1,5,6,7),(1,8,9,10)]:
  arm_tube('shirt',side,upper,lower,hand)
  box('gaiter',(side*7.2,11.98,0),(.83,.87,1),rigid(hand))
@@ -187,7 +211,16 @@ for side,upper,lower,hand in [(-1,5,6,7),(1,8,9,10)]:
   world_x=side*(7.45+(.50 if finger==0 else .44))
   world_y=11.98-.28
   world_z=-.07-.30+(finger-.9)*.19
-  tube('skin',(world_x,world_y,world_z),(world_x+side*(.28 if finger==0 else .40),world_y-.12,world_z-.04),.11,rigid(finger_joint),7)
+  mid=(world_x+side*(.14 if finger==0 else .19),world_y-.055,world_z-.02)
+  tip=(world_x+side*(.32 if finger==0 else .43),world_y-.13,world_z-.05)
+  tube('gaiter',(world_x,world_y,world_z),mid,.125,rigid(finger_joint),7)
+  tube('skin',mid,tip,.088,rigid(finger_joint),7)
+# Reinforced shirt seams, pack hardware and stitches share existing
+# PBR materials/primitives to avoid increasing GPU draw submissions.
+for side in [-1,1]:
+ tube('pocket',(side*2.14,9.24,-.88),(side*2.31,11.52,-.89),.033,rigid(2),5)
+ tube('pocket',(side*1.5,11.64,-1.00),(side*2.55,11.45,-.45),.036,rigid(2),5)
+ box('metal',(side*1.83,10.32,-1.40),(.27,.42,.12),rigid(2))
 for i in range(18):
  t=i/18*math.pi
  a=(1.58*math.cos(t),12.07-.9*math.sin(t),-1.46)
