@@ -2,7 +2,7 @@
 
 **A free, offline-first, family-friendly 3D exploration game** set in a stylized Ohio–Wabash River Valley inspired by Mount Vernon and Posey County, Indiana. Explore on foot or by car, fish, track wildlife, grow crops, cook by the campfire, discover regional destinations, and adventure with Scout the dog. Game progress lives in **three local browser save slots**; no sign-in or gameplay server is required.
 
-**Current playable release: v1.11.0** · Three.js / WebGL · Browser and downloadable offline HTML · Windows and iPhone browser controls
+**Current playable release: v1.12.0** · Three.js / WebGL · Browser and downloadable offline HTML · Windows and iPhone browser controls
 
 [**Play on GitHub Pages**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Direct game page](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/game.html) · [Download single-file offline game](game/River_Valley_Family_Adventure_OFFLINE.html) · [Game technical guide](game/README.md)
 
@@ -14,7 +14,7 @@
 - **Posey County Atlas:** Open an offline map with the official Indiana GIO county outline and U.S. Census reference points for **Mount Vernon, New Harmony, Griffin, Poseyville and Cynthiana**. Visit four original heritage, woodland, farm-market and grove destination scenes; newly discovered regions are recorded in local saves.
 - **Scout the dog:** Scout follows over terrain, sits, comes when called, fetches, wags his tail, earns cooldown-limited bonding rewards, and provides directional wildlife-tracking hints.
 - **Activities:** Fish at an animated riverbank, track deer/turkey/rabbit in non-graphic hunting challenges, plant/water/harvest nine corn plots, and prepare **six recipes** using collected ingredients. The farm includes a barn, silo, crop rows, pump and scarecrow.
-- **Character and world:** River Explorer uses a **27-joint original skinned glTF model** with 13 authored animation clips, finger-level grips, foot-contact correction and a Character Studio. Scene detail includes local procedural roof/facade/terrain materials, riverside reeds, stones, flowers and cinematic lighting.
+- **Character and world:** River Explorer uses a **27-joint original skinned glTF model** with 13 authored animation clips, finger-level grips, foot-contact correction and a Character Studio. Scene detail includes local procedural roof/facade/terrain materials, riverside reeds, stones, flowers, GPU-instanced meadow clumps and cinematic lighting. Battery Saver, Balanced and Showcase graphics tiers control foliage density; all graphics remain offline.
 - **Gameplay feel and diagnostics:** Smooth camera-relative movement, grounded jump, polygon-footprint collision, terrain-aware follow camera, and four-point visual vehicle suspension. In Settings, **Export iPhone FPS** creates a local frame-time report for testing an actual device.
 
 ### Controls
