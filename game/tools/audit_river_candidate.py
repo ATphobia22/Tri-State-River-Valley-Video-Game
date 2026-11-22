@@ -43,7 +43,7 @@ def audit(raw: bytes, baseline=None, max_triangles=None):
     if offset != len(raw) or len(chunks) < 2 or chunks[0][0] != 0x4E4F534A:
         return finish("GLB requires a JSON-first chunk and complete chunk structure")
     try:
-        document = json.loads(chunks[0][1].rstrip(b" \\x00").decode("utf-8"))
+        document = json.loads(chunks[0][1].rstrip(b" \x00").decode("utf-8"))
     except (ValueError, UnicodeError):
         return finish("GLB JSON chunk cannot be decoded")
     bins = [c for kind, c in chunks[1:] if kind == 0x004E4942]
