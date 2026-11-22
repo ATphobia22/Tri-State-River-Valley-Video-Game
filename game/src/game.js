@@ -615,6 +615,54 @@ function updateHUD(){
   return `<button data-stop="${st.id}" class="${selected===st.id?'active ':''}${done?'done':''}"><span class="dot">${st.emoji}</span><span><span class="mtitle">${st.title}${done?' ✓':''}</span><span class="msub">${done?'Memory collected':(dist/1000).toFixed(1)+' km away'}</span></span><span class="destination">${done?'✓':'›'}</span></button>`;
  }).join('');
 }
+
+function drawCounty(){
+ if(!COUNTY||!COUNTY_DATA)return;
+ COUNTY.draw($('countyMapCanvas'),{selected:countySelected,visited:save.countyVisited},COUNTY_DATA);
+ $('countyRegionList').innerHTML=COUNTY_DATA.places.map(p=>'<button type="button" data-region="'+p.id+'" class="'+(p.id===countySelected?'selected':'')+'">'+p.name+(save.countyVisited.includes(p.id)?' ✓':'')+'</button>').join('');
+ const p=COUNTY_DATA.places.find(p=>p.id===countySelected),dest=COUNTY.stage(countySelected);
+ $('countyRegionInfo').textContent=p?(p.name+' · Census town center '+p.lat.toFixed(4)+'°N '+Math.abs(p.lon).toFixed(4)+'°W · '+dest.title+
+  ' (illustrative 3D experience, NOT the actual town model).'):'Select a town.';
+}
+function openCounty(){
+ if(!started){toast('Start your adventure before exploring Posey County.');return;}
+ closeWorldActivity();closeCinema();$('panel').classList.remove('open');$('scoutPanel').hidden=true;
+ countySelected=save.countyRegion;
+ $('countyPanel').hidden=false;drawCounty();
+}
+function closeCounty(){$('countyPanel').hidden=true;}
+function travelCounty(){
+ if(!COUNTY||!started)return;
+ const loc=COUNTY.stage(countySelected);if(!loc)return;
+ const result=C.visitCountyRegion(save,countySelected);
+ save=result.save;player.x=loc.x;player.z=loc.z;
+ suspension.reset();motion.reset({facing:playerHeading});scout?.reset();motionState=motion.snapshot();heroHeightOffset=0;
+ closeCounty();closeWorldActivity();persist();updateHUD();checkNearby();
+ if(result.result==='discovered')audioChime();
+ toast('🧭 '+loc.title+' · original playable regional vignette. County atlas positioning is geographic; the 3D scene is illustrative.');
+}
+function renderScout(){
+ if(!scout)return;
+ const s=scout.snapshot();
+ $('scoutStatus').textContent='Scout bond '+save.scoutBond+'/100 · '+(save.pet?s.action:'resting')+
+  ' · Reward cooldowns prevent repeated XP farming.';
+}
+function openScout(){
+ if(!started){toast('Start your adventure to meet Scout.');return;}
+ closeCounty();$('panel').classList.remove('open');
+ $('scoutPanel').hidden=false;renderScout();
+}
+function scoutCommand(action){
+ if(!scout||!started)return;
+ if(!save.pet){toast('Enable Scout in adventure settings first.');return;}
+ if(action==='pet'){
+  const result=COMPANION.rewardBond(save,'pet',Date.now());save=result.save;persist();updateHUD();
+  toast(result.result==='bonded'?'💛 Scout loves the attention! Bond +1 · 5 XP.':'🐕 Scout is content. Another treat can wait.');
+ }else if(scout.command(action,{player,heading:playerHeading})){
+  toast(action==='fetch'?'🦴 Scout runs for the toy!':action==='sit'?'🐕 Scout sits and watches.':'📣 Scout is coming!');
+ }
+ renderScout();
+}
 function toast(str){const el=$('toast');el.textContent=str;el.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.style.display='none',3500);}
 function audioChime(){if(save.muted)return;try{
  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
@@ -898,6 +946,17 @@ function bindUI(){
  $('heroStudioOpen').addEventListener('click',openHeroStudio);$('heroStudioClose').addEventListener('click',closeHeroStudio);$('heroStudioDone').addEventListener('click',closeHeroStudio);$('heroPhoto').addEventListener('click',screenshot);$('heroPose').addEventListener('change',e=>{if(HERO.STATES.includes(e.target.value))heroPreviewPose=e.target.value;});
  $('playBtn').addEventListener('click',()=>play(false));$('resumeBtn').addEventListener('click',()=>play(true));
  $('walkBtn').addEventListener('click',()=>setMode('walk'));$('driveBtn').addEventListener('click',()=>setMode('drive'));
+ $('countyBtn').addEventListener('click',openCounty);$('countyClose').addEventListener('click',closeCounty);
+ $('countyDismiss').addEventListener('click',closeCounty);$('countyVisit').addEventListener('click',travelCounty);
+ $('countyRegionList').addEventListener('click',e=>{const button=e.target.closest('[data-region]');if(!button)return;countySelected=button.dataset.region;drawCounty();});
+ $('countyMapCanvas').addEventListener('pointerup',e=>{
+  const rect=e.currentTarget.getBoundingClientRect(),canvas=e.currentTarget;
+  const p=COUNTY?.pickTown((e.clientX-rect.left)*canvas.width/rect.width,(e.clientY-rect.top)*canvas.height/rect.height,
+    {width:canvas.width,height:canvas.height},COUNTY_DATA);
+  if(p){countySelected=p.id;drawCounty();}
+ });
+ $('scoutBtn').addEventListener('click',openScout);$('scoutClose').addEventListener('click',()=>$('scoutPanel').hidden=true);
+ $('scoutPanel').addEventListener('click',e=>{const b=e.target.closest('[data-scout]');if(b)scoutCommand(b.dataset.scout);});
  $('mapBtn').addEventListener('click',toggleMap);$('tourBtn').addEventListener('click',startTour);$('photoBtn').addEventListener('click',screenshot);
  $('huntBtn').addEventListener('click',()=>openWorldActivity('hunt'));$('fishBtn').addEventListener('click',()=>openWorldActivity('fish'));$('farmWorldBtn').addEventListener('click',()=>openWorldActivity('farm'));$('cookBtn').addEventListener('click',()=>openWorldActivity('cook'));$('closeActivity').addEventListener('click',closeActivity);$('worldClose').addEventListener('click',closeWorldActivity);$('worldActionButtons').addEventListener('click',e=>{const b=e.target.closest('[data-worldaction]');if(b)worldAction(b.dataset.worldaction);});$('worldAim').addEventListener('input',e=>{worldAim=Number(e.target.value)/100;});
  $('settingsBtn').addEventListener('click',()=>{closeCinema();$('panel').classList.toggle('open');});
@@ -951,7 +1010,7 @@ function bindUI(){
   if(heroInspection){if(k==='escape')closeHeroStudio();return;}
   if(k==='e'||k===' '){if(!activity&&!worldPrimaryAction())interact();}
   // J / mobile JUMP is sampled in the kinematic step and never auto-repeats.
- if(k==='h')openWorldActivity('hunt');if(k==='f')openWorldActivity('fish');if(k==='g')openWorldActivity('farm');if(k==='k')openWorldActivity('cook');if(k==='m'&&!activity&&!backdropOpen)toggleMap();if(k==='p')screenshot();if(k==='c'&&!activity){$('cinemaPanel').classList.contains('open')?closeCinema():openCinema();}if(k==='escape'){if(worldActive)closeWorldActivity();else if(backdropOpen)closeBackdrop();else if(activity)closeActivity();else if($('cinemaPanel').classList.contains('open'))closeCinema();else $('panel').classList.toggle('open');}
+ if(k==='b')openScout();if(k==='n')openCounty();if(k==='h')openWorldActivity('hunt');if(k==='f')openWorldActivity('fish');if(k==='g')openWorldActivity('farm');if(k==='k')openWorldActivity('cook');if(k==='m'&&!activity&&!backdropOpen)toggleMap();if(k==='p')screenshot();if(k==='c'&&!activity){$('cinemaPanel').classList.contains('open')?closeCinema():openCinema();}if(k==='escape'){if(!$('countyPanel').hidden){closeCounty();return;}if(!$('scoutPanel').hidden){$('scoutPanel').hidden=true;return;}if(worldActive)closeWorldActivity();else if(backdropOpen)closeBackdrop();else if(activity)closeActivity();else if($('cinemaPanel').classList.contains('open'))closeCinema();else $('panel').classList.toggle('open');}
  });document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;});
  canvas.addEventListener('pointerdown',e=>{pointerDown=true;pointerX=e.clientX;pointerY=e.clientY;});
  window.addEventListener('pointerup',()=>pointerDown=false);
