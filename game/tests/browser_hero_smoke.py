@@ -37,13 +37,17 @@ def inspect(page, *, mobile: bool):
     assert state()["heroParts"] >= 10
 
     page.locator("#playBtn").click(timeout=15_000)
-    page.wait_for_timeout(500)
-    assert state()["started"], "Start Exploring did not start gameplay"
+    page.wait_for_function(
+        "() => window.RiverValleyDebug.getState().started === true",
+        timeout=15_000,
+    )
     page.locator("#settingsBtn").click(timeout=12_000)
     page.locator("#heroStudioOpen").click(timeout=12_000)
-    page.wait_for_timeout(700)
-    assert state()["heroInspection"] is True
-    assert state()["heroPreviewReady"] is True
+    page.wait_for_function(
+        "() => { const state = window.RiverValleyDebug.getState(); "
+        "return state.heroInspection && state.heroPreviewReady; }",
+        timeout=15_000,
+    )
     assert page.locator("#heroStudio").is_visible()
     assert page.locator("#touchControls").is_hidden() if mobile else True
 
@@ -51,17 +55,25 @@ def inspect(page, *, mobile: bool):
     page.screenshot(path=str(OUT / f"{prefix}-studio-idle.png"))
     for pose in ["fish", "cook", "hunt", "sprint", "drive"]:
         page.locator("#heroPose").select_option(pose)
-        page.wait_for_timeout(100)
-        assert state()["heroState"] == pose, f"{prefix}: pose {pose} did not apply"
+        # On software WebGL in GitHub Actions, a frame can exceed 100 ms.
+        # Require the rendered game state to reach the desired pose, rather
+        # than relying on an arbitrary wall-clock delay.
+        page.wait_for_function(
+            "(expected) => window.RiverValleyDebug.getState().heroState === expected",
+            arg=pose,
+            timeout=15_000,
+        )
     page.locator("#heroPose").select_option("idle")
     page.wait_for_timeout(350)
     page.screenshot(path=str(OUT / f"{prefix}-studio-reset.png"))
     page.locator("#heroStudioClose").click(timeout=10_000)
     assert state()["heroInspection"] is False
     page.locator("#driveBtn").click(timeout=12_000)
-    page.wait_for_timeout(200)
-    assert state()["mode"] == "drive"
-    assert state()["heroState"] == "drive"
+    page.wait_for_function(
+        "() => { const state = window.RiverValleyDebug.getState(); "
+        "return state.mode === 'drive' && state.heroState === 'drive'; }",
+        timeout=15_000,
+    )
     assert not issues, f"Uncaught page errors: {issues}"
     return dict(mobile=mobile, webgl=True, heroModel=True, heroParts=state()["heroParts"],
                 studioOpened=True, posesTested=5, driveWorks=True,
