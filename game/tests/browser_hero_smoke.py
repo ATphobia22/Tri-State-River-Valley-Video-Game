@@ -63,6 +63,23 @@ def inspect(page, *, mobile: bool):
 
     prefix = "mobile" if mobile else "desktop"
     page.screenshot(path=str(OUT / f"{prefix}-studio-idle.png"))
+    for angle in ["front", "three-quarter", "side", "back"]:
+        page.locator("#heroAngle").select_option(angle)
+        page.wait_for_function(
+            "(expected) => window.RiverValleyDebug.getState().heroPreviewAngle === expected",
+            arg=angle, timeout=15000,
+        )
+        page.evaluate("document.getElementById('heroStudio').style.opacity='0'")
+        page.wait_for_timeout(120)
+        page.screenshot(path=str(OUT / f"{prefix}-river-{angle}-turnaround.png"))
+        page.evaluate("document.getElementById('heroStudio').style.opacity=''")
+    page.locator("#heroAngle").select_option("front")
+    page.locator("#heroStudioToggle").click()
+    assert page.locator("#heroStudio").evaluate("(el) => el.classList.contains('is-minimized')")
+    page.screenshot(path=str(OUT / f"{prefix}-river-controls-collapsed.png"))
+    page.locator("#heroStudioToggle").click()
+    assert not page.locator("#heroStudio").evaluate("(el) => el.classList.contains('is-minimized')")
+
     for pose in ["fish", "cook", "hunt", "sprint", "drive"]:
         page.locator("#heroPose").select_option(pose)
         # On software WebGL in GitHub Actions, a frame can exceed 100 ms.
