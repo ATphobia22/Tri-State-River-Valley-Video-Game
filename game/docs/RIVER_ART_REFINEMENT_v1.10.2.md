@@ -13,7 +13,7 @@ The reference sheets are **concept guidance**. They were not treated as raw PBR 
 ## Implemented in the existing 27-joint River GLB generator
 
 - **Clothing silhouette:** each upper arm is now constructed in adjacent short-sleeve, exposed skin and dark synthetic-glove ring sections. All three retain the prior blended skinning and original skeleton. The shader/material primitive count remains 15.
-- **Gaiter/skull print:** narrowed curved tooth row, short cheek and nasal details, no oversized square white billboard teeth. Still original mesh geometry—no unlicensed image textures.
+- **Gaiter/skull print:** a rounded, skinned face-covering mesh with original skull motif drawn in a local CanvasTexture and curved across the surface. Oversized white block teeth are removed. This fabric print is generated at runtime rather than sampled from the uploaded pictures.
 - **Eyewear:** increased lens translucency so pupils/eyebrows can read through the glasses. Slightly tightened PBR roughness and retained fitted frames and side arms.
 - **Equipment:** added subtle stitched shoulder/side seams, small backpack and webbing hardware, knee/cargo reinforcement, crossed boot laces and visible tread accents.
 - **Hands:** individual fingerless black glove bases transition to tan exposed fingertip meshes bound to each of the same ten finger joints. Fishing, cooking, tracking, driving and general interactions retain existing dynamically posed grips.
