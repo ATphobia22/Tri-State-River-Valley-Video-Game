@@ -271,3 +271,33 @@ Release evidence still requires separately: source character import;
 skeletal and facial asset inspection; true UE Editor validation; performance
 profiling, cook/Shipping packaging; network-disabled Windows launch; and the
 browser game's own visual and gameplay regression tests.
+
+## NNE machine-learning runtime profile (UE 5.8)
+
+The plugin policy scanner includes `--profile ml` covering
+`NNERuntimeCoreML`, `NNERuntimeIREE`, `NNERuntimeORT`, and
+`NNERuntimeRDG`. These are **candidate runtime backends**, not installed
+dependencies. An audit of a machine without UE reports no matching local
+descriptors rather than pretending they exist.
+
+```powershell
+python game/unreal-starter/Content/Python/plugin_policy.py --profile ml --engine-plugins "C:\Program Files\Epic Games\UE_5.8\Engine\Plugins" --output game/unreal-starter/Saved/RiverQA/nne-runtime-receipt.json
+```
+
+For Windows, investigate ORT (ONNX Runtime CPU / DirectML) first once a
+concrete `UNNEModelData` asset and deterministic input/output tensors exist.
+RDG requires a rendering-graph integration and GPU frame-budget evidence.
+CoreML is Apple-oriented. IREE is an experimental compiler backend.
+The actual model must pass `CanCreateModel*` for the selected runtime and
+platform; a `.uplugin` descriptor alone does not establish inference support.
+
+The Epic UE 5.8 API plugin index labels ORT Beta and the CoreML, IREE and RDG
+plugins Experimental; do not ship them without explicit compatibility,
+licensing, performance, cook, and native executable tests.
+
+References:
+- https://dev.epicgames.com/documentation/unreal-engine/API/PluginIndex/NNERuntimeORT
+- https://dev.epicgames.com/documentation/en-us/unreal-engine/API/PluginIndex/NNERuntimeCoreML
+- https://dev.epicgames.com/documentation/en-us/unreal-engine/API/PluginIndex/NNERuntimeIREE
+- https://dev.epicgames.com/documentation/en-us/unreal-engine/API/PluginIndex/NNERuntimeRDG
+- https://dev.epicgames.com/documentation/en-us/unreal-engine/neural-network-engine-in-unreal-engine
