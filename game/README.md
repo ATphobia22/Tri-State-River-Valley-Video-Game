@@ -2,7 +2,7 @@
 
 [**Play the game**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Repository overview](../README.md) · [Offline HTML download](River_Valley_Family_Adventure_OFFLINE.html) · [GitHub Actions](../.github/workflows/game-ci.yml)
 
-**Version 1.11.0** · Offline-first browser game · Original Three.js/WebGL world · Three local save slots · No account or server required.
+**Version 1.12.0** · Offline-first browser game · Original Three.js/WebGL world · Three local save slots · No account or server required.
 
 This `game/` directory contains the **playable family adventure**. It is separate from the Tri-State Systems Manager digital twin. The official geographical references are used to orient the fictional game; game terrain, fictional towns, models, river effects and heights are not survey or regulatory products.
 
@@ -18,7 +18,7 @@ This `game/` directory contains the **playable family adventure**. It is separat
 | Fishing | Riverbank setting, bobber/fish animation, reel timing and inventory rewards |
 | Farming | Nine persistent corn plots, planting, watering and harvesting; barn, grain silo, pump, scarecrow and crop-growth visuals |
 | Cooking | Campfire kitchen, inventory-consuming ingredients and six recipes with progression rewards |
-| World visuals | Season/weather/daylight, terrain LOD, 709-road/4,819-footprint optional Mount Vernon visual reference, locally generated brick/clapboard/stone/steel/board-batten/roof textures, instanced reeds/rocks/flowers |
+| World visuals | Season/weather/daylight, terrain LOD, 709-road/4,819-footprint optional Mount Vernon visual reference, locally generated brick/clapboard/stone/steel/board-batten/roof textures, instanced reeds/rocks/flowers and quality-tiered instanced meadow |
 | Sound and performance | Offline synthesized footsteps/biome cues, user-gesture audio activation, bounded FPS telemetry and JSON export; resolution adaptation on slow WebGL frames |
 | Offline and accessibility | Downloadable single-file HTML, HTTPS PWA service worker, gamepad/touch/keyboard-style interfaces where implemented, 2D illustrated fallback, local saves |
 
@@ -30,6 +30,8 @@ This `game/` directory contains the **playable family adventure**. It is separat
 | --- | --- |
 | [`src/core.js`](src/core.js) | Validate local saves, recipes, inventory, discovery, farming and rewards |
 | [`src/game.js`](src/game.js) | Main Three.js/Canvas runtime, camera, UI and system integration |
+| [`src/graphics-quality.js`](src/graphics-quality.js) | GPU-instanced local meadow and deterministic quality-tier budgets |
+| [`src/compressed-assets.js`](src/compressed-assets.js) / [`tools/compress_optional_glb.py`](tools/compress_optional_glb.py) | Optional lossless local GLB transport and raw-format fallback; existing character remains embedded |
 | [`src/open-world.js`](src/open-world.js) | Fishing, hunting, farming and campfire in-world scenes |
 | [`src/companion.js`](src/companion.js) | Scout's locomotion, commands, tracking hints and bonding |
 | [`src/county-atlas.js`](src/county-atlas.js) | Offline county outline projection and interactive town map |
