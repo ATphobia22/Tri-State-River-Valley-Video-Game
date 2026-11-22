@@ -13,7 +13,7 @@
 #toast{position:fixed;z-index:12;top:89px;left:50%;transform:translateX(-50%);padding:10px 19px;background:rgba(7,41,36,.93);border:1px solid #9fffc954;border-radius:15px;box-shadow:0 10px 35px #0019;font-weight:780;max-width:min(450px,92vw);text-align:center;display:none}
 #panel{top:92px;right:14px;width:270px;display:none;padding:17px}#panel.open{display:block}#panel{max-height:calc(100dvh - 124px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}#panel .row>*{min-width:0}#installOfflineBtn{min-height:44px}#offlineStatus{display:block;flex-basis:100%;font-size:11px;line-height:1.4}#footer{touch-action:pan-x;overscroll-behavior-x:contain}#panel h2{margin-bottom:14px}.field{margin-bottom:12px}.field label{font-size:11px;letter-spacing:.7px;font-weight:800;color:var(--muted);display:block;margin-bottom:6px}.field select,.field input{width:100%;color:white;background:#17423e;border:1px solid #ffffff24;border-radius:10px;padding:9px}#panel .row{display:flex;gap:6px;flex-wrap:wrap}#panel .row>*{flex:1}#panel button{padding:8px 10px;border-radius:10px;border:1px solid #ffffff2b;color:#fff;background:#16423d;font-weight:750}#panel button:hover{background:#22534c}.closeX{background:transparent;border:0;color:white;font-size:20px;cursor:pointer}
 #start{position:fixed;z-index:30;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(130deg,rgba(8,34,31,.93),rgba(9,35,44,.86)),radial-gradient(circle at 75% 20%,#eda86a,transparent 35%);padding:20px}#start.hidden{display:none}.hero{width:min(780px,96vw);padding:clamp(23px,5vw,55px);position:relative;overflow:hidden;background:linear-gradient(150deg,#194b43,#0c2830 65%,#173839);border:1px solid #a8d8bb50;border-radius:27px;box-shadow:0 34px 100px #001b}.hero:after{content:'🌲    🌾   🌿    🌊';font-size:68px;position:absolute;right:-50px;bottom:14px;transform:rotate(-6deg);opacity:.14;pointer-events:none}.hero .tag{color:var(--mint);letter-spacing:3px;font-size:12px;font-weight:900}.hero h1{font:750 clamp(37px,7vw,72px)/.98 Georgia,serif;letter-spacing:-1.4px;margin:15px 0}.hero h1 em{display:block;color:var(--gold);font-style:normal}.hero .lead{font-size:15px;max-width:530px;line-height:1.6;color:#d1e3d8}.hero .buttons{display:flex;align-items:center;flex-wrap:wrap;gap:11px;margin:24px 0 12px}.hero button{padding:13px 23px;border-radius:12px;color:white;background:#ffffff18;border:1px solid #ffffff28;font-weight:850}.hero select{background:#ffffff12;border:1px solid #ffffff3b;border-radius:10px;padding:10px;color:#fff;max-width:160px}.hero select option{background:#183b37}.hero input{background:#ffffff12;border:1px solid #ffffff3b;border-radius:10px;padding:10px;color:#fff;max-width:200px}.hero .smallprint{color:#a5c2b7;font-size:11px;max-width:560px}.hero .marker{display:inline-flex;gap:9px;align-items:center;background:#ffffff13;border:1px solid #ffffff16;border-radius:99px;padding:6px 11px;font-size:10px;letter-spacing:1px;margin-right:5px}
-#controlsHelp{bottom:87px;right:14px;font-size:11px;color:#f0ffe7;background:#0d302ac4;padding:7px 11px;border-radius:12px;max-width:360px}#touchControls{display:none;position:fixed;z-index:9;bottom:max(85px,env(safe-area-inset-bottom) + 85px);left:14px;right:14px;align-items:end;justify-content:space-between;pointer-events:none}.dpad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,46px);gap:4px}.dpad button,.touchAction{pointer-events:auto;background:#163f3bd1;border:1px solid #ffffff5a;color:white;border-radius:13px;font-size:22px;touch-action:none}.dpad .blank{visibility:hidden}.touchAction{width:67px;height:67px;font-size:12px;font-weight:850;background:#f3bd70e3;color:#192826}#touchControls button.pressed{background:#baf5cfbb;color:#153831}#rain{pointer-events:none;position:fixed;inset:0;z-index:4;opacity:0;background:repeating-linear-gradient(110deg,transparent 0 55px,rgba(194,221,241,.15) 56px 58px,transparent 59px 90px);background-size:230px 400px;animation:rain .8s linear infinite}body.rainy #rain{opacity:.45}body.misty #rain{opacity:.12;background:#d8e9e1}@keyframes rain{from{background-position:0 0}to{background-position:-40px 400px}}#loading{position:fixed;z-index:35;inset:0;background:#092521;color:#dff3e9;display:none;align-items:center;justify-content:center;font-size:18px}
+#controlsHelp{bottom:87px;right:14px;font-size:11px;color:#f0ffe7;background:#0d302ac4;padding:7px 11px;border-radius:12px;max-width:360px}#touchControls{display:none;position:fixed;z-index:9;bottom:max(85px,env(safe-area-inset-bottom) + 85px);left:14px;right:14px;align-items:end;justify-content:space-between;pointer-events:none}.dpad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,46px);gap:4px}.dpad button,.touchAction{pointer-events:auto;background:#163f3bd1;border:1px solid #ffffff5a;color:white;border-radius:13px;font-size:22px;touch-action:none}.dpad .blank{visibility:hidden}.touchAction{width:67px;height:67px;font-size:12px;font-weight:850;background:#f3bd70e3;color:#192826}#touchJump{width:60px;height:56px;font-size:12px;font-weight:800}#touchControls button.pressed{background:#baf5cfbb;color:#153831}#rain{pointer-events:none;position:fixed;inset:0;z-index:4;opacity:0;background:repeating-linear-gradient(110deg,transparent 0 55px,rgba(194,221,241,.15) 56px 58px,transparent 59px 90px);background-size:230px 400px;animation:rain .8s linear infinite}body.rainy #rain{opacity:.45}body.misty #rain{opacity:.12;background:#d8e9e1}@keyframes rain{from{background-position:0 0}to{background-position:-40px 400px}}#loading{position:fixed;z-index:35;inset:0;background:#092521;color:#dff3e9;display:none;align-items:center;justify-content:center;font-size:18px}
 @media(max-width:780px){#top{left:8px;right:8px;top:7px;align-items:stretch}.brand{padding:7px 9px}.brand b{font-size:13px}.brand small{font-size:8px;letter-spacing:1.2px}.brand .sig{font-size:18px}#hudStats{padding:3px;gap:3px}#hudStats span{font-size:10px;padding:4px 7px}#hudStats .hideMobile{display:none}#missions{top:61px;left:8px;width:206px;padding:8px}#missions h2{font-size:15px}#missionList{max-height:24vh}#missionList button{padding:4px;font-size:10px}#missionList button .mtitle{font-size:10px}#missionList button .msub{display:none}#minimapPane{top:61px;right:8px;width:129px;padding:7px}#minimap{height:113px;width:113px}#miniLegend{display:none}#panel{top:61px;right:8px;width:min(290px,calc(100vw - 16px));max-height:calc(100dvh - 135px);overflow-y:auto}#footer{bottom:max(5px,env(safe-area-inset-bottom));gap:3px;padding:4px;max-width:100vw}#footer button{font-size:10px;padding:8px 8px;border-radius:10px}#controlsHelp{display:none}#context{bottom:175px;padding:8px;font-size:11px;max-width:280px}#touchControls{display:flex;bottom:max(62px,env(safe-area-inset-bottom) + 65px)}#toast{top:61px;font-size:12px}.hero h1{font-size:clamp(32px,9vw,48px)}.hero{padding:20px}.hero .lead{font-size:12px}.hero .marker{margin-bottom:5px}}
 @media(max-height:420px){#missionList{max-height:70px}#missions{top:57px}#minimapPane{top:57px}#footer{bottom:3px}#touchControls{bottom:58px}.hero h1{margin:8px 0}.hero .buttons{margin:10px 0}}
 
@@ -28,17 +28,17 @@
 <div class="hud" id="top"><div class="brand glass"><span class="sig">🏞️</span><div><small>FAMILY EDITION</small><b>River Valley Adventure</b></div></div><div class="glass" id="hudStats"><span>⭐ <b id="level">1</b></span><span class="gold">🪙 <b id="coins">0</b></span><span>🧭 <b id="stamps">0/6</b></span><span class="hideMobile" id="pantrySummary">🌽 0 · 🐟 0 · 🦌 0 · 🍲 0</span><span class="hideMobile">🕔 <b id="clock">5:30 PM</b></span><span class="hideMobile" id="weatherBadge">☀️ Clear</span></div></div>
 <section class="hud glass" id="missions"><div id="missionsHead"><div><div class="eyebrow">THE ADVENTURE BOOK</div><h2>Family discovery trail</h2></div><button aria-label="Toggle quests" class="closeX" id="toggleMissions" title="Collapse quests">−</button></div><div id="missionList"></div><div id="questSummary" style="font-size:11px;color:var(--mint);padding:6px 8px 0">Choose a place to begin exploring.</div></section>
 <section class="hud glass" id="minimapPane"><div id="miniTitle"><b>🗺 WORLD MAP</b><span id="mapMode">N ↑</span></div><canvas aria-label="Area minimap" height="360" id="minimap" width="360"></canvas><div id="miniLegend"><span id="lodLabel">Terrain LOD: Auto · 3D when supported</span><br/>● Explorer   ◆ Discovery stop</div></section>
-<div aria-live="off" class="hud" id="perfHUD" role="status"></div><div class="hud" id="controlsHelp">WASD / arrows move · Shift sprint · E act · Drag to orbit · Scroll to zoom · H hunt · F fish · G farm · K cook · M map · Esc menu</div>
+<div aria-live="off" class="hud" id="perfHUD" role="status"></div><div class="hud" id="controlsHelp">WASD / arrows move · Shift sprint · J jump · E act · Drag to orbit · Scroll to zoom · H hunt · F fish · G farm · K cook · M map · Esc menu</div>
 <div class="hud glass" id="context"><b id="nearName"></b><small id="nearDetail"></small><button id="interactBtn">Collect this memory ✨</button></div>
 <div class="hud glass" id="footer"><button class="selected" id="walkBtn">🚶 Walk</button><button id="driveBtn">🚗 Drive</button><button id="mapBtn">🗺 Map</button><button id="tourBtn">🎬 Tour</button><button id="photoBtn">📷 Photo</button><button id="huntBtn">🦌 Hunt</button><button id="fishBtn">🎣 Fish</button><button id="farmWorldBtn">🌽 Farm</button><button id="cookBtn">🍳 Cook</button><button id="settingsBtn">⚙️ Options</button></div>
 <section aria-label="Cinematic director" aria-modal="false" class="hud glass" id="cinemaPanel" role="dialog"><div class="cinemaHeading"><div><small class="eyebrow">VFX SUPERVISOR DESK</small><h2>Cinematic Director</h2></div><button aria-label="Close cinematic director" class="closeX" id="closeCinema">×</button></div><p>Choose a lighting look, layer atmospheric effects, and balance the device's performance.</p><div class="field"><label for="cineLook">Virtual environment / lighting look</label><select id="cineLook"><option value="natural">Natural Countryside</option><option value="golden">Golden Hour Riverfront</option><option value="blue">Blue Hour Reflections</option><option value="storm">Stormfront Over the Ohio</option><option value="lantern">Lanterns &amp; Fireflies</option></select></div><div class="field"><label for="cineQuality">Cinematic effect budget</label><select id="cineQuality"><option value="lite">Battery Saver · 16 effects</option><option value="balanced">Balanced · 55 effects</option><option value="cinematic">Showcase · 110 effects</option></select></div><div class="field"><label for="cineStrength">Atmosphere intensity <b id="cineStrengthLabel">72%</b></label><input id="cineStrength" max="100" min="0" step="1" type="range" value="72"/></div><div class="cinemaChecks"><label><input id="cineGrain" type="checkbox"/> Fine film grain (showcase)</label><label><input id="cineStats" type="checkbox"/> Live FPS and draw calls</label></div><div class="cinemaButtons"><button id="cineGolden">🌅 Sunset shot</button><button id="cineNight">✨ Night shot</button><button id="cineReset">↻ Reset grade</button><button id="openStage">🌄 Open scenic backdrop studio</button></div><p class="cinemaNote">Effects run in 2D even when 3D GPU graphics are unavailable. No cloud rendering or personal data is uploaded.</p></section>
 <section aria-label="Game settings" class="hud glass" id="panel"><div style="display:flex;align-items:center;justify-content:space-between"><h2>Adventure settings</h2><button class="closeX" id="closePanel">×</button></div><div class="field"><label for="weather">Weather</label><select id="weather"><option value="clear">☀️ Clear skies</option><option value="rain">🌧️ Summer rain</option><option value="mist">🌫️ River mist</option></select></div><div class="field"><label for="season">Season</label><select id="season"><option value="spring">🌷 Spring</option><option value="summer">🌾 Summer</option><option value="autumn">🍂 Autumn</option><option value="winter">❄️ Winter</option></select></div><div class="field"><label for="time">Time of day <span id="timeLabel">5:30 PM</span></label><input id="time" max="24" min="0" step="0.25" type="range" value="17.5"/></div><div class="field"><label for="quality">World view</label><select id="quality"><option value="3d">3D countryside</option><option value="2d">2D illustrated atlas</option></select></div><div class="field"><label for="referenceOverlay">Real Mount Vernon overhead reference</label><label style="display:flex;align-items:center;gap:10px"><input id="referenceOverlay" style="width:auto" type="checkbox"/> IGIO aerial + digitized roads (reference only)</label><small id="referenceStatus" style="display:block;color:var(--muted);margin-top:5px">Reference imagery loads when available; heights remain unverified.</small><p id="locationCode"></p></div><div class="field"><label for="terrainDetail">Terrain detail / LOD</label><select id="terrainDetail"><option value="auto">Adaptive · quadtree screen error</option><option value="high">High · detailed quadtree</option><option value="medium">Medium · balanced quadtree</option><option value="low">Low · performance quadtree</option></select></div><div class="field"><label for="visualEffects">Visual effects</label><select id="visualEffects"><option value="full">Cinematic · sun + fog</option><option value="lite">Performance · reduced effects</option></select></div><div class="field"><label for="slot">Family save slot</label><select id="slot"><option value="0">Adventure 1</option><option value="1">Adventure 2</option><option value="2">Adventure 3</option></select></div><div class="row"><button id="petBtn">🐕 Scout: ON</button><button id="soundBtn">🔊 Sound</button></div><div class="row" style="margin-top:9px"><button class="pill" id="installOfflineBtn">📲 Install / Offline help</button><small id="offlineStatus">Your game runs on this device · saves are local</small><button id="saveBtn">💾 Save</button><button id="newBtn">↻ New game</button></div><div class="row" style="margin-top:9px"><button id="heroStudioOpen">👤 Inspect the Explorer</button><button id="openCinema">🎥 Open Cinematic Director</button></div><div class="row" style="margin-top:9px"><button id="returnBtn">🏠 Title screen</button></div><p style="font-size:10px;margin:12px 0 0">Saves live only in this browser on this device. The countryside is inspired by real places; this preview is a game, not a surveyed or navigational map.</p></section>
-<div id="touchControls"><div class="dpad"><span class="blank"></span><button data-key="up">↑</button><span class="blank"></span><button data-key="left">←</button><button data-key="down">↓</button><button data-key="right">→</button></div><button class="touchAction" id="touchInteract">ACTION ✨</button></div>
+<div id="touchControls"><div class="dpad"><span class="blank"></span><button data-key="up">↑</button><span class="blank"></span><button data-key="left">←</button><button data-key="down">↓</button><button data-key="right">→</button></div><button aria-label="Jump" class="touchAction" data-key="j" id="touchJump">JUMP ↗</button><button class="touchAction" id="touchInteract">ACTION ✨</button></div>
 <section aria-label="Cinematic backdrops studio" aria-modal="true" id="stagePanel" role="dialog"><div id="stageToolbar"><strong>🌄 Virtual Backdrops · Original River Valley Scenes</strong><label for="stageScene">Location</label><select id="stageScene"><option value="riverfront">Ohio Riverfront</option><option value="farm">Family Farm</option><option value="woods">Oak Grove Woods</option></select><button aria-label="Previous cinematic shot" id="stagePrev">◀ Previous</button><button id="stageTour">▶ Play scenic tour</button><button aria-label="Next cinematic shot" id="stageNext">Next ▶</button><button id="stageCapture">📷 Save postcard</button><button id="stageBoard">🎞 Export shot board</button><button id="closeStage">✕ Return to game</button></div><div aria-live="polite" id="stageShotInfo"><b id="stageShotLabel">01 · Ohio River · Arrival</b> <span id="stageShotCount">1 / 5</span></div><canvas aria-label="Original animated 2D virtual scene; selectable riverfront, farm and woods" height="720" id="stageCanvas" width="1280"></canvas><p>Animated 2D virtual background · included offline · not a surveyed or 3D-engine render.</p></section><div aria-live="polite" id="toast" role="status"></div>
 <section aria-label="Live three-dimensional activity" aria-live="polite" class="hud glass" hidden="" id="worldActivityHud" role="region"><div class="worldTitleRow"><div><small class="eyebrow">REAL-TIME WORLD ACTIVITY · 3D</small><h2 id="worldActivityTitle">River Valley Adventure</h2></div><button aria-label="Return to exploration" id="worldClose">✕</button></div><p id="worldActivityText"></p><div id="worldActivityMeter" role="status"></div><label for="worldAim" hidden="" id="worldAimLabel">Track your target <input aria-label="Move in-world target marker" id="worldAim" max="100" min="0" step="1" type="range" value="50"/></label><div id="worldActionButtons"></div><small class="worldHint">Explore freely while playing. Use the buttons or press E to act. No separate minigame scene.</small></section>
 <section aria-label="Family activity" aria-modal="true" class="glass" id="activityPanel" role="dialog"><div class="activityHeader"><span class="eyebrow">RIVER VALLEY • FAMILY ACTIVITIES</span><button aria-label="Close minigame" class="closeX" id="closeActivity">×</button></div><h2 id="activityTitle">Family Activities</h2><div id="activityContent"></div></section>
 <section class="glass" id="farmPanel"><div style="display:flex;align-items:start;justify-content:space-between"><div><div class="eyebrow">🌱 A REPEATABLE FAMILY ACTIVITY</div><h2>Valley Farm</h2></div><button aria-label="Close farm" class="closeX" id="closeFarm">×</button></div><p>Plant corn for 15 coins, let it grow for eight seconds, then harvest for 45 coins and 45 XP. Your fields are saved locally.</p><div class="farmGrid" id="farmGrid"></div><div id="farmNotice" style="font-size:12px;color:var(--gold)">Tap a field to plant.</div><div class="farmActions" style="margin-top:14px"><button id="waterFarm">💧 Water growing crops · 20 🪙</button><button id="farmDone">Done</button></div></section>
-<div id="start"><div class="hero"><div class="tag">✦ YOUR FAMILY. YOUR RIVER VALLEY. ✦</div><h1>Take the scenic route.<em>Make some memories.</em></h1><p class="lead">A cozy open-world adventure inspired by Mount Vernon, Indiana and the Ohio–Wabash River Valley. Walk historic streets, drive through scenic countryside, interact with wildlife on the trail, fish from a 3D river pier, cook at the campfire and cultivate visible farm plots, and complete six family discoveries.</p><div><span class="marker">🌅 DAY &amp; NIGHT</span><span class="marker">🚙 FREE ROAM</span><span class="marker">🐕 A LOYAL COMPANION</span><span class="marker">📸 PHOTO MODE</span></div><div class="buttons"><select aria-label="Choose family save slot" id="startSlot"><option value="0">Save 1</option><option value="1">Save 2</option><option value="2">Save 3</option></select><input aria-label="Family explorer name" id="playerName" maxlength="24" placeholder="Family explorer name" value="Family Explorer"/><button class="primary" id="playBtn">▶ Start exploring</button><button id="resumeBtn">↻ Continue saved game</button></div><p class="smallprint">V1.9.4 · Free-camera 3D exploration with four interactive world sites, a wildlife model, fishing pier, persistent crop plots and a campfire kitchen. Adaptive LOD, cinematic lighting, local saves and 2D fallback. Offline • Single-player family adventure • No account or uploads • Desktop keyboard and mobile touch controls. Uses the supplied Mount Vernon geography as a stylized preview—not a precise replica.</p></div></div>
+<div id="start"><div class="hero"><div class="tag">✦ YOUR FAMILY. YOUR RIVER VALLEY. ✦</div><h1>Take the scenic route.<em>Make some memories.</em></h1><p class="lead">A cozy open-world adventure inspired by Mount Vernon, Indiana and the Ohio–Wabash River Valley. Walk historic streets, drive through scenic countryside, interact with wildlife on the trail, fish from a 3D river pier, cook at the campfire and cultivate visible farm plots, and complete six family discoveries.</p><div><span class="marker">🌅 DAY &amp; NIGHT</span><span class="marker">🚙 FREE ROAM</span><span class="marker">🐕 A LOYAL COMPANION</span><span class="marker">📸 PHOTO MODE</span></div><div class="buttons"><select aria-label="Choose family save slot" id="startSlot"><option value="0">Save 1</option><option value="1">Save 2</option><option value="2">Save 3</option></select><input aria-label="Family explorer name" id="playerName" maxlength="24" placeholder="Family explorer name" value="Family Explorer"/><button class="primary" id="playBtn">▶ Start exploring</button><button id="resumeBtn">↻ Continue saved game</button></div><p class="smallprint">V1.9.5 · Free-camera 3D exploration with four interactive world sites, a wildlife model, fishing pier, persistent crop plots and a campfire kitchen. Adaptive LOD, cinematic lighting, local saves and 2D fallback. Offline • Single-player family adventure • No account or uploads • Desktop keyboard and mobile touch controls. Uses the supplied Mount Vernon geography as a stylized preview—not a precise replica.</p></div></div>
 <div id="loading">🌿 Preparing your river valley...</div>
 <section aria-label="Character studio and animation preview" class="hud glass" hidden="" id="heroStudio" role="dialog">
 <div class="heroStudioHeading"><img alt="River concept portrait" height="56" src="data:image/jpeg;base64,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" style="border-radius:6px;object-fit:cover" width="48"/><div><small class="eyebrow">ORIGINAL GAME CHARACTER</small><h2>River Explorer Studio</h2></div><button aria-label="Close character studio" class="closeX" id="heroStudioClose">✕</button></div>
@@ -1798,7 +1798,7 @@ function create(THREE,{seated=false,samplePose}={}){
  const scene=new THREE.Group();scene.name='River Explorer / rigged GLB';scene.userData.heroId='river-explorer';scene.userData.asset='river_explorer_rigged.glb';
  const plantLibrary=global.ValleyFootPlant||(typeof module==='object'&&module.exports?require('./foot-plant.js'):null);
  if(!plantLibrary?.create)throw Error('Offline foot-contact solver must load before rigged hero');
- const footContacts=plantLibrary.create();
+ const footContacts=plantLibrary.create({reach:5.5});
  const skin=doc.skins[0],jointNodes=skin.joints;
  const bones=jointNodes.map(i=>{const data=doc.nodes[i],b=new THREE.Bone();b.name=data.name;b.position.fromArray(data.translation||[0,0,0]);return b;});
  const byNode=new Map(jointNodes.map((n,i)=>[n,bones[i]]));
@@ -1843,7 +1843,7 @@ function create(THREE,{seated=false,samplePose}={}){
  function footIK(side,{t,groundAt,heading,root,dt,moving,amplitude}){
   const left=side==='left',name=left?'Left':'Right',sign=left?-1:1;
   const hip=joints[name+'UpperLeg'],knee=joints[name+'LowerLeg'],foot=joints[name+'Foot'];
-  const theta=2*Math.PI*t*(amplitude>.7?2.6:amplitude>.4?2.0:1.5)+(left?0:Math.PI);
+  const theta=2*Math.PI*t*(amplitude>.7?3.4:amplitude>.4?2.6:2.0)+(left?0:Math.PI);
   const wave=Math.sin(theta);
   const step=amplitude*(amplitude>.7?1.35:1.07);
   const yaw=Number.isFinite(heading)?heading:root.rotation.y;
@@ -1854,7 +1854,9 @@ function create(THREE,{seated=false,samplePose}={}){
   const reach=Math.acos(clamp((upper*upper+length*length-lower*lower)/(2*upper*length),-1,1));
   const kneeBend=Math.PI-Math.acos(clamp((upper*upper+lower*lower-length*length)/(2*upper*lower),-1,1));
   const hipTilt=Math.atan2(-dz,dy)-reach,gain=1-Math.exp(-Math.min(.1,Math.max(0,dt))*15);
-  hip.rotation.x+=(hipTilt-hip.rotation.x)*gain;knee.rotation.x+=(kneeBend-knee.rotation.x)*gain;
+  hip.rotation.x+=(hipTilt-hip.rotation.x)*gain;
+  const hipYaw=clamp((contact.localX-sign*1.35)*.13,-.32,.32);
+  hip.rotation.y+=(hipYaw-hip.rotation.y)*gain;knee.rotation.x+=(kneeBend-knee.rotation.x)*gain;
   foot.rotation.x+=(-hip.rotation.x-knee.rotation.x+contact.pitch-foot.rotation.x)*gain;
  }
  function update({state='idle',stamp=0,dt=.016,groundAt=null,heading=null}={}){
@@ -1870,6 +1872,18 @@ function create(THREE,{seated=false,samplePose}={}){
    targets.RightUpperArm=[pose.rightArm*.40,-.32-(pose.rightArm||0)*.58,0];
    targets.LeftUpperArm=[pose.leftArm*.4,.32+(pose.leftArm||0)*.58,0];
   }
+  // Wrist alignment lets the existing hand-attached gear follow palms rather
+  // than float independently through fishing, cooking and seated interactions.
+  const grips={
+   fish:{left:[-.26,-.12,.10],right:[-.52,.02,-.13]},
+   hunt:{left:[-.32,.15,.06],right:[-.34,-.08,-.04]},
+   cook:{left:[-.25,.06,.03],right:[-.68,0,-.08]},
+   drive:{left:[-.36,.13,.10],right:[-.36,-.13,-.10]},
+   interact:{left:[-.20,.02,0],right:[-.28,-.02,0]},
+   farm:{left:[-.34,.02,0],right:[-.42,-.02,0]}
+  };
+  const palms=grips[pose.state]||{left:[0,0,0],right:[0,0,0]};
+  targets.LeftHand=palms.left;targets.RightHand=palms.right;
   for(const [key,val] of Object.entries(targets)){
    const b=joints[key];if(!b)continue;
    b.rotation.x+=(val[0]-b.rotation.x)*gain;
@@ -2271,7 +2285,112 @@ return Object.freeze({create});
   }
   return Object.freeze({TARGETS,createGovernor,lookAheadDistance});
 });
-</script><script>/* River Valley Family Adventure: self-contained local-only browser game.
+</script><script>/* River Valley original input-to-motion controller.
+ * A small offline kinematic model: smooth horizontal acceleration/braking,
+ * bounded turn rate, and a ballistic (non-rigid-body) jump on the gameplay rig.
+ * Derived from game-feel principles; not vendored physics-engine code.
+ */
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.ValleyMotion=api;})(typeof globalThis==='object'?globalThis:this,function(){
+ 'use strict';
+ const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+ function create({walkSpeed=19,sprintSpeed=35,driveSpeed=230,worldLimit=2450}={}){
+  if(![walkSpeed,sprintSpeed,driveSpeed,worldLimit].every(v=>Number.isFinite(v)&&v>0)||sprintSpeed<walkSpeed||worldLimit<100)
+   throw new RangeError('Invalid local game locomotion parameters');
+  let vx=0,vz=0,heading=0,air=0,vy=0,jumpHeld=false,landingSeconds=0;
+  function reset({facing=heading}={}){
+   vx=0;vz=0;air=0;vy=0;jumpHeld=false;landingSeconds=0;
+   heading=Number.isFinite(facing)?facing:0;
+  }
+  function step({dt=.016,position={x:0,z:0},inputX=0,inputZ=0,cameraYaw=0,sprint=false,drive=false,jump=false}={}){
+   if(!position||!Number.isFinite(position.x)||!Number.isFinite(position.z))
+    throw new TypeError('Finite player coordinates required');
+   const h=Number.isFinite(dt)?clamp(dt,0,.065):0;
+   const x=Number.isFinite(inputX)?clamp(inputX,-1,1):0,z=Number.isFinite(inputZ)?clamp(inputZ,-1,1):0;
+   const magnitude=Math.hypot(x,z),hasInput=magnitude>.0001;
+   const yaw=Number.isFinite(cameraYaw)?cameraYaw:0;
+   const speed=drive?driveSpeed:sprint?sprintSpeed:walkSpeed;
+   const targetX=hasInput?(x*Math.cos(yaw)+z*Math.sin(yaw))/magnitude*speed:0;
+   const targetZ=hasInput?(z*Math.cos(yaw)-x*Math.sin(yaw))/magnitude*speed:0;
+   const response=hasInput?(drive?3.8:10.5):(drive?7.5:13);
+   const fade=Math.exp(-response*h),fraction=(1-fade)/response;
+   // Analytic first-order velocity integration avoids FPS-dependent acceleration.
+   const deltaX=targetX*h+(vx-targetX)*fraction;
+   const deltaZ=targetZ*h+(vz-targetZ)*fraction;
+   vx=targetX+(vx-targetX)*fade;vz=targetZ+(vz-targetZ)*fade;
+   let nextX=clamp(position.x+deltaX,-worldLimit,worldLimit);
+   let nextZ=clamp(position.z+deltaZ,-worldLimit,worldLimit);
+   if(Math.abs(nextX-(position.x+deltaX))>1e-8)vx=0;
+   if(Math.abs(nextZ-(position.z+deltaZ))>1e-8)vz=0;
+   const actualSpeed=Math.hypot(vx,vz);
+   if(actualSpeed>.6&&h>0){
+    const desired=Math.atan2(-vx,-vz);
+    const shortest=Math.atan2(Math.sin(desired-heading),Math.cos(desired-heading));
+    const maxTurn=(drive?2.2:8)*h;
+    heading+=clamp(shortest,-maxTurn,maxTurn);
+    heading=Math.atan2(Math.sin(heading),Math.cos(heading));
+   }
+   let startedJump=false,landed=false;
+   const nowJump=!!jump&&!drive;
+   if(nowJump&&!jumpHeld&&air<=0&&vy<=0&&h>0){
+    vy=24;air=.000001;startedJump=true;landingSeconds=0;
+   }
+   jumpHeld=!!jump;
+   if(drive){air=0;vy=0;landingSeconds=0;}
+   else if(air>0||vy>0){
+    const nextAir=air+vy*h-.5*65*h*h;
+    vy-=65*h;
+    if(nextAir<=0){
+     air=0;vy=0;landed=true;landingSeconds=.23;
+    }else air=nextAir;
+   }else landingSeconds=Math.max(0,landingSeconds-h);
+   return {x:nextX,z:nextZ,heading,speed:actualSpeed,airborne:air>0,
+    heightOffset:air,verticalSpeed:vy,startedJump,landed,landing:landingSeconds>0};
+  }
+  function snapshot(){return {vx,vz,speed:Math.hypot(vx,vz),heading,heightOffset:air,airborne:air>0,landing:landingSeconds>0};}
+  return Object.freeze({step,reset,snapshot});
+ }
+ // Keep the third-person camera line-of-sight above locally sampled terrain.
+ // This is deterministic clearance only, not a collision test against buildings.
+ function cameraClearance({playerX,playerZ,lookHeight,cameraX,cameraZ,desiredY,groundAt,margin=3,samples=8,maxLift=90}={}){
+  if(![playerX,playerZ,lookHeight,cameraX,cameraZ,desiredY].every(Number.isFinite))
+   throw new TypeError('Camera clearance needs finite world coordinates');
+  if(typeof groundAt!=='function')return desiredY;
+  const count=clamp(Math.floor(Number.isFinite(samples)?samples:8),2,32);
+  const clearance=clamp(Number.isFinite(margin)?margin:3,0,15);
+  const lift=clamp(Number.isFinite(maxLift)?maxLift:90,0,250);
+  let y=desiredY;
+  for(let i=1;i<=count;i++){
+   const t=i/(count+1),x=playerX+(cameraX-playerX)*t,z=playerZ+(cameraZ-playerZ)*t;
+   const h=groundAt(x,z);
+   if(!Number.isFinite(h))continue;
+   // At fraction t, y(t)=lookHeight+(cameraY-lookHeight)*t.
+   y=Math.max(y,lookHeight+(h+clearance-lookHeight)/t);
+  }
+  return Math.min(desiredY+lift,y);
+ }
+ // A cheap ground-contact cue, shared by walking/driving, without expensive
+ // dynamic shadow-map passes or downloaded textures. Not physically cast light.
+ function createContactShadow(THREE){
+  if(typeof document==='undefined'||!THREE?.CanvasTexture)return null;
+  const canvas=document.createElement('canvas');canvas.width=canvas.height=128;
+  const ctx=canvas.getContext('2d');if(!ctx)return null;
+  const gradient=ctx.createRadialGradient(64,64,6,64,64,64);
+  gradient.addColorStop(0,'rgba(0,0,0,.65)');
+  gradient.addColorStop(.42,'rgba(0,0,0,.40)');
+  gradient.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=gradient;ctx.fillRect(0,0,128,128);
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  const material=new THREE.MeshBasicMaterial({map:texture,transparent:true,opacity:.52,depthWrite:false,side:THREE.DoubleSide});
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(10,7),material);
+  mesh.name='River/terrain-contact-soft-shadow';
+  mesh.rotation.x=-Math.PI/2;
+  mesh.renderOrder=1;
+  mesh.userData.dispose=()=>{mesh.geometry.dispose();texture.dispose();material.dispose();};
+  return mesh;
+ }
+ return Object.freeze({create,createContactShadow,cameraClearance});
+});</script><script>/* River Valley Family Adventure: self-contained local-only browser game.
    No network endpoints, no trackers, no external audio, and no repository integration. */
 (function(){
 'use strict';
@@ -2299,6 +2418,10 @@ let referenceEnabled=false,referenceImage=null,referenceDrape=null;
 const activeRoads=REF&&Array.isArray(REF.roadsPacked)&&REF.roadsPacked.length>400?REF.roadsPacked:DATA.roads;
 const activeBuildings=REF&&Array.isArray(REF.buildingsPacked)&&REF.buildingsPacked.length>1000?REF.buildingsPacked:DATA.buildings;
 const STREAM=window.ValleyStreamingPolicy;
+const MOTION=window.ValleyMotion;
+if(!MOTION?.create)throw new Error('Offline motion controller must load before runtime');
+const motion=MOTION.create({worldLimit:C.LIMIT});
+let motionState=motion.snapshot(),heroHeightOffset=0,groundShadow=null;
 const streamingGovernor=STREAM?STREAM.createGovernor({maxTiles:innerWidth<781?110:200,minTiles:innerWidth<781?60:85,targetFPS:30}):null;
 let currentTravelSpeed=0;
 const G=window.THREE;
@@ -2693,6 +2816,7 @@ function buildPlayer(){
  // original local procedural meshes, with no external asset fetch or online rig.
  if(!HERO)throw new Error('Hero character module must load before the world');
  heroController=HERO.create(G);
+ groundShadow=MOTION.createContactShadow(G);if(groundShadow)scene.add(groundShadow);
  avatar=heroController.root;
  avatar.name='Playable River Explorer';
  scene.add(avatar);
@@ -2729,6 +2853,8 @@ function cueHero(state,durationMs=650){
 function chooseHeroState(stamp){
  const preview=heroInspection?heroPreviewPose:null;if(preview)return preview;
  if(save.mode==='drive')return 'drive';
+ if(motionState.airborne)return 'jump';
+ if(motionState.landing)return 'land';
  if(heroOneShot&&stamp<heroOneShotUntil){
   if(heroOneShot==='jump')return stamp<heroOneShotUntil-320?'jump':'land';
   return heroOneShot;
@@ -2740,8 +2866,9 @@ function chooseHeroState(stamp){
  if(activity==='fish')return 'fish';
  if(activity==='hunt')return 'hunt';
  if(activity==='cook')return 'cook';
- if(currentTravelSpeed>=100)return 'sprint';
- if(currentTravelSpeed>=20)return 'walk';
+ if(currentTravelSpeed>=29)return 'sprint';
+ if(currentTravelSpeed>=15)return 'run';
+ if(currentTravelSpeed>=1.4)return 'walk';
  return 'idle';
 }
 function buildHouse(){
@@ -2785,7 +2912,8 @@ function updateVisuals(dt,stamp){
  const mist=weather==='mist';scene.background.set(light<.25?'#13273e':(weather==='rain'?'#839d9d':'#9cb8b3'));
  scene.fog.color.set(light<.25?'#3e5360':mist?'#b1c5bd':'#aec8c1');scene.fog.density=visualEffects==='lite'?.00004:(mist?.0006:weather==='rain'?.00033:.00018);
  ambient.intensity=.6+1.8*light;sunLight.intensity=.25+2.2*light;sunLight.position.set(-200,Math.max(30,380*light),180);renderer.toneMappingExposure=.75+light*.62;
- avatar.position.set(player.x,height(player.x,player.z),player.z);car.position.copy(avatar.position);avatar.rotation.y=playerHeading;car.rotation.y=playerHeading;avatar.visible=save.mode==='walk'||heroInspection;car.visible=save.mode==='drive'&&!heroInspection;
+ avatar.position.set(player.x,height(player.x,player.z)+heroHeightOffset,player.z);car.position.set(player.x,height(player.x,player.z),player.z);
+ if(groundShadow){groundShadow.position.set(player.x,height(player.x,player.z)+.16,player.z);groundShadow.scale.setScalar(save.mode==='drive'?2.3:1);groundShadow.material.opacity=save.mode==='drive'?.40:Math.max(.22,.52-heroHeightOffset*.065);groundShadow.visible=started&&!heroInspection;}avatar.rotation.y=playerHeading;car.rotation.y=playerHeading;avatar.visible=save.mode==='walk'||heroInspection;car.visible=save.mode==='drive'&&!heroInspection;
  heroState=chooseHeroState(stamp);
  if(heroController)heroController.update({state:heroState,stamp,dt,groundAt:height,heading:playerHeading});
  if(driverController)driverController.update({state:'drive',stamp,dt});
@@ -2801,7 +2929,8 @@ function updateVisuals(dt,stamp){
  if(stamp-lastVegetationTime>250){refreshVegetation(false,stamp);lastVegetationTime=stamp;}
  updateBuildingLOD();
  const yaw=heroInspection?playerHeading+Math.PI:cameraYaw,dist=heroInspection?30:cameraDist,dx=Math.sin(yaw)*dist,dz=Math.cos(yaw)*dist;
- const tx=player.x+dx,tz=player.z+dz,ty=heroInspection?height(player.x,player.z)+12:height(tx,tz)+Math.max(23,cameraDist*.34);
+ const tx=player.x+dx,tz=player.z+dz,desiredY=heroInspection?height(player.x,player.z)+12:height(tx,tz)+Math.max(23,cameraDist*.34);
+ const ty=heroInspection?desiredY:MOTION.cameraClearance({playerX:player.x,playerZ:player.z,lookHeight:height(player.x,player.z)+6+heroHeightOffset,cameraX:tx,cameraZ:tz,desiredY,groundAt:height,maxLift:75});
  camera.position.lerp(new G.Vector3(tx,ty,tz),Math.min(1,dt*4.5));
  camera.lookAt(player.x,height(player.x,player.z)+(heroInspection?10.5:6),player.z);
  renderer.render(scene,camera);
@@ -2840,7 +2969,7 @@ function audioChime(){if(save.muted)return;try{
  }catch(err){console.warn('Audio playback blocked',err.message);}}
 function persist(){save.position={x:player.x,z:player.z};save.time=time;save.weather=weather;save.season=season;try{localStorage.setItem(nameKey(slot),JSON.stringify(save));return true;}catch(_){return false;}}
 function readSlot(idx){try{const t=localStorage.getItem(nameKey(idx));return t?C.validateSave(JSON.parse(t)):null;}catch(_){return null;}}
-function applyState(s){save=C.validateSave(s);player={...save.position};time=save.time;weather=save.weather;season=save.season;document.body.classList.toggle('rainy',weather==='rain');document.body.classList.toggle('misty',weather==='mist');$('playerName').value=save.name;needsMap=true;updateHUD();}
+function applyState(s){save=C.validateSave(s);player={...save.position};motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;time=save.time;weather=save.weather;season=save.season;document.body.classList.toggle('rainy',weather==='rain');document.body.classList.toggle('misty',weather==='mist');$('playerName').value=save.name;needsMap=true;updateHUD();}
 function play(resume){slot=Number($('startSlot').value)||0;$('slot').value=String(slot);const loaded=resume?readSlot(slot):null;
  applyState(loaded||C.freshSave($('playerName').value));started=true;$('start').classList.add('hidden');
  if(!renderer){view='2d';$('quality').value='2d';toast('2D Atlas adventure loaded. 3D requires WebGL support.');}
@@ -2860,11 +2989,11 @@ function locateNearest(){let best=null,bd=Infinity;for(const s of C.STOPS){let d
 function checkNearby(){near=locateNearest();const pane=$('context');if(!started||!near||touring||activity){pane.style.display='none';return;}
  pane.style.display='block';$('nearName').textContent=near.emoji+' '+near.title;$('nearDetail').textContent=near.fact;
  $('interactBtn').textContent=save.completed.includes(near.id)?(near.id==='farm'?'🌱 Tend the family farm':near.id==='oak'?(save.homestead?'🏠 Visit your cottage':'🏠 Build your cottage (250 🪙)'):'✓ Memory in your book'):'Collect this memory ✨';}
-function teleport(id){const s=C.STOPS.find(s=>s.id===id);if(!s)return;player={x:s.x+60,z:s.z+44};toast(`📍 Fast traveled near ${s.title}`);persist();checkNearby();}
+function teleport(id){const s=C.STOPS.find(s=>s.id===id);if(!s)return;motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;player={x:s.x+60,z:s.z+44};toast(`📍 Fast traveled near ${s.title}`);persist();checkNearby();}
 function selectStop(id,fast=false){selected=id;const s=C.STOPS.find(s=>s.id===id);if(!s)return;
  if(fast)teleport(id);else toast(`${s.emoji} ${s.task} — Tap the stop again to fast travel.`);
  updateHUD();}
-function setMode(mode){save.mode=mode;updateHUD();persist();toast(mode==='drive'?'🚗 Family road trip mode':'🚶 Exploring on foot');}
+function setMode(mode){save.mode=mode;motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;updateHUD();persist();toast(mode==='drive'?'🚗 Family road trip mode':'🚶 Exploring on foot');}
 function toggleMap(){if(worldActive)closeWorldActivity();view=view==='2d'&&renderer?'3d':'2d';$('quality').value=view;resize();updateHUD();toast(view==='2d'?'🗺 Illustrated map view':'🌄 3D countryside view');}
 function setWeather(w){weather=w;save.weather=w;document.body.classList.toggle('rainy',w==='rain');document.body.classList.toggle('misty',w==='mist');persist();updateHUD();}
 function setSeason(s){season=s;save.season=s;needsMap=true;persist();updateHUD();for(const mesh of terrainMeshes){const po=mesh.geometry.attributes.position,color=mesh.geometry.attributes.color,tmp=new G.Color();for(let i=0;i<po.count;i++){let rgb=themeHeight(po.getY(i));tmp.setRGB(rgb[0]/255,rgb[1]/255,rgb[2]/255,G.SRGBColorSpace);color.setXYZ(i,tmp.r,tmp.g,tmp.b);}color.needsUpdate=true;}
@@ -2883,7 +3012,7 @@ function openWorldActivity(id){
  closeActivity();$('farmPanel').classList.remove('open');$('panel').classList.remove('open');closeCinema();
  if(save.mode==='drive'){save.mode='walk';updateHUD();}
  const loc=WORLD.SITES[id];worldActive=id;worldHuntRound=null;worldFishRound=null;worldAim=.5;worldStatus='';
- const approach=WORLD.approachSite(id,cameraYaw,34);player.x=approach.x;player.z=approach.z;playerHeading=cameraYaw;cameraDist=Math.min(cameraDist,43);
+ const approach=WORLD.approachSite(id,cameraYaw,34);motion.reset({facing:cameraYaw});heroHeightOffset=0;motionState=motion.snapshot();player.x=approach.x;player.z=approach.z;playerHeading=cameraYaw;cameraDist=Math.min(cameraDist,43);
  $('worldAim').value='50';$('worldActivityHud').hidden=false;
  showWorldActivity();persist();toast(`🌍 ${loc.title}: play right inside the 3D world.`);
 }
@@ -3011,10 +3140,10 @@ function screenshot(){if(!started)return;
  try{if(renderer&&view==='3d')renderer.render(scene,camera);else update2d();const a=document.createElement('a');a.download=`River-Valley-Family-${Date.now()}.png`;a.href=(view==='2d'||!renderer?atlas:canvas).toDataURL('image/png');document.body.appendChild(a);a.click();a.remove();toast('📷 Photo saved to your device (if supported by your browser).');}
  catch(err){toast('Photo unavailable in this browser. Try your device screenshot controls.');}
 }
-function startTour(){if(!started)return;if(touring){stopTour();return;}closeWorldActivity();touring=true;tourAt=0;tourTimer=0;tourFrom={...player};
+function startTour(){if(!started)return;if(touring){stopTour();return;}closeWorldActivity();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;touring=true;tourAt=0;tourTimer=0;tourFrom={...player};
  if(G&&G.CatmullRomCurve3){const points=[new G.Vector3(player.x,0,player.z),...C.STOPS.map(st=>new G.Vector3(st.x,0,st.z))];tourCurve=new G.CatmullRomCurve3(points,false,'centripetal',.25);}else tourCurve=null;
  $('tourBtn').classList.add('selected');toast('🎬 Smooth scenic fly-through started. Tap Tour to stop.');}
-function stopTour(){touring=false;$('tourBtn').classList.remove('selected');}
+function stopTour(){touring=false;motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;$('tourBtn').classList.remove('selected');}
 function stepTour(dt){if(!touring)return;
  if(tourCurve){tourTimer+=dt;const t=C.clamp(tourTimer/34,0,1),p=tourCurve.getPoint(t),tangent=tourCurve.getTangent(t);
   player.x=p.x;player.z=p.z;cameraYaw=Math.atan2(-tangent.x,-tangent.z);cameraDist=105;
@@ -3027,20 +3156,17 @@ function stepTour(dt){if(!touring)return;
 }
 function update(dt,stamp){
  if(!started)return;
- if(heroInspection){currentTravelSpeed=0;return;}
- if(activity)return;
+ if(heroInspection||activity){motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;currentTravelSpeed=0;return;}
  currentTravelSpeed=0;
- if(touring)stepTour(dt);else{
+ if(touring){motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;stepTour(dt);}else{
   let x=0,z=0;
   if(keys.has('w')||keys.has('arrowup')||keys.has('up'))z-=1;
   if(keys.has('s')||keys.has('arrowdown')||keys.has('down'))z+=1;
   if(keys.has('a')||keys.has('arrowleft')||keys.has('left'))x-=1;
   if(keys.has('d')||keys.has('arrowright')||keys.has('right'))x+=1;
-  if(x||z){const length=Math.hypot(x,z),speed=save.mode==='drive'?230:(keys.has('shift')?105:72);currentTravelSpeed=speed;
-   const wx=(x*Math.cos(cameraYaw)+z*Math.sin(cameraYaw))/length,wz=(z*Math.cos(cameraYaw)-x*Math.sin(cameraYaw))/length;
-   player.x+=wx*speed*dt;player.z+=wz*speed*dt;playerHeading=Math.atan2(-wx,-wz);
-   const p=C.clampPosition(player);player.x=p.x;player.z=p.z;
-  }
+  motionState=motion.step({dt,position:player,inputX:x,inputZ:z,cameraYaw,sprint:keys.has('shift'),drive:save.mode==='drive',jump:keys.has('j')&&save.mode==='walk'&&!worldActive});
+  player.x=motionState.x;player.z=motionState.z;playerHeading=motionState.heading;
+  currentTravelSpeed=motionState.speed;heroHeightOffset=motionState.heightOffset;
  }
  time=(time+dt*.003)%24;
  if(stamp-lastUI>280){checkNearby();updateWorldHUD();updateHUD();mapDraw(mapCtx,mapCanvas.width,mapCanvas.height,false);if($('farmPanel').classList.contains('open'))renderFarm();lastUI=stamp;}
@@ -3148,9 +3274,9 @@ function bindUI(){
   if(k==='v'){heroInspection?closeHeroStudio():openHeroStudio();return;}
   if(heroInspection){if(k==='escape')closeHeroStudio();return;}
   if(k==='e'||k===' '){if(!activity&&!worldPrimaryAction())interact();}
-  if(k==='j'&&save.mode==='walk'&&!worldActive&&!activity)cueHero('jump',750);
+  // J / mobile JUMP is sampled in the kinematic step and never auto-repeats.
  if(k==='h')openWorldActivity('hunt');if(k==='f')openWorldActivity('fish');if(k==='g')openWorldActivity('farm');if(k==='k')openWorldActivity('cook');if(k==='m'&&!activity&&!backdropOpen)toggleMap();if(k==='p')screenshot();if(k==='c'&&!activity){$('cinemaPanel').classList.contains('open')?closeCinema():openCinema();}if(k==='escape'){if(worldActive)closeWorldActivity();else if(backdropOpen)closeBackdrop();else if(activity)closeActivity();else if($('cinemaPanel').classList.contains('open'))closeCinema();else $('panel').classList.toggle('open');}
- });document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>keys.clear());
+ });document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;});
  canvas.addEventListener('pointerdown',e=>{pointerDown=true;pointerX=e.clientX;pointerY=e.clientY;});
  window.addEventListener('pointerup',()=>pointerDown=false);
  canvas.addEventListener('pointermove',e=>{if(!pointerDown||!renderer||view==='2d')return;cameraYaw+=(e.clientX-pointerX)*.005;cameraDist=C.clamp(cameraDist+(e.clientY-pointerY)*.2,42,310);pointerX=e.clientX;pointerY=e.clientY;});
@@ -3174,7 +3300,7 @@ function init(){
  if(!tryRenderer()){view='2d';$('quality').value='2d';}else view='3d';
  resize();updateHUD();mapDraw(mapCtx,mapCanvas.width,mapCanvas.height,false);
  requestAnimationFrame(loop);
- window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,heroPreviewReady:!!heroPreviewStage,heroInspection,heroPreviewPose,heroState,heroModel:!!heroController,heroProfile:HERO?.PROFILE?.id||null,heroSkinned:!!heroController?.skinned,heroTexturedMeshes:heroController?.meshes?.filter(m=>!!m.material?.map).length||0,heroFootContacts:heroController?.footContacts||null,heroBoneCount:heroController?.skinned?Object.keys(heroController.joints).length:0,heroClipCount:heroController?.clips?.length||0,heroParts:heroController?Object.keys(heroController.joints).length:0,terrainTransition:terrainTransition?.status()||null,vegetation:biomeStreamer?.snapshot()||null,facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,imageryYear:REF?.metadata?.downtownTileYear||null},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
+ window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,heroPreviewReady:!!heroPreviewStage,heroInspection,heroPreviewPose,heroState,heroModel:!!heroController,heroProfile:HERO?.PROFILE?.id||null,heroSkinned:!!heroController?.skinned,heroHeightOffset,groundShadowReady:!!groundShadow,motionState:motion.snapshot(),heroTexturedMeshes:heroController?.meshes?.filter(m=>!!m.material?.map).length||0,heroFootContacts:heroController?.footContacts||null,heroBoneCount:heroController?.skinned?Object.keys(heroController.joints).length:0,heroClipCount:heroController?.clips?.length||0,heroParts:heroController?Object.keys(heroController.joints).length:0,terrainTransition:terrainTransition?.status()||null,vegetation:biomeStreamer?.snapshot()||null,facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,imageryYear:REF?.metadata?.downtownTileYear||null},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
 }
 init();
 })();
@@ -3184,7 +3310,7 @@ if('serviceWorker' in navigator && ['https:','http:'].includes(location.protocol
   navigator.serviceWorker.register('./game-sw.js',{scope:'./'}).then(async reg=>{
     try {
       await navigator.serviceWorker.ready;
-      const cache=await caches.open('rva-game-1.9.4');
+      const cache=await caches.open('rva-game-1.9.5');
       const scoped=new URL('./game.html',location.href).pathname;
       const saved=await cache.match(scoped);
       const el=document.getElementById('offlineStatus');
