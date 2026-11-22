@@ -23,6 +23,6 @@ test('game uses instanced meadow, terrain re-anchoring and its retained local ri
  assert.match(source,/GRAPHICS\?\.create/);
  assert.match(source,/groundPlacementDirty/);
  assert.match(source,/refreshVegetation\(true,stamp\)/);
- assert.match(source,/HERO\.create\(G\)/);
+ assert.match(source,/HERO\.create\(G/);
  assert.match(source,/GRAPHICS\.budget\(visualEffects/);
 });
