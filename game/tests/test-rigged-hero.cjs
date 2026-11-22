@@ -15,8 +15,8 @@ test('original self-contained GLB is independently reproducible with real skin, 
  assert.equal(manifest.usesExternalResources,false);
  assert.equal(doc.asset.version,'2.0');
  assert.equal(doc.skins.length,1);
- assert.equal(doc.skins[0].joints.length,17);
- assert.equal(doc.animations.length,9);
+ assert.equal(doc.skins[0].joints.length,27);
+ assert.equal(doc.animations.length,13);
  assert.ok(doc.materials.length>=14);
  assert.ok(doc.materials.some(m=>m.name==='River lens'&&m.alphaMode==='BLEND'));
  assert.ok(doc.meshes[0].primitives.length>=12);
@@ -40,7 +40,7 @@ test('original self-contained GLB is independently reproducible with real skin, 
    let total=0;
    for(let j=0;j<4;j++){
     const w=weights.values[i*4+j];total+=w;
-    if(w>0)assert.ok(joints.values[i*4+j]<17);
+    if(w>0)assert.ok(joints.values[i*4+j]<27);
    }
    assert.ok(Math.abs(total-1)<.00002,'invalid vertex weight '+i+': '+total);
   }
@@ -58,8 +58,12 @@ test('runtime decodes SkinnedMeshes and drives actual shoulder, knee and hand at
   const hero=Rigged.create(THREE,{samplePose:Pose.samplePose});
   assert.equal(hero.skinned,true);
   assert.equal(hero.meshes.length,doc.meshes[0].primitives.length);
-  assert.ok(hero.meshes.every(mesh=>mesh.isSkinnedMesh&&mesh.skeleton.bones.length===17));
+  assert.ok(hero.meshes.every(mesh=>mesh.isSkinnedMesh&&mesh.skeleton.bones.length===27));
   assert.ok(hero.clips.includes('FishingCast'));
+  assert.ok(hero.clips.includes('Jump'));
+  assert.equal(hero.clipMixerReady,true);
+  for(const side of ['Left','Right'])for(const digit of ['Thumb','Index','Middle','Ring','Pinky'])
+   assert.ok(hero.joints[side+digit],side+digit);
   assert.ok('left' in hero.footContacts && 'right' in hero.footContacts);
   assert.ok(hero.meshes.every(mesh=>mesh.geometry.attributes.uv?.count===mesh.geometry.attributes.position.count));
   const s=hero.update({state:'walk',stamp:950,dt:.065,groundAt:(x,z)=>.25*Math.sin(x/10)+.1*Math.cos(z/10),heading:.33});
@@ -70,6 +74,7 @@ test('runtime decodes SkinnedMeshes and drives actual shoulder, knee and hand at
   for(const [state,prop] of [['fish','rod'],['cook','spoon'],['hunt','binoculars']]){
    hero.update({state,stamp:1500,dt:.045});
    assert.ok(hero.props[prop].visible,state);
+   assert.ok(hero.activeClip,'GLB animation mixer inactive');
    assert.equal(hero.props[prop].parent,hero.joints.RightHand);
    assert.ok(Number.isFinite(hero.joints.RightHand.rotation.x));
    assert.ok(Number.isFinite(hero.joints.LeftHand.rotation.x));

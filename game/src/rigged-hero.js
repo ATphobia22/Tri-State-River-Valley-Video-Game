@@ -74,6 +74,25 @@ function create(THREE,{seated=false,samplePose}={}){
   const mesh=new THREE.SkinnedMesh(geo,materials[prim.material]);mesh.name='River/PBR/'+doc.materials[prim.material].name;
   mesh.bind(skeleton);mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;scene.add(mesh);meshes.push(mesh);
  }
+ // Play the GLB's original authored QuaternionKeyframeTracks before
+ // procedural IK and hands; fade transitions instead of abruptly swapping poses.
+ const clipActions=new Map(),mixer=typeof THREE.AnimationMixer==='function'?new THREE.AnimationMixer(scene):null;
+ if(mixer)for(const animation of doc.animations||[]){
+  const tracks=[];
+  for(const channel of animation.channels||[]){
+   if(channel.target?.path!=='rotation')continue;
+   const jointName=doc.nodes[channel.target.node]?.name,bone=joints[jointName];
+   if(!bone)continue;
+   const sampler=animation.samplers[channel.sampler];
+   const times=source.dataAccessor(parsed,sampler.input),quats=source.dataAccessor(parsed,sampler.output);
+   if(times.channels!==1||quats.channels!==4||times.count!==quats.count)continue;
+   tracks.push(new THREE.QuaternionKeyframeTrack(jointName+'.quaternion',times.values,quats.values));
+  }
+  if(tracks.length){const clip=new THREE.AnimationClip(animation.name,1,tracks);clipActions.set(animation.name,mixer.clipAction(clip));}
+ }
+ const stateToClip={idle:'Idle',walk:'Walk',run:'Run',sprint:'Sprint',jump:'Jump',land:'Land',farm:'Farm',
+  fish:'FishingCast',cook:'Cook',hunt:'Track',drive:'Drive',interact:'Interact'};
+ let activeClip=null,activeClipName=null;
  const propMat=materials.find(m=>m.name==='River strap')||new THREE.MeshStandardMaterial({color:0x806344,roughness:.88});
  const metal=materials.find(m=>m.name==='River metal')||new THREE.MeshStandardMaterial({color:0x65706b,metalness:.7});
  const dark=materials.find(m=>m.name==='River gaiter')||propMat;
@@ -105,6 +124,15 @@ function create(THREE,{seated=false,samplePose}={}){
  }
  function update({state='idle',stamp=0,dt=.016,groundAt=null,heading=null}={}){
   const t=Number.isFinite(stamp)?stamp/1000:0,pose=samplePose(state,t),gain=1-Math.exp(-clamp(dt,0,.15)*11);
+  if(mixer){
+   const name=stateToClip[pose.state]||'Idle',next=clipActions.get(name);
+   if(next&&activeClip!==next){
+    if(activeClip)activeClip.fadeOut(.16);
+    next.reset().setEffectiveWeight(1).fadeIn(.16).play();
+    activeClip=next;activeClipName=name;
+   }
+   mixer.update(clamp(dt,0,.065));
+  }
   const moving=['walk','run','sprint'].includes(pose.state),amp=pose.state==='walk'?.36:pose.state==='run'?.66:pose.state==='sprint'?.92:0;
   const targets={
    Spine:[pose.torso*.28,0,0],Chest:[pose.torso*.72,0,0],Neck:[pose.head||0,0,0],Head:[0,0,pose.headTurn||0],
@@ -128,6 +156,15 @@ function create(THREE,{seated=false,samplePose}={}){
   };
   const palms=grips[pose.state]||{left:[0,0,0],right:[0,0,0]};
   targets.LeftHand=palms.left;targets.RightHand=palms.right;
+  // Ten authored skinned fingers curl around grips while other hands stay relaxed.
+  const gripAmount={fish:.68,hunt:.58,cook:.55,drive:.48,interact:.4,farm:.44}[pose.state]??.11;
+  for(const side of ['Left','Right']){
+   for(const [index,digit] of ['Thumb','Index','Middle','Ring','Pinky'].entries()){
+    const finger=joints[side+digit];if(!finger)continue;
+    const amount=gripAmount*(index===0?.65:index===1?.85:1);
+    finger.rotation.x+=((side==='Left'?-1:1)*amount-finger.rotation.x)*gain;
+   }
+  }
   for(const [key,val] of Object.entries(targets)){
    const b=joints[key];if(!b)continue;
    b.rotation.x+=(val[0]-b.rotation.x)*gain;
@@ -150,8 +187,8 @@ function create(THREE,{seated=false,samplePose}={}){
   currentState=pose.state;lastPose=pose;return {state:currentState,pose};
  }
  if(seated)update({state:'drive',stamp:100,dt:.5});
- function dispose(){footContacts.reset();for(const m of meshes){m.geometry.dispose();m.parent?.remove(m)}for(const g of propsGeo)g.dispose();for(const m of materials){m.map?.dispose();m.dispose();}for(const p of Object.values(props))p.parent?.remove(p);scene.clear();}
- return {root:scene,joints,props,meshes,skinned:true,get footContacts(){return footContacts.snapshot()},clips:(doc.animations||[]).map(a=>a.name),update,dispose,features:['curly-hair','glasses','skull-gaiter','black-shirt','gold-chain','cargo-pants','adventure-boots','backpack'],get state(){return currentState},get pose(){return lastPose}};
+ function dispose(){if(mixer)mixer.stopAllAction();footContacts.reset();for(const m of meshes){m.geometry.dispose();m.parent?.remove(m)}for(const g of propsGeo)g.dispose();for(const m of materials){m.map?.dispose();m.dispose();}for(const p of Object.values(props))p.parent?.remove(p);scene.clear();}
+ return {root:scene,joints,props,meshes,skinned:true,get activeClip(){return activeClipName},get clipMixerReady(){return !!mixer&&clipActions.size>=9},get footContacts(){return footContacts.snapshot()},clips:(doc.animations||[]).map(a=>a.name),update,dispose,features:['curly-hair','glasses','skull-gaiter','black-shirt','gold-chain','cargo-pants','adventure-boots','backpack'],get state(){return currentState},get pose(){return lastPose}};
 }
 return Object.freeze({create});
 });

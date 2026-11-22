@@ -44,6 +44,17 @@
     ctx.fillStyle='rgba(255,255,255,.16)';ctx.fillRect(0,y+2,256,2);
     ctx.fillStyle='rgba(65,72,60,'+(Math.abs(variation)*.011)+')';ctx.fillRect(0,y+6,256,4);
    }
+  }else if(type==='roof'){
+   ctx.fillStyle=base;ctx.fillRect(0,0,256,256);
+   for(let row=0;row<16;row++){
+    const y=row*16;
+    for(let col=-1;col<10;col++){
+     const x=col*32+(row%2)*16,v=hueVariation(col,row,seed);
+     ctx.fillStyle='rgba(10,16,18,.17)';ctx.fillRect(x+1,y+1,30,14);
+     ctx.fillStyle='rgba(255,246,220,'+(.045+Math.abs(v)*.005)+')';ctx.fillRect(x+3,y+2,26,2);
+     ctx.fillStyle='rgba(9,12,14,.11)';ctx.fillRect(x+2,y+14,28,2);
+    }
+   }
   }else if(type==='limestone'){
    ctx.fillStyle='#b5aaa0';ctx.fillRect(0,0,256,256);
    for(let row=0;row<8;row++){
@@ -73,8 +84,9 @@
    return new THREE.MeshStandardMaterial({color:0xffffff,map:texture,roughness:.88,metalness:0,
      side:THREE.DoubleSide});
   });
-  const roofs=[0x645c58,0x7b5040,0x66706b].map(color=>
-   new THREE.MeshStandardMaterial({color,roughness:.92,metalness:0,side:THREE.DoubleSide}));
+  const roofs=['#615b59','#75544a','#626d69'].map((color,i)=>
+   new THREE.MeshStandardMaterial({color:0xffffff,map:createTexture(THREE,'roof',color,i+14),
+    roughness:.94,metalness:0,side:THREE.DoubleSide}));
   const glass=new THREE.MeshStandardMaterial({color:0x426679,roughness:.19,metalness:.17,
    emissive:0x0a1821,emissiveIntensity:.12,side:THREE.DoubleSide});
   const trim=new THREE.MeshStandardMaterial({color:0xd9c7a8,roughness:.79,side:THREE.DoubleSide});
