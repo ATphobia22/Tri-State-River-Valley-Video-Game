@@ -2,7 +2,7 @@
 
 [**Play the game**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Repository overview](../README.md) · [Offline HTML download](River_Valley_Family_Adventure_OFFLINE.html) · [GitHub Actions](../.github/workflows/game-ci.yml)
 
-**Version 1.10.0** · Offline-first browser game · Original Three.js/WebGL world · Three local save slots · No account or server required.
+**Version 1.10.1** · Offline-first browser game · Original Three.js/WebGL world · Three local save slots · No account or server required.
 
 This `game/` directory contains the **playable family adventure**. It is separate from the Tri-State Systems Manager digital twin. The official geographical references are used to orient the fictional game; game terrain, fictional towns, models, river effects and heights are not survey or regulatory products.
 
@@ -91,6 +91,7 @@ The offline test **really disables networking** after a cache warm-up, navigates
 
 | Release | Changes | Implementation record |
 | --- | --- | --- |
+| **v1.10.1** | Batched building windows and terrain seam skirts, staged LOD sampling, degenerate-triangle cleanup and per-scene frame diagnostics | [Mobile performance/rig evidence](docs/MOBILE_PERFORMANCE_AND_RIG_v1.10.1.md) |
 | **v1.10.0** | Posey County Atlas, four regional vignettes, Scout behavior, hunting/fishing/cooking/farming upgrades and painted terrain | [County expansion](docs/POSEY_COUNTY_EXPANSION_v1.10.md) |
 | **v1.9.7** | Polygon-aware footprint collision and visual wheel suspension | [Physics/character evidence](docs/PHYSICS_CHARACTER_HARDWARE_v1.9.7.md) |
 | **v1.9.6** | 27-joint hands, 13 animation clips, procedural environment, biome audio and FPS export | [World refinement](docs/WORLD_REFINEMENT_v1.9.6.md) |
