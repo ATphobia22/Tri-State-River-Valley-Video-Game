@@ -1,3 +1,7 @@
+# v1.10.0 — Explore Posey County, New Adventures and Scout
+
+The offline game now includes a **source-backed Posey County atlas** using the official Indiana GIO boundary and five U.S. Census town reference centers. Four distinct, intentionally **illustrative** regional 3D destinations can be visited, with local save tracking. Scout now follows, sits, fetches, earns limited bond rewards and gives non-graphic hunting clues. Gameplay adds three modeled wildlife species, moving hunting targets, touch-friendlier fishing, expanded farms and recipes, painted steel/board siding, asphalt and grass materials, and instanced wildflowers. [Read the exact geographical scope, data provenance and release gates](docs/POSEY_COUNTY_EXPANSION_v1.10.md). The existing detailed 3D runtime is still the local Mount Vernon stage, not all of Posey County at surveyed 1:1 resolution.
+
 # v1.9.7 — Footprint collision and suspension
 
 The playable world now checks the avatar's horizontal capsule disc against concave building polygon footprints, preserves step/grade traversal, and samples four wheels for damped vehicle pitch and roll. See [physics boundaries and iPhone acceptance](docs/PHYSICS_CHARACTER_HARDWARE_v1.9.7.md). It remains a deterministic offline 2.5D collision/visual vehicle system, not a certified full rigid-body engine.
