@@ -20,7 +20,7 @@ test('deployed v1.12 app keeps its offline worker and version synchronized',()=>
 });
 test('game uses instanced meadow, terrain re-anchoring and its retained local rig',()=>{
  const source=read('src/game.js');
- assert.match(source,/GRAPHICS\.create/);
+ assert.match(source,/GRAPHICS\?\.create/);
  assert.match(source,/groundPlacementDirty/);
  assert.match(source,/refreshVegetation\(true,stamp\)/);
  assert.match(source,/HERO\.create\(G\)/);
