@@ -725,8 +725,8 @@ function worldAction(action){
  if(action==='cook'||action.startsWith('recipe'))cueHero('cook',1400);
  const now=Date.now();let r;
  if(worldActive==='hunt'){
-  if(action==='track'){const list=['deer','turkey','rabbit'];worldHuntRound={target:.18+rand()*.64,kind:list[Math.floor(rand()*list.length)],expiresAt:now+12000};worldStatus='Track the moving wildlife target. Slide the gold marker to align, then take your shot.';}
-  if(action==='shoot'&&worldHuntRound){r=C.huntShot(save,worldAim,worldHuntRound.target,now,worldHuntRound.expiresAt);save=r.save;worldStatus=r.result==='hit'?'🎯 Wildlife challenge complete! +1 virtual game · 35 coins · 60 XP.':r.result==='missed'?'Clean miss. Try tracking again.':'The wildlife moved on. Track again.';worldHuntRound=null;if(r.result==='hit')audioChime();}
+  if(action==='track'){const list=['deer','turkey','rabbit'];const baseTarget=.18+rand()*.64;worldHuntRound={target:baseTarget,baseTarget,startedAt:now,kind:list[Math.floor(rand()*list.length)],expiresAt:now+12000};worldStatus='Track the moving wildlife target. Slide the gold marker to align, then take your shot.';}
+  if(action==='shoot'&&worldHuntRound){worldHuntRound.target=WORLD.huntTargetAt(worldHuntRound,now);r=C.huntShot(save,worldAim,worldHuntRound.target,now,worldHuntRound.expiresAt);save=r.save;worldStatus=r.result==='hit'?'🎯 Wildlife challenge complete! +1 virtual game · 35 coins · 60 XP.':r.result==='missed'?'Clean miss. Try tracking again.':'The wildlife moved on. Track again.';worldHuntRound=null;if(r.result==='hit')audioChime();}
  }else if(worldActive==='fish'){
   if(action==='cast'){const kinds=['bluegill','channelCatfish','bass'];worldFishRound={biteAt:now+1550+Math.floor(rand()*2400),kind:kinds[Math.floor(rand()*3)]};worldStatus='Line in the water! Watch the floating bobber for a bite.';}
   if(action==='reel'&&worldFishRound){r=C.fishReel(save,worldFishRound.biteAt,now,worldFishRound.kind);save=r.save;worldStatus=r.result==='caught'?`🐟 Caught ${worldFishRound.kind}! +1 fish · 30 coins · 55 XP.`:r.result==='early'?'Too early. Let the bobber dip.':'The fish escaped. Cast again.';worldFishRound=null;if(r.result==='caught')audioChime();}
@@ -750,7 +750,7 @@ function showWorldActivity(){
  const id=worldActive;if(!id)return;const place=WORLD.SITES[id];$('worldActivityTitle').textContent=place.label+' · '+place.title;
  const pantry=`Pantry: 🌽 ${save.inventory.corn} · 🐟 ${save.inventory.fish} · 🦌 ${save.inventory.game} · 🍲 ${save.inventory.meals}`;
  let text='',actions=[],aim=id==='hunt'&&!!worldHuntRound;
- if(id==='hunt'){text='Watch a fully modeled low-poly animal in the clearing. Align the 3D gold targeting ring with the animal; no gore.';actions=worldHuntRound?[['shoot','🎯 Take shot']]:[['track','🔭 Track wildlife']];}
+ if(id==='hunt'){text='Track deer, turkey, or rabbit models moving through the clearing. Align the 3D gold targeting ring with the animal; no gore.';actions=worldHuntRound?[['shoot','🎯 Take shot']]:[['track','🔭 Track wildlife']];}
  if(id==='fish'){text='Cast directly from the 3D fishing pier. Watch the animated river bobber; reel when the bite flashes.';actions=worldFishRound?[['reel','🎣 Reel now!']]:[['cast','🎣 Cast line']];}
  if(id==='farm'){const pick=WORLD.farmPick(save,Date.now());text='Work the nine actual farm plots. Growing corn appears in 3D; harvest is saved to your pantry.';actions=[['plot',pick.action==='harvest'?'🌽 Harvest ready crop':pick.action==='plant'?'🌱 Plant next plot (15 coins)':'🌿 Check crops'],['water','💧 Water (20 coins)']];}
  if(id==='cook'){text='Cook beside the animated campfire in your world. Gather fish and corn first; meals are saved.';actions=Object.entries(C.RECIPES).map(([id,r])=>[id,r.title+' · '+r.coins+' coins',!Object.entries(r.ingredients).every(([k,n])=>save.inventory[k]>=n)]);}
@@ -759,9 +759,12 @@ function showWorldActivity(){
  $('worldActivityMeter').textContent=worldStatus?worldStatus+' · '+pantry:pantry;
 }
 function updateWorldHUD(){if(!worldActive)return;const now=Date.now();const label=$('worldActivityMeter');
- if(worldHuntRound){const left=Math.max(0,(worldHuntRound.expiresAt-now)/1000);label.textContent=`Wildlife target · ${left.toFixed(1)}s left · Aim ${(worldAim*100).toFixed(0)}%`;
+ if(worldHuntRound){worldHuntRound.target=WORLD.huntTargetAt(worldHuntRound,now);
+  const left=Math.max(0,(worldHuntRound.expiresAt-now)/1000);
+  const hint=save.pet?COMPANION.hint(worldAim,worldHuntRound.target):null;
+  label.textContent=`Wildlife tracking · ${left.toFixed(1)}s left · Aim ${(worldAim*100).toFixed(0)}% · ${hint==='close'?'🐕 Scout: near the trail':hint==='left'?'🐕 Scout: look left':hint==='right'?'🐕 Scout: look right':'Track by eye'}`;
  if(left===0){worldHuntRound=null;worldStatus='Time elapsed. The animal moved away.';showWorldActivity();}}
- else if(worldFishRound){label.textContent=now<worldFishRound.biteAt?'🌊 Watch the 3D bobber…':now<=worldFishRound.biteAt+700?'⚡ BITE! REEL NOW!':'💨 Fish gone. Reel to reset, or cast again.';}
+ else if(worldFishRound){label.textContent=now<worldFishRound.biteAt?'🌊 Watch the 3D bobber…':now<=worldFishRound.biteAt+1100?'⚡ BITE! REEL NOW!':'💨 Fish gone. Reel to reset, or cast again.';}
 }
 function renderFarm(){
  const now=Date.now();$('farmGrid').innerHTML=save.farmPlots.map((t,i)=>{
@@ -787,7 +790,7 @@ function renderActivity(){
   else $('trackAnimal').onclick=()=>{const species=['🦌 Deer','🦃 Turkey','🐇 Rabbit'];huntRound={target:.18+rand()*.64,expiresAt:Date.now()+8000,kind:species[Math.floor(rand()*3)]};renderActivity();activityStatus('Find the animal and line up the marker.');};
  }else if(activity==='fish'){
   const active=!!fishRound;
-  d.innerHTML=`<p>Cast into an imaginary Ohio River backwater. Wait until the bobber shows a bite, then tap REEL! within seven-tenths of a second. Try bluegill, channel catfish or bass.</p>
+  d.innerHTML=`<p>Cast into an imaginary Ohio River backwater. Wait until the bobber shows a bite, then tap REEL! within about one second. Try bluegill, channel catfish or bass.</p>
   <canvas class="activityCanvas" id="activityScene" width="960" height="320" aria-label="Animated river fishing scene"></canvas><div class="biteMessage" id="biteMessage">${active?'Watch the float...':'A quiet morning on the river.'}</div>
   <button class="actionPrimary" id="${active?'reelBtn':'castBtn'}">${active?'🎣 REEL!':'🎣 Cast your line'}</button>${pantry}`;
   if(active){$('reelBtn').onclick=()=>{const a=C.fishReel(save,fishRound.biteAt,Date.now(),fishRound.kind);const kind=fishRound.kind;save=a.save;fishRound=null;renderActivity();activityStatus(a.result==='caught'?`🐟 Landed a ${kind==='channelCatfish'?'channel catfish':kind}! +1 fish, +30 coins, +55 XP.`:a.result==='early'?'Too early! The bobber was still quiet.':'Too late! The fish swam away.');if(a.result==='caught')audioChime();updateHUD();persist();};}
@@ -805,7 +808,7 @@ function renderActivity(){
 function openActivity(id){if(!started){toast('Start your adventure first.');return;}$('farmPanel').classList.remove('open');$('panel').classList.remove('open');activity=id;huntRound=null;fishRound=null;$('activityPanel').classList.add('open');renderActivity();
  if(activityInterval)clearInterval(activityInterval);activityInterval=setInterval(()=>{
  if(activity==='hunt'&&huntRound){const secs=Math.max(0,(huntRound.expiresAt-Date.now())/1000);const timer=$('roundTimer');if(timer)timer.textContent=`Time left: ${secs.toFixed(1)} seconds`;if(secs===0){huntRound=null;renderActivity();activityStatus('The animal has moved on. Track again.');}}
- if(activity==='fish'&&fishRound){const t=Date.now(),msg=$('biteMessage');if(msg){msg.textContent=t<fishRound.biteAt?'🌊 Waiting for a bite...':t<=fishRound.biteAt+700?'⚡ BITE! REEL NOW!':'💨 The fish has gone — try another cast.';msg.classList.toggle('bite',t>=fishRound.biteAt&&t<=fishRound.biteAt+700);}}
+ if(activity==='fish'&&fishRound){const t=Date.now(),msg=$('biteMessage');if(msg){msg.textContent=t<fishRound.biteAt?'🌊 Waiting for a bite...':t<=fishRound.biteAt+1100?'⚡ BITE! REEL NOW!':'💨 The fish has gone — try another cast.';msg.classList.toggle('bite',t>=fishRound.biteAt&&t<=fishRound.biteAt+1100);}}
  },85);
 }
 function openHeroStudio(){
@@ -924,7 +927,7 @@ function updateCinema(stamp){if(!DIR)return;const budget=DIR.pickQuality(cinemaP
 function renderMinigameScene(stamp){
  if(!activity||!VFX)return;
  const aim=$('aimSlider')?Number($('aimSlider').value)/100:.5;
- VFX.render($('activityScene'),activity,stamp,{aim,target:huntRound?.target,kind:huntRound?.kind,biting:!!(fishRound&&Date.now()>=fishRound.biteAt&&Date.now()<=fishRound.biteAt+700)});
+ VFX.render($('activityScene'),activity,stamp,{aim,target:huntRound?.target,kind:huntRound?.kind,biting:!!(fishRound&&Date.now()>=fishRound.biteAt&&Date.now()<=fishRound.biteAt+1100)});
 }
 function loop(stamp){
  const rawFrameMs=lastFrame?stamp-lastFrame:16;
