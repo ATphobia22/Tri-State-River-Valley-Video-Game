@@ -83,6 +83,25 @@ class TestPluginPolicy(unittest.TestCase):
                                       {}, target="shipping")
                 self.assertEqual(result["status"], "BLOCKED")
 
+    def test_virtual_production_profiles_remain_opt_in(self):
+        for profile in ("virtual_production_capture", "virtual_production_authoring",
+                        "virtual_production_stage", "misc"):
+            with self.subTest(profile=profile):
+                names = policy.PROFILES[profile]
+                result = policy.audit({"Plugins": []}, {}, requested=names)
+                self.assertEqual(result["enabled"], [])
+                self.assertEqual([entry["name"] for entry in result["candidates"]], names)
+                self.assertFalse(result["engineVerified"])
+                self.assertFalse(result["shippingVerified"])
+
+    def test_virtual_production_editor_module_blocked_from_shipping(self):
+        result = policy.audit(
+            {"Plugins": [{"Name": "Switchboard", "Enabled": True}]},
+            {"Switchboard": [{"path": "Switchboard.uplugin",
+                             "modules": [{"name": "SwitchboardEditor", "type": "Editor"}]}]},
+            "shipping")
+        self.assertEqual(result["status"], "BLOCKED")
+
     def test_scan_skips_malformed_descriptor(self):
         with tempfile.TemporaryDirectory() as folder:
             (Path(folder) / "Bad.uplugin").write_text("{oops")
