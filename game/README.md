@@ -1,3 +1,7 @@
+# v1.9.4 — Contact-aware boot planting, fabric detail and glasses
+
+River now has a short-duration world-space foot stance latch with slope-sampled ankle pitch, local procedural ripstop/weave materials over new GLB UV0 coordinates, transparent glasses lenses and additional skull gaiter details. Changes are deterministic and offline; the original v1.9.3 skin and fallback remain. Full provenance and acceptance boundaries: [v1.9.4 art pass](docs/HERO_ART_PASS_v1.9.4.md).
+
 # v1.9.3 — Original skinned River Explorer GLB
 
 The game now builds an offline glTF 2.0 River Explorer with **17 deforming joints**, nine named animation clips, metallic/roughness outfit materials, and bone-parented fishing, tracking and cooking gear. The game and Character Studio prefer real Three.js skinned meshes while preserving the previous procedural fallback. Walking and running use a terrain-sampled two-bone knee/ankle solver; no paid rigging or remote downloads are needed. The GLB and base64 offline payload are deterministic build artifacts. See [full rigging documentation](docs/HERO_RIGGED_v1.9.3.md).
