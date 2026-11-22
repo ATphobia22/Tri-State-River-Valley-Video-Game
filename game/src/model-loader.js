@@ -35,9 +35,17 @@ function makeModel(three,b64){const file=parseGLB(decodeBase64(b64)),doc=file.js
     g.setAttribute('position',new three.Float32BufferAttribute(pos.values,3));
     if(Number.isInteger(prim.attributes.NORMAL)){const norm=dataAccessor(file,prim.attributes.NORMAL);g.setAttribute('normal',new three.Float32BufferAttribute(norm.values,3));}
     if(Number.isInteger(prim.indices))g.setIndex(dataAccessor(file,prim.indices).values);
+    if(Number.isInteger(prim.attributes.COLOR_0)){
+     const colors=dataAccessor(file,prim.attributes.COLOR_0);
+     if(colors.count!==pos.count||![3,4].includes(colors.channels))throw Error('Invalid static GLB vertex color');
+     const factor=colors.componentType===5121?255:colors.componentType===5123?65535:1;
+     const rgb=[];
+     for(let i=0;i<colors.count;i++)for(let k=0;k<3;k++)rgb.push(colors.values[i*colors.channels+k]/factor);
+     g.setAttribute('color',new three.Float32BufferAttribute(rgb,3));
+    }
     if(!g.getAttribute('normal'))g.computeVertexNormals();
     const mat=(doc.materials||[])[prim.material??0]||{},factor=mat.pbrMetallicRoughness?.baseColorFactor||[.7,.72,.67,1];
-    const material=new three.MeshStandardMaterial({color:new three.Color().setRGB(factor[0],factor[1],factor[2],three.LinearSRGBColorSpace),roughness:mat.pbrMetallicRoughness?.roughnessFactor??.9,metalness:mat.pbrMetallicRoughness?.metallicFactor??0,side:mat.doubleSided?three.DoubleSide:three.FrontSide});
+    const material=new three.MeshStandardMaterial({color:new three.Color().setRGB(factor[0],factor[1],factor[2],three.LinearSRGBColorSpace),roughness:mat.pbrMetallicRoughness?.roughnessFactor??.9,metalness:mat.pbrMetallicRoughness?.metallicFactor??0,side:mat.doubleSided?three.DoubleSide:three.FrontSide,vertexColors:!!g.getAttribute('color')});
     group.add(new three.Mesh(g,material));
   }
   return group;
