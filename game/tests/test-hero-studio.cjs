@@ -28,7 +28,7 @@ test('studio returns camera and player control after close',()=>{
  assert.match(game,/previousHeroCamera/);
  assert.match(game,/cameraDist=previousHeroCamera\.distance/);
  assert.match(game,/cameraYaw=previousHeroCamera\.yaw/);
- assert.match(game,/if\(heroInspection\)\{currentTravelSpeed=0;return;\}/);
+ assert.match(game,/if\(heroInspection\|\|activity\)\{motion\.reset\(\{facing:playerHeading\}\)/);
  assert.match(game,/heroStudioClose/);
 });
 
