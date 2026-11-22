@@ -91,6 +91,10 @@ test('LOD planner can build all initial ground before gameplay sources register'
  assert.equal(committed,200);assert.equal(p.status().pending,false);
 });
 
+test('the intro visibly carries the shipped graphics version',()=>{
+ assert.match(get('index.html'),/V1\.8\.2 · Free-camera/);
+});
+
 test('user quality modes and offline caches preserve full standalone delivery',()=>{
  const html=get('index.html'),cache=get('sw.js'),game=get('src/game.js');
  const scripts=['src/visual-polish.js','src/biome-streamer.js','src/lod-transition.js','src/streaming-policy.js'];
