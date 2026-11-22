@@ -25,6 +25,14 @@
   const hero=Hero.create(THREE);
   hero.root.position.set(0,.7,0);
   scene.add(hero.root);
+  // Optional inspector for the REAL skinned bone hierarchy, never a fake painted rig.
+  const skeletonHelper=hero.skinned&&THREE.SkeletonHelper?new THREE.SkeletonHelper(hero.root):null;
+  if(skeletonHelper){
+   skeletonHelper.name='River Explorer / live 27-bone overlay';
+   skeletonHelper.visible=false;skeletonHelper.renderOrder=10;skeletonHelper.frustumCulled=false;
+   skeletonHelper.material.depthTest=false;skeletonHelper.material.transparent=true;
+   skeletonHelper.material.opacity=.90;scene.add(skeletonHelper);
+  }
   // Independent art-directed display stand, never world terrain.
   const stageAssets=[];
   function add(mesh){scene.add(mesh);stageAssets.push(mesh);return mesh;}
@@ -65,6 +73,11 @@
    }
    camera.updateProjectionMatrix();
   }
+  function setSkeletonVisible(next){
+   if(!skeletonHelper)return false;
+   skeletonHelper.visible=!!next;
+   return skeletonHelper.visible;
+  }
   function setFocus(next){
    if(!['full','face','right-hand','boots'].includes(next))throw new RangeError('Invalid character inspection focus');
    focus=next;resize(width,height);
@@ -88,6 +101,7 @@
    renderer.render(scene,camera);
   }
   function dispose(){
+   if(skeletonHelper){scene.remove(skeletonHelper);skeletonHelper.geometry.dispose();skeletonHelper.material.dispose();}
    hero.dispose();
    for(const object of stageAssets){
     if(object.geometry)object.geometry.dispose();
@@ -97,7 +111,7 @@
    if(hero.root.parent)hero.root.parent.remove(hero.root);
   }
   resize(width,height);
-  return Object.freeze({scene,camera,hero,resize,setFocus,setAngle,update,render,dispose,get state(){return lastState;},get focus(){return focus;},get angle(){return viewAngle;}});
+  return Object.freeze({scene,camera,hero,resize,setFocus,setAngle,setSkeletonVisible,update,render,dispose,get skeletonVisible(){return !!skeletonHelper?.visible;},get skeletonBoneCount(){return hero.skinned?Object.keys(hero.joints).length:0;},get state(){return lastState;},get focus(){return focus;},get angle(){return viewAngle;}});
  }
  return Object.freeze({create});
 });
