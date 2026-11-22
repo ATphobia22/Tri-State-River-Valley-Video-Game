@@ -69,6 +69,13 @@
  }
  function create(THREE,{seated=false}={}){
   if(!THREE||typeof THREE.Group!=='function')throw new TypeError('THREE scene-graph implementation required');
+  // Prefer a locally built skinned glTF model. Keep the original procedural
+  // character as an offline, WebGL and browser compatibility fallback.
+  const rig=typeof globalThis!=='undefined'?globalThis.ValleyRiggedHero:null;
+  if(rig&&globalThis.ValleyRiggedHeroData){
+   try{return rig.create(THREE,{seated,samplePose});}
+   catch(error){if(typeof console!=='undefined')console.warn('Rigged River fallback:',error.message);}
+  }
   const root=new THREE.Group();root.name='River Explorer';
   root.userData.heroId=PROFILE.id;
   const joints={};
