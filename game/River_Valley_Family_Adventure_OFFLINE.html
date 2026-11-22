@@ -38,7 +38,7 @@
 <section aria-label="Live three-dimensional activity" aria-live="polite" class="hud glass" hidden="" id="worldActivityHud" role="region"><div class="worldTitleRow"><div><small class="eyebrow">REAL-TIME WORLD ACTIVITY · 3D</small><h2 id="worldActivityTitle">River Valley Adventure</h2></div><button aria-label="Return to exploration" id="worldClose">✕</button></div><p id="worldActivityText"></p><div id="worldActivityMeter" role="status"></div><label for="worldAim" hidden="" id="worldAimLabel">Track your target <input aria-label="Move in-world target marker" id="worldAim" max="100" min="0" step="1" type="range" value="50"/></label><div id="worldActionButtons"></div><small class="worldHint">Explore freely while playing. Use the buttons or press E to act. No separate minigame scene.</small></section>
 <section aria-label="Family activity" aria-modal="true" class="glass" id="activityPanel" role="dialog"><div class="activityHeader"><span class="eyebrow">RIVER VALLEY • FAMILY ACTIVITIES</span><button aria-label="Close minigame" class="closeX" id="closeActivity">×</button></div><h2 id="activityTitle">Family Activities</h2><div id="activityContent"></div></section>
 <section class="glass" id="farmPanel"><div style="display:flex;align-items:start;justify-content:space-between"><div><div class="eyebrow">🌱 A REPEATABLE FAMILY ACTIVITY</div><h2>Valley Farm</h2></div><button aria-label="Close farm" class="closeX" id="closeFarm">×</button></div><p>Plant corn for 15 coins, let it grow for eight seconds, then harvest for 45 coins and 45 XP. Your fields are saved locally.</p><div class="farmGrid" id="farmGrid"></div><div id="farmNotice" style="font-size:12px;color:var(--gold)">Tap a field to plant.</div><div class="farmActions" style="margin-top:14px"><button id="waterFarm">💧 Water growing crops · 20 🪙</button><button id="farmDone">Done</button></div></section>
-<div id="start"><div class="hero"><div class="tag">✦ YOUR FAMILY. YOUR RIVER VALLEY. ✦</div><h1>Take the scenic route.<em>Make some memories.</em></h1><p class="lead">A cozy open-world adventure inspired by Mount Vernon, Indiana and the Ohio–Wabash River Valley. Walk historic streets, drive through scenic countryside, interact with wildlife on the trail, fish from a 3D river pier, cook at the campfire and cultivate visible farm plots, and complete six family discoveries.</p><div><span class="marker">🌅 DAY &amp; NIGHT</span><span class="marker">🚙 FREE ROAM</span><span class="marker">🐕 A LOYAL COMPANION</span><span class="marker">📸 PHOTO MODE</span></div><div class="buttons"><select aria-label="Choose family save slot" id="startSlot"><option value="0">Save 1</option><option value="1">Save 2</option><option value="2">Save 3</option></select><input aria-label="Family explorer name" id="playerName" maxlength="24" placeholder="Family explorer name" value="Family Explorer"/><button class="primary" id="playBtn">▶ Start exploring</button><button id="resumeBtn">↻ Continue saved game</button></div><p class="smallprint">V1.8.2 · Free-camera 3D exploration with four interactive world sites, a wildlife model, fishing pier, persistent crop plots and a campfire kitchen. Adaptive LOD, cinematic lighting, local saves and 2D fallback. Offline • Single-player family adventure • No account or uploads • Desktop keyboard and mobile touch controls. Uses the supplied Mount Vernon geography as a stylized preview—not a precise replica.</p></div></div>
+<div id="start"><div class="hero"><div class="tag">✦ YOUR FAMILY. YOUR RIVER VALLEY. ✦</div><h1>Take the scenic route.<em>Make some memories.</em></h1><p class="lead">A cozy open-world adventure inspired by Mount Vernon, Indiana and the Ohio–Wabash River Valley. Walk historic streets, drive through scenic countryside, interact with wildlife on the trail, fish from a 3D river pier, cook at the campfire and cultivate visible farm plots, and complete six family discoveries.</p><div><span class="marker">🌅 DAY &amp; NIGHT</span><span class="marker">🚙 FREE ROAM</span><span class="marker">🐕 A LOYAL COMPANION</span><span class="marker">📸 PHOTO MODE</span></div><div class="buttons"><select aria-label="Choose family save slot" id="startSlot"><option value="0">Save 1</option><option value="1">Save 2</option><option value="2">Save 3</option></select><input aria-label="Family explorer name" id="playerName" maxlength="24" placeholder="Family explorer name" value="Family Explorer"/><button class="primary" id="playBtn">▶ Start exploring</button><button id="resumeBtn">↻ Continue saved game</button></div><p class="smallprint">V1.9.0 · Free-camera 3D exploration with four interactive world sites, a wildlife model, fishing pier, persistent crop plots and a campfire kitchen. Adaptive LOD, cinematic lighting, local saves and 2D fallback. Offline • Single-player family adventure • No account or uploads • Desktop keyboard and mobile touch controls. Uses the supplied Mount Vernon geography as a stylized preview—not a precise replica.</p></div></div>
 <div id="loading">🌿 Preparing your river valley...</div>
 <script>console.warn('Scripts "build/three.js" and "build/three.min.js" are deprecated with r150+, and will be removed with r160. Please use ES Modules or alternatives: https://threejs.org/docs/index.html#manual/en/introduction/Installation'),
 /**
@@ -972,6 +972,227 @@ window.ValleyReference={"version":"1.8.0","imageDataUrl":"data:image/jpeg;base64
  }
  return Object.freeze({create});
 });
+</script><script>/*
+ * River Explorer: ORIGINAL local, articulated 3D player character.
+ * Modeled after the user-provided hero concept/animation sheets; no external
+ * services, textures, rig packages, original photo replication, or CDN assets.
+ * Hero faces local -Z; root origin is the ground contact. Units match the world.
+ */
+(function(root,factory){
+ const api=factory();
+ if(typeof module==='object'&&module.exports)module.exports=api;
+ else root.ValleyHero=api;
+})(typeof globalThis==='object'?globalThis:this,function(){
+ 'use strict';
+ const PROFILE=Object.freeze({
+  id:'river-explorer',displayName:'River — Explorer',
+  features:Object.freeze(['curly-hair','glasses','skull-gaiter','black-shirt','gold-chain',
+    'cargo-pants','adventure-boots','backpack']),
+  palette:Object.freeze({fabric:0x24272a,boots:0x1b2124,skin:0xb97e57,hair:0x35251d,
+    trim:0x857c61,gold:0xdba54a,glasses:0x171c20,pack:0x544e3d})
+ });
+ const STATES=Object.freeze(['idle','walk','run','sprint','jump','land','interact','fish','hunt','cook','farm','drive']);
+ const clamp=(v,min,max)=>Math.min(max,Math.max(min,Number.isFinite(v)?v:min));
+ function samplePose(state,time,phase=0){
+  if(!STATES.includes(state))state='idle';
+  const t=Number.isFinite(time)?time:0;
+  const step=state==='walk'?1.5:state==='run'?2.1:state==='sprint'?2.7:0;
+  const amp=state==='walk'?.32:state==='run'?.63:state==='sprint'?.87:0;
+  const wave=Math.sin(t*2*Math.PI*step+phase),opposite=-wave;
+  const p={state,torso:0,head:0,headTurn:0,leftArm:0,rightArm:0,leftLeg:0,rightLeg:0,
+    leftElbow:-.13,rightElbow:-.13,leftKnee:0,rightKnee:0,pack:0,bodyY:0,armSpread:.08};
+  if(amp){
+   p.leftLeg=amp*wave;p.rightLeg=amp*opposite;
+   p.leftArm=-amp*.82*wave;p.rightArm=amp*.82*wave;
+   p.leftElbow=-.23-(state==='sprint'?.62:state==='run'?.35:.12);
+   p.rightElbow=p.leftElbow;
+   p.leftKnee=Math.max(0,-wave)*amp*.6;p.rightKnee=Math.max(0,wave)*amp*.6;
+   p.torso=state==='sprint'?.21:state==='run'?.12:.035;
+   p.bodyY=Math.abs(wave)*(state==='sprint'?.18:.11);
+   p.pack=Math.sin(t*step*9)*.036;
+  }else if(state==='idle'){
+   p.torso=Math.sin(t*1.4)*.017;p.headTurn=Math.sin(t*.45)*.09;
+   p.bodyY=Math.sin(t*1.5)*.045;p.pack=Math.sin(t*1.25)*.01;
+  }else if(state==='jump'){
+   p.torso=.13;p.leftArm=-.9;p.rightArm=-.9;p.leftLeg=.44;p.rightLeg=-.12;
+   p.leftKnee=.68;p.rightKnee=.28;p.bodyY=1.25;
+  }else if(state==='land'){
+   p.torso=.48;p.leftArm=.28;p.rightArm=.25;p.leftLeg=.38;p.rightLeg=.34;
+   p.leftKnee=.62;p.rightKnee=.63;p.bodyY=-.18;
+  }else if(state==='interact'||state==='farm'){
+   p.torso=state==='farm'?.65:.48;
+   p.leftArm=.40;p.rightArm=.72;p.leftLeg=.24;p.rightLeg=-.15;
+   p.leftKnee=.54;p.rightKnee=.61;p.rightElbow=-.65;
+  }else if(state==='fish'){
+   p.torso=.05;p.leftArm=1.08+Math.sin(t*2.2)*.04;p.rightArm=1.28+Math.sin(t*3)*.08;
+   p.leftElbow=-.76;p.rightElbow=-.56;
+   p.head=-.1;p.pack=Math.sin(t*1.4)*.013;
+  }else if(state==='hunt'){
+   p.torso=.19;p.leftArm=1.16;p.rightArm=1.08;p.leftElbow=-1.12;
+   p.rightElbow=-.98;p.leftLeg=.19;p.rightLeg=-.12;p.head=-.12;
+  }else if(state==='cook'){
+   p.torso=.63;p.leftArm=.76;p.rightArm=.88+Math.sin(t*4.2)*.11;
+   p.leftElbow=-.42;p.rightElbow=-.9;p.leftLeg=.52;p.rightLeg=-.29;
+   p.leftKnee=.68;p.rightKnee=.71;p.bodyY=-.28;
+  }else if(state==='drive'){
+   p.torso=.08;p.leftArm=1.08;p.rightArm=1.08;p.leftElbow=-.66;
+   p.rightElbow=-.66;p.leftLeg=1.0;p.rightLeg=1.0;
+   p.leftKnee=1.08;p.rightKnee=1.08;p.headTurn=Math.sin(t*.32)*.07;
+  }
+  return p;
+ }
+ function create(THREE,{seated=false}={}){
+  if(!THREE||typeof THREE.Group!=='function')throw new TypeError('THREE scene-graph implementation required');
+  const root=new THREE.Group();root.name='River Explorer';
+  root.userData.heroId=PROFILE.id;
+  const joints={};
+  function group(parent,name,x=0,y=0,z=0){
+   const g=new THREE.Group();g.name='Hero/'+name;g.position.set(x,y,z);parent.add(g);return g;
+  }
+  function mat(hex,roughness=.88,metalness=0,more={}){
+   return new THREE.MeshStandardMaterial({color:hex,roughness,metalness,...more});
+  }
+  const cloth=mat(PROFILE.palette.fabric),pants=mat(0x313234),
+   cargo=mat(0x3d3b37),skin=mat(PROFILE.palette.skin),hair=mat(PROFILE.palette.hair),
+   boot=mat(PROFILE.palette.boots),trim=mat(PROFILE.palette.trim),
+   gold=mat(PROFILE.palette.gold,.32,.69),glass=mat(0x344953,.24,.12,{transparent:true,opacity:.83}),
+   dark=mat(0x151618),white=mat(0xd9d9d1,.87),pack=mat(PROFILE.palette.pack,.94);
+  const shared=[cloth,pants,cargo,skin,hair,boot,trim,gold,glass,dark,white,pack];
+  const geometry=[];
+  function mesh(parent,geo,material,name,position,feature){
+   const m=new THREE.Mesh(geo,material);m.name='Hero/'+name;
+   if(position)m.position.set(...position);
+   if(feature)m.userData.heroFeature=feature;
+   m.castShadow=true;m.receiveShadow=true;parent.add(m);geometry.push(geo);return m;
+  }
+  function box(parent,size,material,name,position,feature){
+   return mesh(parent,new THREE.BoxGeometry(...size),material,name,position,feature);
+  }
+  function sphere(parent,r,material,name,position,feature){
+   return mesh(parent,new THREE.SphereGeometry(r,10,8),material,name,position,feature);
+  }
+  function cylinder(parent,r1,r2,h,material,name,position,feature){
+   return mesh(parent,new THREE.CylinderGeometry(r1,r2,h,8),material,name,position,feature);
+  }
+  // Body, shirt seams and cargo belt. Animation pivots at the waist.
+  joints.torso=group(root,'torso',0,7.5,0);
+  box(joints.torso,[5.2,5.5,2.65],cloth,'technical-shirt',[0,2.6,0],'black-shirt');
+  box(joints.torso,[5.55,.43,2.84],dark,'belt',[0,-.34,0]);
+  box(joints.torso,[1.1,.46,.7],trim,'belt-buckle',[0,-.36,-1.49]);
+  for(const side of [-1,1]){
+   box(joints.torso,[.9,2,.85],cargo,'utility-pocket',[side*2.45,.35,.55]);
+   box(joints.torso,[.7,2.7,.35],trim,'backpack-strap',[side*2.04,2.9,-1.41]);
+   sphere(joints.torso,.55,cloth,'shoulder',[side*2.7,4.45,0]);
+  }
+  joints.pack=group(joints.torso,'pack',0,2.7,0);
+  box(joints.pack,[4.4,5.4,2.5],pack,'adventure-backpack',[0,0,2.7],'backpack');
+  box(joints.pack,[3.1,2.05,.55],cargo,'backpack-front-pocket',[0,-1,4.2]);
+  box(joints.pack,[4.1,.5,3],trim,'backpack-roll-top',[0,2.3,2.75]);
+  box(joints.pack,[.75,.45,.4],gold,'pack-buckle',[0,-.24,4.35]);
+  // Gold necklace forms a U in front of the shirt. Original procedural geometry.
+  const curve=new THREE.CatmullRomCurve3([
+   new THREE.Vector3(-1.5,4.18,-1.42),new THREE.Vector3(-1.2,3.36,-1.56),
+   new THREE.Vector3(0,2.94,-1.58),new THREE.Vector3(1.2,3.36,-1.56),
+   new THREE.Vector3(1.5,4.18,-1.42)]);
+  mesh(joints.torso,new THREE.TubeGeometry(curve,18,.095,5,false),gold,'gold-necklace',null,'chain');
+  // Head, hair curls, skull gaiter and glasses.
+  joints.head=group(joints.torso,'head',0,5.8,0);
+  sphere(joints.head,1.84,skin,'head-form',[0,0,0]);
+  cylinder(joints.head,1.65,1.47,2.1,dark,'skull-neck-gaiter',[0,-.84,-.23],'gaiter');
+  box(joints.head,[2.75,1.52,.19],dark,'face-gaiter-front',[0,-.76,-1.65]);
+  // Distinctive skull teeth & nose remain readable when no texture canvas is available.
+  sphere(joints.head,.26,white,'skull-nose',[0,-.40,-1.79]);
+  for(let i=0;i<6;i++)box(joints.head,[.28,.48,.10],white,'gaiter-tooth',[(i-2.5)*.37,-1.12,-1.77]);
+  for(const sign of [-1,1]){
+   box(joints.head,[1.34,.82,.16],dark,'eyeglass-frame',[sign*.78,.40,-1.73],'glasses');
+   box(joints.head,[1.07,.61,.14],glass,'eyeglass-lens',[sign*.78,.40,-1.84]);
+   box(joints.head,[.37,.16,1.05],dark,'eyeglass-arm',[sign*1.62,.43,-1.21]);
+  }
+  box(joints.head,[.39,.16,.2],dark,'eyeglass-bridge',[0,.43,-1.84]);
+  // Instanced curls: one draw batch. The shape belongs to this *original* game model.
+  const curlGeo=new THREE.IcosahedronGeometry(.48,1);geometry.push(curlGeo);
+  const curls=new THREE.InstancedMesh(curlGeo,hair,21);
+  const dummy=new THREE.Object3D();
+  let count=0;
+  for(let row=0;row<3;row++)for(let col=0;col<7;col++){
+   if(count>=21)break;
+   const x=(col-3)*.54+Math.sin(row*2+col)*.11;
+   const y=1.54+Math.cos(col*.7+row)*.22+row*.10;
+   const z=-1.22+row*.71;
+   dummy.position.set(x,y,z);
+   const sc=.72+.24*((col+row)%3)/2;
+   dummy.scale.setScalar(sc);dummy.updateMatrix();curls.setMatrixAt(count++,dummy.matrix);
+  }
+  curls.instanceMatrix.needsUpdate=true;curls.name='Hero/curly-hair';
+  curls.userData.heroFeature='hair';joints.head.add(curls);
+  // Articulated arms, fingerless gloves and visible hands.
+  for(const side of [-1,1]){
+   const key=side<0?'left':'right';
+   const arm=group(joints.torso,key+'Arm',side*3.0,4.35,0);
+   joints[key+'Arm']=arm;
+   cylinder(arm,.77,.66,2.55,cloth,key+'UpperArm',[0,-1.35,0]);
+   const elbow=group(arm,key+'Elbow',0,-2.65,0);joints[key+'Elbow']=elbow;
+   cylinder(elbow,.66,.59,2.0,skin,key+'Forearm',[0,-1.05,0]);
+   box(elbow,[1.27,.86,1.13],dark,key+'Glove',[0,-2.15,0],'gloves');
+   box(elbow,[1.09,.45,.96],skin,key+'Fingers',[0,-2.60,-.12]);
+  }
+  // Two hips with knees, boot shafts, tread and outer cargo-pocket detail.
+  for(const side of [-1,1]){
+   const key=side<0?'left':'right';
+   const leg=group(root,key+'Leg',side*1.35,6.6,0);joints[key+'Leg']=leg;
+   cylinder(leg,1.30,1.02,3.45,pants,key+'Thigh',[0,-1.82,0]);
+   box(leg,[1.5,1.85,.49],cargo,key+'CargoPocket',[side*.38,-2.07,.95]);
+   const knee=group(leg,key+'Knee',0,-3.68,0);joints[key+'Knee']=knee;
+   cylinder(knee,1.00,.82,2.7,pants,key+'Shin',[0,-1.38,0]);
+   box(knee,[2.1,1.53,2.5],boot,key+'AdventureBoot',[0,-3.12,-.40],'boots');
+   box(knee,[2.2,.42,3.0],dark,key+'Sole',[0,-3.97,-.73]);
+   for(let j=0;j<3;j++)box(knee,[1.55,.11,.16],trim,key+'BootLace',[0,-2.87+j*.32,-1.74]);
+  }
+  // Activity-specific equipment can animate with the same hand joints.
+  const props={};
+  props.rod=group(joints.rightElbow,'fishing-rod',0,-2.45,-.3);
+  const rod=cylinder(props.rod,.09,.18,8.0,trim,'rod-shaft',[0,-.1,-4]);
+  rod.rotation.x=Math.PI/2;
+  sphere(props.rod,.54,gold,'rod-reel',[0,0,-1.4]);
+  props.binoculars=group(joints.rightElbow,'tracking-binoculars',0,-2.3,-1.0);
+  for(const side of [-1,1])cylinder(props.binoculars,.56,.56,1.55,dark,'binoculars',[side*.52,0,-.7]);
+  props.spoon=group(joints.rightElbow,'cooking-spoon',0,-2.6,-.30);
+  const handle=cylinder(props.spoon,.11,.11,3.7,trim,'spoon-handle',[0,-.2,-2]);
+  handle.rotation.x=Math.PI/2;
+  sphere(props.spoon,.42,trim,'spoon-head',[0,-.2,-3.7]);
+  props.rod.visible=false;props.binoculars.visible=false;props.spoon.visible=false;
+  const current={};let currentState='idle';let lastPose=samplePose('idle',0);
+  const targets={torso:[joints.torso,'x'],head:[joints.head,'x'],headTurn:[joints.head,'y'],
+    leftArm:[joints.leftArm,'x'],rightArm:[joints.rightArm,'x'],
+    leftLeg:[joints.leftLeg,'x'],rightLeg:[joints.rightLeg,'x'],
+    leftElbow:[joints.leftElbow,'x'],rightElbow:[joints.rightElbow,'x'],
+    leftKnee:[joints.leftKnee,'x'],rightKnee:[joints.rightKnee,'x'],pack:[joints.pack,'x']};
+  function update({state='idle',stamp=0,dt=.016}={}){
+   const pose=samplePose(state,stamp/1000);
+   const gain=1-Math.exp(-clamp(dt,0,.15)*10);
+   for(const [key,[joint,axis]] of Object.entries(targets)){
+    const target=pose[key]??0;
+    joint.rotation[axis]+=(target-joint.rotation[axis])*gain;
+   }
+   joints.torso.position.y=7.5+pose.bodyY;
+   props.rod.visible=pose.state==='fish';
+   props.binoculars.visible=pose.state==='hunt';
+   props.spoon.visible=pose.state==='cook';
+   currentState=pose.state;lastPose=pose;
+   return {state:currentState,pose:samplePose(currentState,stamp/1000)};
+  }
+  // Seat composition is pose-driven, rather than a separate generic mannequin.
+  if(seated)update({state:'drive',stamp:100,dt:.16});
+  function dispose(){
+   root.traverse(object=>{if(object.isMesh&&object.geometry&&!geometry.includes(object.geometry))object.geometry.dispose();});
+   geometry.forEach(g=>g.dispose());
+   shared.forEach(m=>m.dispose());
+  }
+  return {root,joints,props,update,dispose,get state(){return currentState},
+    get pose(){return lastPose},features:PROFILE.features};
+ }
+ return Object.freeze({PROFILE,STATES,samplePose,create});
+});
 </script><script>/* Lightweight, engine-independent frame-budget governor for the browser game.
  * Adapted conceptually from the studio UE5 streaming guides, NOT Unreal code.
  * This is NOT GPU profiling, asynchronous file streaming or true UE World Partition.
@@ -1063,6 +1284,7 @@ const streamingGovernor=STREAM?STREAM.createGovernor({maxTiles:innerWidth<781?11
 let currentTravelSpeed=0;
 const G=window.THREE;
 const POLISH=window.ValleyVisualPolish,BIOME=window.ValleyBiomeStreamer,LODPLAN=window.ValleyLODTransition;
+const HERO=window.ValleyHero;let heroController=null,driverController=null,heroOneShot=null,heroOneShotUntil=0,heroState='idle';
 let facadePalette=null,biomeStreamer=null,lastVegetationTime=0,terrainTransition=null,retiringTerrain=null;
 
 const rand=(function(){let v=78932;return function(){v=(Math.imul(v,1664525)+1013904223)>>>0;return v/4294967296;}})();
@@ -1448,15 +1670,59 @@ function buildBeacons(){
  }
 }
 function buildPlayer(){
- avatar=new G.Group();const body=new G.Mesh(new G.CylinderGeometry(2.4,3,10,9),new G.MeshLambertMaterial({color:0x326c80}));body.position.y=6;avatar.add(body);
- const head=new G.Mesh(new G.SphereGeometry(2.6,12,10),new G.MeshLambertMaterial({color:0xf0c6a0}));head.position.y=12.6;avatar.add(head);
- const hat=new G.Mesh(new G.CylinderGeometry(3.6,3.6,1.4,12),new G.MeshLambertMaterial({color:0x654b34}));hat.position.y=15.2;avatar.add(hat);scene.add(avatar);
- car=new G.Group();const chassis=new G.Mesh(new G.BoxGeometry(15,4,26),new G.MeshLambertMaterial({color:0xd58b5b}));chassis.position.y=4;car.add(chassis);
- const cab=new G.Mesh(new G.BoxGeometry(12,5,13),new G.MeshLambertMaterial({color:0x264750}));cab.position.set(0,8,-1);car.add(cab);
- const wheels=new G.Mesh(new G.CylinderGeometry(2.4,2.4,2,10),new G.MeshLambertMaterial({color:0x20272a}));
- for(const side of [-1,1])for(const dz of [-8,8]){const w=wheels.clone();w.rotation.z=Math.PI/2;w.position.set(side*7.5,2.2,dz);car.add(w);}scene.add(car);
- dog=new G.Group();let dbody=new G.Mesh(new G.BoxGeometry(5,3.5,7),new G.MeshLambertMaterial({color:0xbe9a72}));dbody.position.y=2.7;dog.add(dbody);
- let dhead=new G.Mesh(new G.BoxGeometry(3,3,3.5),new G.MeshLambertMaterial({color:0xa5764d}));dhead.position.set(0,4.5,-4);dog.add(dhead);scene.add(dog);
+ // The studio reference sheets define the character; geometry and animations are
+ // original local procedural meshes, with no external asset fetch or online rig.
+ if(!HERO)throw new Error('Hero character module must load before the world');
+ heroController=HERO.create(G);
+ avatar=heroController.root;
+ avatar.name='Playable River Explorer';
+ scene.add(avatar);
+ car=new G.Group();
+ const paint=new G.MeshStandardMaterial({color:0xa26c4c,roughness:.51,metalness:.16});
+ const chassis=new G.Mesh(new G.BoxGeometry(15,4,26),paint);
+ chassis.position.y=4;car.add(chassis);
+ // Translucent cabin makes the seated explorer visible from third-person cameras.
+ const cab=new G.Mesh(new G.BoxGeometry(12,5,13),
+  new G.MeshStandardMaterial({color:0x345b68,roughness:.16,metalness:.08,transparent:true,opacity:.43,depthWrite:false}));
+ cab.position.set(0,8,-1);car.add(cab);
+ const top=new G.Mesh(new G.BoxGeometry(12.8,.55,13.6),
+  new G.MeshStandardMaterial({color:0x5d5248,roughness:.74}));
+ top.position.set(0,10.6,-1);car.add(top);
+ const wheelMat=new G.MeshStandardMaterial({color:0x20272a,roughness:.95});
+ const wheels=new G.Mesh(new G.CylinderGeometry(2.4,2.4,2,10),wheelMat);
+ for(const side of [-1,1])for(const dz of [-8,8]){
+  const w=wheels.clone();w.rotation.z=Math.PI/2;w.position.set(side*7.5,2.2,dz);car.add(w);
+ }
+ driverController=HERO.create(G,{seated:true});
+ driverController.root.name='Explorer driving';
+ driverController.root.scale.setScalar(.53);
+ driverController.root.position.set(-2.45,1.5,-1.0);
+ car.add(driverController.root);scene.add(car);
+ dog=new G.Group();
+ const dbody=new G.Mesh(new G.BoxGeometry(5,3.5,7),new G.MeshLambertMaterial({color:0xbe9a72}));
+ dbody.position.y=2.7;dog.add(dbody);
+ const dhead=new G.Mesh(new G.BoxGeometry(3,3,3.5),new G.MeshLambertMaterial({color:0xa5764d}));
+ dhead.position.set(0,4.5,-4);dog.add(dhead);scene.add(dog);
+}
+function cueHero(state,durationMs=650){
+ heroOneShot=state;heroOneShotUntil=performance.now()+durationMs;
+}
+function chooseHeroState(stamp){
+ if(save.mode==='drive')return 'drive';
+ if(heroOneShot&&stamp<heroOneShotUntil){
+  if(heroOneShot==='jump')return stamp<heroOneShotUntil-320?'jump':'land';
+  return heroOneShot;
+ }
+ if(worldActive==='fish')return 'fish';
+ if(worldActive==='hunt')return 'hunt';
+ if(worldActive==='cook')return 'cook';
+ if(worldActive==='farm')return 'farm';
+ if(activity==='fish')return 'fish';
+ if(activity==='hunt')return 'hunt';
+ if(activity==='cook')return 'cook';
+ if(currentTravelSpeed>=100)return 'sprint';
+ if(currentTravelSpeed>=20)return 'walk';
+ return 'idle';
 }
 function buildHouse(){
  house=new G.Group();const px=-740,pz=-210;house.position.set(px,height(px,pz),pz);
@@ -1492,6 +1758,9 @@ function updateVisuals(dt,stamp){
  scene.fog.color.set(light<.25?'#3e5360':mist?'#b1c5bd':'#aec8c1');scene.fog.density=visualEffects==='lite'?.00004:(mist?.0006:weather==='rain'?.00033:.00018);
  ambient.intensity=.6+1.8*light;sunLight.intensity=.25+2.2*light;sunLight.position.set(-200,Math.max(30,380*light),180);renderer.toneMappingExposure=.75+light*.62;
  avatar.position.set(player.x,height(player.x,player.z),player.z);car.position.copy(avatar.position);avatar.rotation.y=playerHeading;car.rotation.y=playerHeading;avatar.visible=save.mode==='walk';car.visible=save.mode==='drive';
+ heroState=chooseHeroState(stamp);
+ if(heroController)heroController.update({state:heroState,stamp,dt});
+ if(driverController)driverController.update({state:'drive',stamp,dt});
  if(dog){dog.visible=save.pet&&save.mode==='walk';dog.position.set(player.x+10+Math.sin(stamp/700)*2,height(player.x+10,player.z+14),player.z+14);}
  if(beaconGroup)beaconGroup.children.forEach((g,i)=>{g.rotation.y+=dt*.5;g.position.y=height(g.position.x,g.position.z)+8+Math.sin(stamp/450+i)*2;g.visible=!save.completed.includes(g.userData.id);});
  if(house)house.visible=save.homestead;
@@ -1580,6 +1849,7 @@ function openWorldActivity(id){
  if(!isWorld3D()){openActivity(id==='farm'?'cook':id);if(id==='farm'){closeActivity();openFarm();}return;}
  if(!WORLD.SITES[id])return;
  closeActivity();$('farmPanel').classList.remove('open');$('panel').classList.remove('open');closeCinema();
+ if(save.mode==='drive'){save.mode='walk';updateHUD();}
  const loc=WORLD.SITES[id];worldActive=id;worldHuntRound=null;worldFishRound=null;worldAim=.5;worldStatus='';
  const approach=WORLD.approachSite(id,cameraYaw,34);player.x=approach.x;player.z=approach.z;playerHeading=cameraYaw;cameraDist=Math.min(cameraDist,43);
  $('worldAim').value='50';$('worldActivityHud').hidden=false;
@@ -1587,6 +1857,10 @@ function openWorldActivity(id){
 }
 function worldAction(action){
  if(!worldActive||!isWorld3D())return;
+ if(action==='cast')cueHero('fish',1000);
+ if(action==='track'||action==='shoot')cueHero('hunt',700);
+ if(action==='plot'||action==='water')cueHero('farm',950);
+ if(action==='cook'||action.startsWith('recipe'))cueHero('cook',1400);
  const now=Date.now();let r;
  if(worldActive==='hunt'){
   if(action==='track'){const list=['deer','turkey','rabbit'];worldHuntRound={target:.18+rand()*.64,kind:list[Math.floor(rand()*list.length)],expiresAt:now+12000};worldStatus='Track the moving wildlife target. Slide the gold marker to align, then take your shot.';}
@@ -1809,7 +2083,8 @@ function bindUI(){
   const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();keys.add(k);
   if(!started)return;
   if(k==='e'||k===' '){if(!activity&&!worldPrimaryAction())interact();}
-  if(k==='h')openWorldActivity('hunt');if(k==='f')openWorldActivity('fish');if(k==='g')openWorldActivity('farm');if(k==='k')openWorldActivity('cook');if(k==='m'&&!activity&&!backdropOpen)toggleMap();if(k==='p')screenshot();if(k==='c'&&!activity){$('cinemaPanel').classList.contains('open')?closeCinema():openCinema();}if(k==='escape'){if(worldActive)closeWorldActivity();else if(backdropOpen)closeBackdrop();else if(activity)closeActivity();else if($('cinemaPanel').classList.contains('open'))closeCinema();else $('panel').classList.toggle('open');}
+  if(k==='j'&&save.mode==='walk'&&!worldActive&&!activity)cueHero('jump',750);
+ if(k==='h')openWorldActivity('hunt');if(k==='f')openWorldActivity('fish');if(k==='g')openWorldActivity('farm');if(k==='k')openWorldActivity('cook');if(k==='m'&&!activity&&!backdropOpen)toggleMap();if(k==='p')screenshot();if(k==='c'&&!activity){$('cinemaPanel').classList.contains('open')?closeCinema():openCinema();}if(k==='escape'){if(worldActive)closeWorldActivity();else if(backdropOpen)closeBackdrop();else if(activity)closeActivity();else if($('cinemaPanel').classList.contains('open'))closeCinema();else $('panel').classList.toggle('open');}
  });document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>keys.clear());
  canvas.addEventListener('pointerdown',e=>{pointerDown=true;pointerX=e.clientX;pointerY=e.clientY;});
  window.addEventListener('pointerup',()=>pointerDown=false);
@@ -1834,7 +2109,7 @@ function init(){
  if(!tryRenderer()){view='2d';$('quality').value='2d';}else view='3d';
  resize();updateHUD();mapDraw(mapCtx,mapCanvas.width,mapCanvas.height,false);
  requestAnimationFrame(loop);
- window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,terrainTransition:terrainTransition?.status()||null,vegetation:biomeStreamer?.snapshot()||null,facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,imageryYear:REF?.metadata?.downtownTileYear||null},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
+ window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,heroState,heroModel:!!heroController,heroProfile:HERO?.PROFILE?.id||null,heroParts:heroController?Object.keys(heroController.joints).length:0,terrainTransition:terrainTransition?.status()||null,vegetation:biomeStreamer?.snapshot()||null,facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,imageryYear:REF?.metadata?.downtownTileYear||null},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
 }
 init();
 })();
