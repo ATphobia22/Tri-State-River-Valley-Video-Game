@@ -152,10 +152,15 @@ function buildTerrain(){
  applyTerrainLOD(true,true);
 }
 function disposeTerrainMeshes(meshes){
+ // Tiles of one LOD generation share shader/material; dispose it once.
+ const materials=new Set();
  for(const m of meshes){
   if(m.parent)m.parent.remove(m);
-  m.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();obj.material.dispose();}});
+  m.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();
+   for(const mat of Array.isArray(obj.material)?obj.material:[obj.material])if(mat)materials.add(mat);
+  }});
  }
+ for(const material of materials)material.dispose();
 }
 function commitTerrainLOD(job){
  const committedAt=performance.now();
@@ -225,7 +230,9 @@ function tileColorMesh(tile,index){
   colors.push(Math.min(1,rgb.r+grain),Math.min(1,rgb.g+grain),Math.min(1,rgb.b+grain));
  }
  ge.setAttribute('color',new G.Float32BufferAttribute(colors,3));ge.setAttribute('uv',new G.Float32BufferAttribute(tileUVs,2));ge.computeVertexNormals();
- const mesh=new G.Mesh(ge,new G.MeshLambertMaterial({vertexColors:true,map:facadePalette?.terrainMap||null,side:G.DoubleSide}));
+ const terrainMaterial=index.terrainMaterial||(index.terrainMaterial=new G.MeshLambertMaterial({
+   vertexColors:true,map:facadePalette?.terrainMap||null,side:G.DoubleSide}));
+ const mesh=new G.Mesh(ge,terrainMaterial);
  mesh.userData.lod=tile.depth;mesh.frustumCulled=true;
  const skirts=[];
  function addEdge(side){
@@ -423,9 +430,9 @@ function buildTrees(){
  const crownMat=new G.MeshLambertMaterial({color:0xffffff,side:G.DoubleSide});
  const trunk=new G.InstancedMesh(new G.CylinderGeometry(.5,.95,6,5),barkMat,capacity);
  const crowns=[
-  new G.InstancedMesh(new G.IcosahedronGeometry(4.1,1),crownMat.clone(),capacity),
-  new G.InstancedMesh(new G.SphereGeometry(4.3,7,6),crownMat.clone(),capacity),
-  new G.InstancedMesh(new G.ConeGeometry(4.3,11,7),crownMat.clone(),capacity)
+  new G.InstancedMesh(new G.IcosahedronGeometry(4.1,1),crownMat,capacity),
+  new G.InstancedMesh(new G.SphereGeometry(4.3,7,6),crownMat,capacity),
+  new G.InstancedMesh(new G.ConeGeometry(4.3,11,7),crownMat,capacity)
  ];
  treeMeshes=[trunk,...crowns];
  for(const m of treeMeshes){m.count=0;m.frustumCulled=true;scene.add(m);}
