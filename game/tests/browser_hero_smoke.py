@@ -38,7 +38,13 @@ def inspect(page, *, mobile: bool):
     assert state()["heroSkinned"] is True, "Rigged GLB did not instantiate: procedural fallback used"
     assert state()["heroBoneCount"] >= 27
     assert state()["heroClipCount"] >= 9
-    assert state()["heroTexturedMeshes"] >= 6, "Procedural cloth maps missing from WebGL character"
+    assert state()["heroTexturedMeshes"] >= 6, "Character material maps missing"
+    page.wait_for_function(
+        "() => {const t=window.RiverValleyDebug.getState().heroEmbeddedTextures;"
+        "return !!t && t.expected===8 && t.loaded===8 && t.failed===0;}",
+        timeout=45_000,
+    )
+    assert state()["heroEmbeddedTextures"]["loaded"] == 8, "Baked GLB images never reached the playable skinned materials"
     assert state()["heroGaiterPrintReady"] is True, "Skull-print fabric not rendered"
     assert state()["heroFootContacts"] is not None, "Terrain contact solver missing"
     assert state()["groundShadowReady"] is True, "Player contact shadow mesh missing"
@@ -59,6 +65,18 @@ def inspect(page, *, mobile: bool):
         timeout=15_000,
     )
     assert page.locator("#heroStudio").is_visible()
+    page.wait_for_function(
+        "() => {const t=window.RiverValleyDebug.getState().heroStudioEmbeddedTextures;"
+        "return !!t && t.expected===8 && t.loaded===8 && t.failed===0;}",
+        timeout=45_000,
+    )
+    page.locator("#heroShowSkeleton").check(timeout=15_000)
+    assert state()["heroRigOverlay"] is True, "Studio skeleton overlay did not activate"
+    assert state()["heroBoneCount"] == 27, "Live rig differs from claimed GLB bone count"
+    prefix = "mobile" if mobile else "desktop"
+    page.screenshot(path=str(OUT / f"{prefix}-27-joint-live-skeleton.png"))
+    page.locator("#heroShowSkeleton").uncheck(timeout=15_000)
+    assert state()["heroRigOverlay"] is False, "Skeleton overlay leaked into normal render"
     assert page.locator("#touchControls").is_hidden() if mobile else True
 
     prefix = "mobile" if mobile else "desktop"
