@@ -2,7 +2,7 @@
    No network endpoints, no trackers, no external audio, and no repository integration. */
 (function(){
 'use strict';
-const WORLD=window.ValleyOpenWorld, C=window.ValleyCore, DATA=window.VALLEY_DATA, GEO=window.ValleyGeometry, VFX=window.ValleyVisuals, QT=window.ValleyTerrain, MODEL=window.ValleyModelLoader, ATM=window.ValleyAtmosphere, DIR=window.ValleyDirector, STORY=window.ValleyStoryscape;
+const WORLD=window.ValleyOpenWorld, C=window.ValleyCore, DATA=window.VALLEY_DATA, GEOREF=window.ValleyGeoReference, REF=window.ValleyReference, GEO=window.ValleyGeometry, VFX=window.ValleyVisuals, QT=window.ValleyTerrain, MODEL=window.ValleyModelLoader, ATM=window.ValleyAtmosphere, DIR=window.ValleyDirector, STORY=window.ValleyStoryscape;
 const $=id=>document.getElementById(id);
 const canvas=$('world'),atlas=$('atlas'),mapCanvas=$('minimap');
 const ctx=atlas.getContext('2d',{alpha:false}); // separate 2D surface; WebGL uses its own canvas
@@ -22,6 +22,9 @@ let roofInstances=null,tourCurve=null;
 let activeTerrainSegments=16,terrainDetail='auto',visualEffects='full';
 let time=15.5,weather='clear',season='summer',keys=new Set(),pointerDown=false,pointerX=0,pointerY=0,cameraYaw=.2,cameraDist=74,mapZoom=1;
 let demArray,grid=DATA.grid,staticMap=null,needsMap=true,lastUI=0,lastFrame=0,lastPersist=0;
+let referenceEnabled=!!(REF&&REF.imageDataUrl),referenceImage=null,referenceDrape=null;
+const activeRoads=REF&&Array.isArray(REF.roadsPacked)&&REF.roadsPacked.length>400?REF.roadsPacked:DATA.roads;
+const activeBuildings=REF&&Array.isArray(REF.buildingsPacked)&&REF.buildingsPacked.length>1000?REF.buildingsPacked:DATA.buildings;
 const G=window.THREE;
 const rand=(function(){let v=78932;return function(){v=(Math.imul(v,1664525)+1013904223)>>>0;return v/4294967296;}})();
 const LIMIT=C.LIMIT, TWO=LIMIT*2;
@@ -61,19 +64,25 @@ function makeStaticMap(){
   const x=px/900*TWO-LIMIT,z=py/900*TWO-LIMIT,v=height(x,z);
   let a=themeHeight(v);ct.fillStyle=`rgb(${a[0]},${a[1]},${a[2]})`;ct.fillRect(px,py,tile+1,tile+1);
  }}
+ // Exact rect placement uses the ACTUAL ArcGIS returned geographic extent, not its requested bbox.
+ if(referenceEnabled&&referenceImage&&GEOREF&&REF&&Array.isArray(REF.bboxWGS84)){
+  const r=GEOREF.worldRect(REF.bboxWGS84);
+  const x=(r.x0+LIMIT)/TWO*900,z=(r.z0+LIMIT)/TWO*900,w=r.width/TWO*900,h=r.height/TWO*900;
+  ct.drawImage(referenceImage,x,z,w,h);
+ }
  // Designed water corridor, intentionally illustrative rather than a factual river polygon.
  ct.fillStyle='#397889';ct.beginPath();ct.moveTo(0,900);
  for(let x=0;x<=900;x+=12){let wx=x/900*TWO-LIMIT;let zz=1200+125*Math.sin(wx/550)+65*Math.cos(wx/175);ct.lineTo(x,(zz+LIMIT)/TWO*900);}
- ct.lineTo(900,900);ct.closePath();ct.fill();
+ ct.lineTo(900,900);ct.closePath();if(!(referenceEnabled&&referenceImage))ct.fill();
  ct.lineJoin='round';ct.lineCap='round';
- DATA.roads.forEach(road=>{if(!Array.isArray(road[1]))return;
+ activeRoads.forEach(road=>{if(!Array.isArray(road[1]))return;
   const pts=road[1],r=road[0];ct.strokeStyle=r>=6?'#b4a884':'#383f3a';ct.lineWidth=r>=6?1.1:1.7;ct.beginPath();
   for(let k=0;k<pts.length-1;k+=2){const p=worldToMap(pts[k]*.25,pts[k+1]*.25,900,900);if(k===0)ct.moveTo(...p);else ct.lineTo(...p);}ct.stroke();
  });
- ct.fillStyle='#e4dbbb';DATA.buildings.forEach((b,i)=>{if(i%2===1)return;const p=worldToMap((b[0]+35)*.25,(b[1]+35)*.25,900,900);ct.fillRect(p[0],p[1],1.5,1.5);});
+ ct.fillStyle='#e4dbbb';activeBuildings.forEach((b,i)=>{if(i%2===1)return;const p=worldToMap((b[0]+35)*.25,(b[1]+35)*.25,900,900);ct.fillRect(p[0],p[1],1.5,1.5);});
  // Not survey-verified: these are intended game-level region labels.
  ct.fillStyle='#f6ffea';ct.font='bold 17px system-ui';ct.shadowColor='#244539';ct.shadowBlur=8;
- ct.fillText('MOUNT VERNON',378,445);ct.font='italic 19px Georgia';ct.fillText('Ohio River • stylized',310,785);ct.shadowBlur=0;
+ ct.fillText('MOUNT VERNON',378,445);ct.font='italic 19px Georgia';ct.fillText(referenceEnabled&&referenceImage?'IGIO aerial reference • horizontal only':'Ohio River • stylized',235,785);ct.shadowBlur=0;
  return c;
 }
 function mapDraw(targetCtx,width,height,focus){
@@ -167,9 +176,36 @@ function applyTerrainLOD(force=false){
  activeTerrainSegments=QT.WIDTH;
  if(roadMesh){scene.remove(roadMesh);roadMesh.geometry.dispose();roadMesh.material.dispose();roadMesh=null;buildRoads();}
  updateBuildingLOD(true);
+ if(referenceEnabled)updateReferenceDrape();
  const labels=Object.entries(terrainStats.levels).map(([l,n])=>`L${l}:${n}`).join(' · ');
  const label=`Quadtree SSE ${terrainDetail.toUpperCase()} · ${leaves.length} tiles · ${labels}`;
  if($('lodLabel'))$('lodLabel').textContent=label;lastLODLabel=label;
+}
+function updateReferenceDrape(){
+ if(!scene||!G||!GEOREF)return;
+ if(referenceDrape){scene.remove(referenceDrape);referenceDrape.geometry.dispose();if(referenceDrape.material.map)referenceDrape.material.map.dispose();referenceDrape.material.dispose();referenceDrape=null;}
+ if(!referenceEnabled||!referenceImage||!REF||!REF.bboxWGS84)return;
+ const r=GEOREF.worldRect(REF.bboxWGS84),x0=Math.max(-LIMIT,r.x0),x1=Math.min(LIMIT,r.x1),z0=Math.max(-LIMIT,r.z0),z1=Math.min(LIMIT,r.z1);
+ if(x1<=x0||z1<=z0)return;
+ const geometry=new G.PlaneGeometry(x1-x0,z1-z0,64,64);
+ geometry.rotateX(-Math.PI/2);geometry.translate((x0+x1)/2,0,(z0+z1)/2);
+ const position=geometry.attributes.position,uv=geometry.attributes.uv;
+ for(let i=0;i<position.count;i++){
+  const x=position.getX(i),z=position.getZ(i),[px,py]=GEOREF.worldToPixel(x,z,REF.bboxWGS84,1,1);
+  position.setY(i,height(x,z)+.26);uv.setXY(i,Math.max(0,Math.min(1,px)),1-Math.max(0,Math.min(1,py)));
+ }
+ position.needsUpdate=true;uv.needsUpdate=true;
+ const texture=new G.Texture(referenceImage);texture.needsUpdate=true;texture.colorSpace=G.SRGBColorSpace;
+ const mat=new G.MeshBasicMaterial({map:texture,transparent:true,opacity:.78,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,side:G.DoubleSide});
+ referenceDrape=new G.Mesh(geometry,mat);referenceDrape.frustumCulled=false;referenceDrape.renderOrder=2;scene.add(referenceDrape);
+}
+function setupReferenceImage(){
+ const status=$('referenceStatus');
+ if(!REF||!REF.imageDataUrl||!GEOREF){if(status)status.textContent='Official map reference not bundled; illustration and original map remain playable.';return;}
+ const img=new Image();img.onload=()=>{referenceImage=img;needsMap=true;if(referenceEnabled)updateReferenceDrape();};
+ img.onerror=()=>{if(status)status.textContent='Overhead reference image could not be decoded; game remains playable.';};
+ img.src=REF.imageDataUrl;
+ if(status){const year=REF.metadata&&REF.metadata.downtownTileYear||'unverified';status.textContent='IGIO overhead: '+year+' at downtown · '+REF.metadata.roads+' road segments · '+REF.metadata.buildings+' building polygons · roof heights illustrative.';}
 }
 function buildRiver(){
  const shape=[];const n=100;
@@ -188,7 +224,7 @@ function buildRiver(){
 function buildRoads(){
  // Sample both *edges* of each ribbon on the SAME displayed terrain triangles.
  // Short subdivisions prevent long straight road segments from cutting through hills.
- const meshData=GEO.drapedRoadVertices(DATA.roads,height,LIMIT,12);
+ const meshData=GEO.drapedRoadVertices(activeRoads,height,LIMIT,12);
  const geo=new G.BufferGeometry();geo.setAttribute('position',new G.Float32BufferAttribute(meshData.vertices,3));geo.computeVertexNormals();
  roadMesh=new G.Mesh(geo,new G.MeshLambertMaterial({color:0x42474a,polygonOffset:true,polygonOffsetFactor:-2,side:G.DoubleSide}));
  roadMesh.frustumCulled=false;scene.add(roadMesh);
@@ -235,7 +271,7 @@ function detailedBuilding(rec){
 }
 function buildBuildings(){
  buildingItems=[];
- DATA.buildings.forEach((b,i)=>{const footprint=GEO.buildingFootprint(b,LIMIT);if(footprint)buildingItems.push({...footprint,i});});
+ activeBuildings.forEach((b,i)=>{const footprint=GEO.buildingFootprint(b,LIMIT);if(footprint)buildingItems.push({...footprint,i});});
  buildingMesh=new G.InstancedMesh(new G.BoxGeometry(1,1,1),new G.MeshLambertMaterial({color:0xffffff}),buildingItems.length);
  const col=new G.Color(),colors=[0xdac5a5,0xb7afa2,0xb67861,0xbdb9ad,0x969f9a,0xd7b08a];
  buildingItems.forEach((b,i)=>buildingMesh.setColorAt(i,col.setHex(colors[b.i%colors.length])));
@@ -625,6 +661,8 @@ function bindUI(){
  for(const [id,key] of [['cineGrain','grain'],['cineStats','showStats']])$(id).addEventListener('change',e=>{cinemaPrefs[key]=e.target.checked;syncCinemaControls();saveCinemaPrefs();});
  $('weather').addEventListener('change',e=>setWeather(e.target.value));$('season').addEventListener('change',e=>setSeason(e.target.value));
  $('time').addEventListener('input',e=>{time=Number(e.target.value);save.time=time;$('timeLabel').textContent=C.formatTime(time);});$('time').addEventListener('change',()=>persist());
+ $('referenceOverlay').checked=referenceEnabled;
+ $('referenceOverlay').addEventListener('change',e=>{referenceEnabled=!!e.target.checked;needsMap=true;updateReferenceDrape();toast(referenceEnabled?(referenceImage?'🛰️ Geographic overhead reference enabled. Not a surveyed terrain.':'🛰️ Reference image is not loaded yet.'):'🌾 Stylized landscape restored.');});
  $('terrainDetail').addEventListener('change',e=>{terrainDetail=e.target.value;applyTerrainLOD(true);});
  $('visualEffects').addEventListener('change',e=>{visualEffects=e.target.value;applyTerrainLOD(true);toast(visualEffects==='full'?'✨ Cinematic lighting enabled.':'⚡ Reduced atmosphere for performance.');});
  $('quality').addEventListener('change',e=>{if(worldActive)closeWorldActivity();view=e.target.value;if(view==='3d'&&!renderer){view='2d';e.target.value='2d';toast('3D is not available without WebGL.');}resize();});
@@ -673,14 +711,14 @@ function bindUI(){
  window.addEventListener('resize',resize);
 }
 function init(){
- bindUI();loadCinemaPrefs();
+ bindUI();loadCinemaPrefs();setupReferenceImage();
  if(innerWidth<781){$('missionList').hidden=true;$('questSummary').hidden=true;$('toggleMissions').textContent='+';}slot=Number($('slot').value)||0;
  const had=readSlot(slot);$('resumeBtn').disabled=!had;$('resumeBtn').title=had?'Resume your saved adventure':'No saved adventure yet';
  if('ontouchstart'in window||navigator.maxTouchPoints>0)$('touchControls').style.display='flex';
  if(!tryRenderer()){view='2d';$('quality').value='2d';}else view='3d';
  resize();updateHUD();mapDraw(mapCtx,mapCanvas.width,mapCanvas.height,false);
  requestAnimationFrame(loop);
- window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
+ window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,imageryYear:REF?.metadata?.downtownTileYear||null},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
 }
 init();
 })();

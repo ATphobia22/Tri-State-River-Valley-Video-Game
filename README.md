@@ -13,3 +13,7 @@ The previous digital-twin code is archived in legacy/engineering-source-before-g
 Build and test: cd game; python -m pip install -r requirements.txt; npm test; npm run build.
 
 GitHub Pages can serve the root index.html as a launcher if enabled. The offline HTML runs in a browser and is not a native Windows/iPhone executable.
+
+### Georeferenced Mount Vernon reference (v1.8)
+
+Actual 2023 downtown orthophotography, Indiana GIO road centerlines, building outlines, original unmodified GeoJSON, SHA-256 receipts, registered preview map, and game-packed layers: see [game georeferencing documentation](game/docs/MOUNT_VERNON_GEOREFERENCE_V1_8.md), [captured imagery/vector reference](game/reference/mount-vernon/), and [digital reference overlay](game/reference/mount-vernon/digitized-overview.png). Horizontal reference only: source game terrain elevations, building roofs, river levels, and landmark locations are not survey-verified.

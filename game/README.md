@@ -1,4 +1,12 @@
-# River Valley Family Adventure v1.7 — free roaming 3D
+# River Valley Family Adventure v1.8 — georeferenced 3D game reference
+
+New v1.8 horizontal map reference: after the official IGIO download step, the 3D scene and 2D overview use authoritative overhead imagery, digitized street centerlines, and building footprints via a shared WGS84-to-game registration. The overhead imagery identifies as **2023 in central Mount Vernon**; official 2025 leaf-on imagery is a distinct source and is not assumed to be the default raster. The *roof heights*, game DEM, and stops remain illustrative. See [`docs/MOUNT_VERNON_GEOREFERENCE_V1_8.md`](docs/MOUNT_VERNON_GEOREFERENCE_V1_8.md) and [`reference/mount-vernon/registration.json`](reference/mount-vernon/registration.json) after data acquisition. Settings → official overhead reference toggles the art reference without changing local save data.
+
+## Live official-data build
+
+`python tools/acquire_mount_vernon_reference.py --out reference/mount-vernon` downloads full IGIO road/building GeoJSON, orthophoto and a vector-overlaid `digitized-overview.png`. **No download is assumed complete until the source counts, checksums, returned aerial bounds and game packaging tests pass.** Then run `npm run build && npm test` (and Python tests).
+
+# v1.7 original open-world gameplay notes
 
 **Canonical game repository: [ATphobia22/Tri-State-River-Valley-Video-Game](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game). Independent of TSM and its engineering repositories.**
 

@@ -1,0 +1,137 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "courthouse",
+        "kind": "nearest-public-road-to-game-stop",
+        "approximateGamePosition": [
+          -87.89481800176,
+          37.931833304474
+        ],
+        "distanceFromCurrentGameStopMeters": 53.56,
+        "nearestRoadName": "3rd",
+        "sourceRoadObjectID": 260271,
+        "note": "Computed nearest road, NOT a surveyed landmark ground-control point"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -87.894630439,
+          37.931374244
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "riverfront",
+        "kind": "nearest-public-road-to-game-stop",
+        "approximateGamePosition": [
+          -87.89352126429999,
+          37.926914172619995
+        ],
+        "distanceFromCurrentGameStopMeters": 278.24,
+        "nearestRoadName": "Water",
+        "sourceRoadObjectID": 115407,
+        "note": "Computed nearest road, NOT a surveyed landmark ground-control point"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -87.894527462,
+          37.929290928
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "farm",
+        "kind": "nearest-public-road-to-game-stop",
+        "approximateGamePosition": [
+          -87.90933236139999,
+          37.944032030719995
+        ],
+        "distanceFromCurrentGameStopMeters": 42.78,
+        "nearestRoadName": "Givens",
+        "sourceRoadObjectID": 262656,
+        "note": "Computed nearest road, NOT a surveyed landmark ground-control point"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -87.90933978,
+          37.943646692
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "oak",
+        "kind": "nearest-public-road-to-game-stop",
+        "approximateGamePosition": [
+          -87.9042136609,
+          37.9379056394
+        ],
+        "distanceFromCurrentGameStopMeters": 200.63,
+        "nearestRoadName": "Lower New Harmony",
+        "sourceRoadObjectID": 162079,
+        "note": "Computed nearest road, NOT a surveyed landmark ground-control point"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -87.901933807,
+          37.937985977
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "dock",
+        "kind": "nearest-public-road-to-game-stop",
+        "approximateGamePosition": [
+          -87.9103561015,
+          37.926914172619995
+        ],
+        "distanceFromCurrentGameStopMeters": 120.44,
+        "nearestRoadName": "69",
+        "sourceRoadObjectID": 12315,
+        "note": "Computed nearest road, NOT a surveyed landmark ground-control point"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -87.909632741,
+          37.925992632
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "trail",
+        "kind": "nearest-public-road-to-game-stop",
+        "approximateGamePosition": [
+          -87.8806676386,
+          37.94448250067
+        ],
+        "distanceFromCurrentGameStopMeters": 16.65,
+        "nearestRoadName": "Cardinal",
+        "sourceRoadObjectID": 96919,
+        "note": "Computed nearest road, NOT a surveyed landmark ground-control point"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -87.880670335,
+          37.944332496
+        ]
+      }
+    }
+  ]
+}

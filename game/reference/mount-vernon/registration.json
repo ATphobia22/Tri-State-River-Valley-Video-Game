@@ -1,0 +1,44 @@
+{
+  "captureUTC": "2026-11-22T00:16:46.524302+00:00",
+  "bboxRequestedWGS84": [
+    -87.928,
+    37.909,
+    -87.853,
+    37.96
+  ],
+  "bboxReturnedWGS84": [
+    -87.928,
+    37.90899340820312,
+    -87.853,
+    37.960006591796876
+  ],
+  "projection": "EPSG:4326",
+  "sourceImage": "https://di-ingov.img.arcgis.com/arcgis/rest/services/DynamicWebMercator/Indiana_Current_Imagery/ImageServer",
+  "imageServiceYears": "2022\u20132025",
+  "identifiedDowntownTileYear": "2023",
+  "imageDimensions": [
+    2048,
+    1393
+  ],
+  "imageryLicense": "CC0 \u2014 Indiana GIO",
+  "roadsSource": "https://gisdata.in.gov/server/rest/services/Hosted/Road_Centerlines_of_Indiana_Current/FeatureServer/0",
+  "roadsReleaseDate": "2025-12-31",
+  "roadLineCount": 709,
+  "buildingsSource": "https://gisdata.in.gov/server/rest/services/Hosted/Building_Footprints/FeatureServer/0",
+  "buildingYears": "LiDAR 2016\u20132020",
+  "buildingFootprintCount": 4819,
+  "buildingsRenderedInGame": 4412,
+  "roadLineParts": 709,
+  "gameHorizontalTransform": {
+    "lon0": -87.895,
+    "lat0": 37.9325,
+    "z0": 430,
+    "dlon": 1.137489e-05,
+    "dlat": -9.009399e-06
+  },
+  "verticalDatumVerified": false,
+  "allStopCoordinatesSurveyVerified": false,
+  "roadAndBuildingUse": "Design-reference and approximate visual registration; not cadastral or engineering",
+  "2025LeafOnPoseyAvailableSeparately": true,
+  "policy": "No fabricated elevation, roofs or imagery vintage; gameplay heights deliberately illustrative."
+}

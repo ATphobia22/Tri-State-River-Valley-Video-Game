@@ -5,5 +5,5 @@ test('repository-hosted game caches every required runtime script for offline pl
  const scripts=[...index.matchAll(/<script src="([^"]+)"/g)].map(x=>x[1]);
  assert.ok(scripts.length>=10);
  for(const script of scripts){assert.match(sw,new RegExp(script.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')),`Missing pre-cache: ${script}`);assert.ok(fs.existsSync(root+script),`Missing file: ${script}`);}
- assert.match(sw,/river-valley-family-1\.7\./);
+ assert.match(sw,/river-valley-family-1\.8\./);
 });
