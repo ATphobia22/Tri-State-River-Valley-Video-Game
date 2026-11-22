@@ -196,15 +196,16 @@ function desiredPixelError(){return ({auto:8,high:3.5,medium:14,low:28})[terrain
 function tileColorMesh(tile,index){
  const n=QT.WIDTH,ge=new G.PlaneGeometry(tile.width,tile.width,n,n);
  ge.rotateX(-Math.PI/2);ge.translate(tile.x0+tile.width/2,0,tile.z0+tile.width/2);
- const pos=ge.attributes.position,colors=[],rgb=new G.Color();
+ const pos=ge.attributes.position,colors=[],tileUVs=[],rgb=new G.Color();
  for(let i=0;i<pos.count;i++){
   const y=tile.samples[i];pos.setY(i,y);
   const c=themeHeight(y);rgb.setRGB(c[0]/255,c[1]/255,c[2]/255,G.SRGBColorSpace);
+  tileUVs.push(pos.getX(i)*.06,pos.getZ(i)*.06);
   const grain=(Math.sin(pos.getX(i)*.028)*Math.cos(pos.getZ(i)*.013)+1)*.022;
   colors.push(Math.min(1,rgb.r+grain),Math.min(1,rgb.g+grain),Math.min(1,rgb.b+grain));
  }
- ge.setAttribute('color',new G.Float32BufferAttribute(colors,3));ge.computeVertexNormals();
- const mesh=new G.Mesh(ge,new G.MeshLambertMaterial({vertexColors:true,side:G.DoubleSide}));
+ ge.setAttribute('color',new G.Float32BufferAttribute(colors,3));ge.setAttribute('uv',new G.Float32BufferAttribute(tileUVs,2));ge.computeVertexNormals();
+ const mesh=new G.Mesh(ge,new G.MeshLambertMaterial({vertexColors:true,map:facadePalette?.terrainMap||null,side:G.DoubleSide}));
  mesh.userData.lod=tile.depth;mesh.frustumCulled=true;
  const skirts=[];
  function addEdge(side){
@@ -289,8 +290,10 @@ function buildRoads(){
  // Sample both *edges* of each ribbon on the SAME displayed terrain triangles.
  // Short subdivisions prevent long straight road segments from cutting through hills.
  const meshData=GEO.drapedRoadVertices(activeRoads,height,LIMIT,12);
- const geo=new G.BufferGeometry();geo.setAttribute('position',new G.Float32BufferAttribute(meshData.vertices,3));geo.computeVertexNormals();
- roadMesh=new G.Mesh(geo,new G.MeshLambertMaterial({color:0x42474a,polygonOffset:true,polygonOffsetFactor:-2,side:G.DoubleSide}));
+ const geo=new G.BufferGeometry();geo.setAttribute('position',new G.Float32BufferAttribute(meshData.vertices,3));
+ const roadUVs=[];for(let i=0;i<meshData.vertices.length;i+=3)roadUVs.push(meshData.vertices[i]*.07,meshData.vertices[i+2]*.07);
+ geo.setAttribute('uv',new G.Float32BufferAttribute(roadUVs,2));geo.computeVertexNormals();
+ roadMesh=new G.Mesh(geo,facadePalette?.road?facadePalette.road.clone():new G.MeshLambertMaterial({color:0x42474a,polygonOffset:true,polygonOffsetFactor:-2,side:G.DoubleSide}));
  roadMesh.frustumCulled=false;scene.add(roadMesh);
  console.info('River Valley road mesh sections',meshData.sections,'terrain LOD',activeTerrainSegments);
 }
