@@ -38,6 +38,19 @@ test('organic sculpted silhouette increases hair, eyewear, leather and backpack 
  assert.ok(boots.length>1400,'hiking boots need rounded toe and shaft geometry');
  const skin=vertices('skin');assert.ok(skin.filter(v=>Math.abs(v[0])>5.0&&Math.abs(v[0])<6.6&&v[1]>11.0).length>75);
 });
+test('the GLB contains valid PNG fabric textures in its own binary chunk',()=>{
+ assert.equal(doc.images?.length,8);
+ assert.equal(doc.textures?.length,8);
+ assert.equal(manifest.embeddedTextureImages,8);
+ assert.ok(doc.materials.filter(m=>m.pbrMetallicRoughness?.baseColorTexture).length>=8);
+ for(const image of doc.images){
+  assert.equal(image.mimeType,'image/png');
+  const view=doc.bufferViews[image.bufferView];
+  const start=glb.bin.offset+(view.byteOffset||0);
+  const bytes=Buffer.from(glb.raw,start,view.byteLength);
+  assert.equal(bytes.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+ }
+});
 test('better fabric and face materials remain local, offline, and actually bound to GLB geometry',()=>{
  const runtime=fs.readFileSync(path.join(root,'src/rigged-hero.js'),'utf8');
  assert.match(runtime,/weaveTexture/);
