@@ -50,7 +50,10 @@
    // An independently framed art inspection of the CURRENT skinned GLB.
    // Full-body camera keeps space for the pose panel; close views make
    // 27-joint hand grips and boots auditable in headed browser captures.
-   if(focus==='right-hand'){
+   if(focus==='face'){
+    camera.position.set(phone?1.2:1.55,phone?15.25:15.1,phone?-12:-9);
+    camera.lookAt(0,14.60,-.25);
+   }else if(focus==='right-hand'){
     camera.position.set(10.8,13.4,phone?-12:-14);
     camera.lookAt(phone?8.3:9.6,11.8,-.4);
    }else if(focus==='boots'){
@@ -63,7 +66,7 @@
    camera.updateProjectionMatrix();
   }
   function setFocus(next){
-   if(!['full','right-hand','boots'].includes(next))throw new RangeError('Invalid character inspection focus');
+   if(!['full','face','right-hand','boots'].includes(next))throw new RangeError('Invalid character inspection focus');
    focus=next;resize(width,height);
   }
   function update({state='idle',stamp=0,dt=.016}={}){

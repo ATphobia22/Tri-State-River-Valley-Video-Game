@@ -39,6 +39,7 @@ def inspect(page, *, mobile: bool):
     assert state()["heroBoneCount"] >= 27
     assert state()["heroClipCount"] >= 9
     assert state()["heroTexturedMeshes"] >= 6, "Procedural cloth maps missing from WebGL character"
+    assert state()["heroGaiterPrintReady"] is True, "Skull-print fabric not rendered"
     assert state()["heroFootContacts"] is not None, "Terrain contact solver missing"
     assert state()["groundShadowReady"] is True, "Player contact shadow mesh missing"
     assert state()["motionState"] is not None, "Kinematic locomotion controller missing"
@@ -92,6 +93,19 @@ def inspect(page, *, mobile: bool):
             page.wait_for_timeout(160)
             page.screenshot(path=str(OUT / f"{prefix}-rig-sprint-boots-clean.png"))
             page.evaluate("document.getElementById('heroStudio').style.opacity=''")
+    # Visually inspect the CURRENT skinned, self-contained GLB against the
+    # user-supplied face-covering and glasses reference sheets.
+    page.locator("#heroFocus").select_option("face")
+    page.locator("#heroPose").select_option("idle")
+    page.wait_for_function(
+        "() => window.RiverValleyDebug.getState().heroPreviewFocus === 'face'",
+        timeout=10000,
+    )
+    page.screenshot(path=str(OUT / f"{prefix}-river-face-covering.png"))
+    page.evaluate("document.getElementById('heroStudio').style.opacity='0'")
+    page.wait_for_timeout(160)
+    page.screenshot(path=str(OUT / f"{prefix}-river-face-clean.png"))
+    page.evaluate("document.getElementById('heroStudio').style.opacity=''")
     page.locator("#heroFocus").select_option("full")
     page.locator("#heroPose").select_option("idle")
     page.wait_for_timeout(350)
