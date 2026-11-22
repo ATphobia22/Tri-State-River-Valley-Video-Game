@@ -4,7 +4,7 @@
  'use strict';
  function scatter(THREE,scene,ground,{mobile=false,limit=2450}={}){
   if(!THREE?.InstancedMesh||!scene||typeof ground!=='function')throw Error('Three.js, scene and terrain required');
-  const nRock=mobile?165:380,nReed=mobile?230:560;
+  const nRock=mobile?165:380,nReed=mobile?230:560,nFlower=mobile?210:620;
   let seed=0x734abe12;const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   const meshes=[];
   const rockGeo=new THREE.DodecahedronGeometry(1,0);
@@ -14,6 +14,9 @@
   const reedGeo=new THREE.ConeGeometry(.46,4.2,4,1),reedMat=new THREE.MeshLambertMaterial({color:0x748350,side:THREE.DoubleSide});
   const reeds=new THREE.InstancedMesh(reedGeo,reedMat,nReed);
   reeds.name='River/instanced-riverside-reeds';reeds.frustumCulled=false;
+  const flowerGeo=new THREE.ConeGeometry(.7,2.2,5,1),flowerMat=new THREE.MeshLambertMaterial({color:0xffffff,side:THREE.DoubleSide});
+  const flowers=new THREE.InstancedMesh(flowerGeo,flowerMat,nFlower);
+  flowers.name='River/instanced-meadow-wildflowers';flowers.frustumCulled=false;
   const dummy=new THREE.Object3D(),color=new THREE.Color();
   for(let i=0;i<nRock;i++){
    const x=(rand()*2-1)*limit*.94,z=(rand()*2-1)*limit*.94;
@@ -30,8 +33,17 @@
    dummy.rotation.set(0,rand()*6.28,0);dummy.scale.set(size,size,size);dummy.updateMatrix();reeds.setMatrixAt(i,dummy.matrix);
    color.setHSL(.18+rand()*.03,.26+rand()*.14,.27+rand()*.13);reeds.setColorAt(i,color);
   }
-  for(const mesh of [rock,reeds]){mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;scene.add(mesh);meshes.push(mesh);}
-  return {counts:{fieldStones:nRock,reeds:nReed,drawCalls:2},dispose(){for(const mesh of meshes)scene.remove(mesh);rockGeo.dispose();reedGeo.dispose();rockMat.dispose();reedMat.dispose();}};
+  for(let i=0;i<nFlower;i++){
+   const x=1260+(rand()-.5)*1050,z=-900+(rand()-.5)*1050;
+   const h=ground(x,z),size=.65+rand()*1.25;
+   dummy.position.set(x,(Number.isFinite(h)?h:0)+size*1.1,z);
+   dummy.rotation.set(0,rand()*Math.PI*2,0);dummy.scale.set(size,size,size);dummy.updateMatrix();
+   flowers.setMatrixAt(i,dummy.matrix);
+   color.setHSL([.11,.81,.58,.14][i%4],.35+rand()*.26,.46+rand()*.18);
+   flowers.setColorAt(i,color);
+  }
+  for(const mesh of [rock,reeds,flowers]){mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;scene.add(mesh);meshes.push(mesh);}
+  return {counts:{fieldStones:nRock,reeds:nReed,meadowFlowers:nFlower,drawCalls:3},dispose(){for(const mesh of meshes)scene.remove(mesh);rockGeo.dispose();reedGeo.dispose();flowerGeo.dispose();rockMat.dispose();reedMat.dispose();flowerMat.dispose();}};
  }
  return Object.freeze({scatter});
 });
