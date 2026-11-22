@@ -66,6 +66,23 @@ class TestPluginPolicy(unittest.TestCase):
         self.assertEqual(result["status"], "BLOCKED")
         self.assertTrue(any("Non-runtime module" in b for b in result["blockers"]))
 
+    def test_runtime_profiles_are_candidates_not_enabled_plugins(self):
+        for profile in ("performance", "physics", "rendering", "profiling", "scripting"):
+            with self.subTest(profile=profile):
+                names = policy.PROFILES[profile]
+                self.assertTrue(names)
+                report = policy.audit({"Plugins": []}, {}, requested=names)
+                self.assertEqual(report["enabled"], [])
+                self.assertEqual([candidate["name"] for candidate in report["candidates"]], names)
+                self.assertFalse(report["nativeBuildVerified"])
+
+    def test_editor_scripting_dependencies_cannot_ship(self):
+        for name in ("PythonScriptPlugin", "EditorScriptingUtilities"):
+            with self.subTest(name=name):
+                result = policy.audit({"Plugins": [{"Name": name, "Enabled": True}]},
+                                      {}, target="shipping")
+                self.assertEqual(result["status"], "BLOCKED")
+
     def test_scan_skips_malformed_descriptor(self):
         with tempfile.TemporaryDirectory() as folder:
             (Path(folder) / "Bad.uplugin").write_text("{oops")
