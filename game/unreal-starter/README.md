@@ -131,3 +131,59 @@ be injected into a Runtime target to make an editor QA script work.
    installation, inspect the cook log, and launch the packaged Windows game
    without Editor modules. The current optional art lab does not satisfy
    that runtime requirement.
+
+## Runtime-module inventory (third A–X list)
+
+These entries are **Unreal Engine modules**, not a package manifest for the
+browser game. A module may be engine-runtime, editor-only, platform-specific,
+experimental, optional plugin-provided, or unavailable in the installed build.
+Use the UE 5.8 engine source and target rules to establish actual availability
+before enabling one. This section records intended integration boundaries;
+it does not install, compile or execute Unreal modules.
+
+| River Valley system | Candidate runtime modules | Conditions |
+| --- | --- | --- |
+| Core game objects and input | Core, CoreUObject, Engine, InputCore, ApplicationCore, Projects, DeveloperSettings | Baseline dependencies only for a **future native Unreal game target**; the current art lab has no C++ runtime target |
+| River skeletal animation | AnimationCore, AnimGraphRuntime, Constraints, PhysicsCore, ClothingSystemRuntimeCommon, ClothingSystemRuntimeInterface | Evaluate imported skeletal mesh, animation blueprint, skin deformation, and clothing support on a UE runner; do not infer GLB compatibility from module availability |
+| Walking, vehicles and collision | Chaos, ChaosCore, ChaosSolverEngine, ChaosVehiclesCore, ChaosVehiclesEngine, NavigationSystem, GameplayTasks, GameplayTags, AIModule | Optional native physics/AI prototype; game browser collision, driving and NPC systems remain implemented in JavaScript |
+| Terrain, buildings and geometry | Landscape, Foliage, GeometryCore, GeometryFramework, MeshDescription, StaticMeshDescription, SkeletalMeshDescription, ISMPool | Optional native world authoring; distinguish art terrain from survey-grade or regulatory GIS |
+| Cinematics, UI and effects | CinematicCamera, LevelSequence, MovieScene, MovieSceneTracks, UMG, Slate, SlateCore, Niagara (when plugin present), ColorManagement | Cinematic/viewport prototype only; confirm native scene and package evidence separately |
+| Audio | AudioMixer, AudioMixerCore, AudioExtensions, SignalProcessing, AudioAnalyzer, VorbisAudioDecoder, OpusAudioDecoder | Choose engine-supported platform audio codecs; no requirement to bundle all decoders |
+| Rendering and optimization | RenderCore, RHI, RHICore, Renderer, D3D12RHI, VulkanRHI, MaterialShaderQualitySettings, ImageCore | RHI/platform backends depend on target hardware; do not hard-code every backend or CUDA |
+| Asset pipeline | AssetRegistry, InterchangeCore, InterchangeEngine, ImageWrapper, ImageWriteQueue, Json, JsonUtilities, Serialization | Import/catalog/export tools may be editor-dependent; runtime reads only packaged assets |
+| Runtime testing and diagnostics | AutomationTest, AutomationMessages, AutomationWorker, TraceLog, HardwareSurvey, PerfCounters | Execute UE native tests and profile real hardware independently of the existing browser CI |
+| Optional save/network | HTTP, SSL, Sockets, Networking, NetCore, NetworkReplayStreaming, PakFile | Not necessary for offline-first single-player game; no remote service or login should be required |
+
+### Explicit exclusions and special cases
+
+- **WebBrowser, WebBrowserTexture, CEF3Utils, WebSockets, HttpServer:**
+  do not add as a dependency to the offline-native target; the user requires
+  native offline execution rather than a hidden browser/server.
+- **Advertising, Analytics*, FriendsAndChat, XMPP, Voice, Online/telemetry
+  services:** not needed for anonymous, offline-first gameplay. No new
+  analytics, ads, identity, or tracking services are enabled.
+- **CUDA, D3D12RHI, VulkanRHI, OpenGLDrv, NullDrv, SlateNullRenderer:**
+  platform-specific or headless/render-backend choices, not universal
+  dependencies; select and test only the actual supported target.
+- **AutoRTFM, VerseCompiler, uLang*, NNE, MassEntity, IrisCore, StateStream,
+  VirtualProduction, AugmentedReality, HeadMountedDisplay, EyeTracker:**
+  specialized or optional technology. No game requirement justifies
+  enabling them in this art lab.
+- **BuildPatchServices, BackgroundHTTP, IoStoreOnDemandCore, StreamingFile,
+  InstallBundleManager, NetworkFileSystem:** remote/dynamic delivery is not
+  required for the offline game; preserve local asset packaging.
+- **AudioCaptureCore, AudioCaptureRtAudio, LiveLinkInterface,
+  LiveLinkAnimationCore:** potential future motion/audio capture tools,
+  not required for the current character asset and not enabled by default.
+- **BinkAudioDecoder, RadAudioDecoder, AdpcmAudioDecoder, AVEncoder, AVIWriter:**
+  codec or encoding choices that must be licensed and tested when used.
+  Do not add them merely because the module name appears in an inventory.
+
+### Native-engine dependency gate
+
+Before adding a runtime Build.cs or .uproject C++ module, require a concrete
+UE-specific feature, a supported UE 5.8 API, a module dependency audit,
+a clean Editor compile, cook, package and a network-disabled Windows launch.
+Keep Editor, Developer and Program modules out of Shipping. A successful
+browser game CI run validates **only the existing browser game** and the
+optional art-lab's static policy tests, not an Unreal native executable.
