@@ -156,6 +156,24 @@ def inspect(page, *, mobile: bool):
     page.locator("#heroPose").select_option("idle")
     page.wait_for_timeout(350)
     page.screenshot(path=str(OUT / f"{prefix}-studio-reset.png"))
+    # Import the genuine second-quality skinned GLB via the same local file picker
+    # used on iPhone Safari, then verify the gameplay model actually changes.
+    page.locator("#customHeroFile").set_input_files(str(ROOT / "assets/models/river_explorer_lod2.glb"))
+    page.wait_for_function(
+        "() => window.RiverValleyDebug.getState().heroCustomGLB === true",
+        timeout=20_000,
+    )
+    assert state()["heroSkinned"] is True
+    assert state()["heroLOD"] == "CUSTOM"
+    assert state()["heroBoneCount"] == 27
+    assert state()["heroClipCount"] == 13
+    page.screenshot(path=str(OUT / f"{prefix}-local-import-rigged-playable.png"))
+    page.locator("#clearCustomHero").click(timeout=15_000)
+    page.wait_for_function(
+        "() => window.RiverValleyDebug.getState().heroCustomGLB === false",
+        timeout=20_000,
+    )
+    assert state()["heroSkinned"] is True, "Restoring the built-in game rig failed"
     page.locator("#heroStudioClose").click(timeout=10_000)
     assert state()["heroInspection"] is False
     # County guide is a real source-backed map over the same playable engine.
