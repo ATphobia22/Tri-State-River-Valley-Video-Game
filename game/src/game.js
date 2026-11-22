@@ -897,7 +897,7 @@ function closeHeroStudio(){
  }
 }
 function screenshot(){if(!started)return;
- try{if(renderer&&view==='3d')renderer.render(scene,camera);else update2d();const a=document.createElement('a');a.download=`River-Valley-Family-${Date.now()}.png`;a.href=(view==='2d'||!renderer?atlas:canvas).toDataURL('image/png');document.body.appendChild(a);a.click();a.remove();toast('📷 Photo saved to your device (if supported by your browser).');}
+ try{if(renderer&&view==='3d'){if(heroInspection&&heroPreviewStage)heroPreviewStage.render(renderer);else renderer.render(scene,camera);}else update2d();const a=document.createElement('a');a.download=`River-Valley-Family-${Date.now()}.png`;a.href=(view==='2d'||!renderer?atlas:canvas).toDataURL('image/png');document.body.appendChild(a);a.click();a.remove();toast('📷 Photo saved to your device (if supported by your browser).');}
  catch(err){toast('Photo unavailable in this browser. Try your device screenshot controls.');}
 }
 function startTour(){if(!started)return;if(touring){stopTour();return;}closeWorldActivity();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;touring=true;tourAt=0;tourTimer=0;tourFrom={...player};
