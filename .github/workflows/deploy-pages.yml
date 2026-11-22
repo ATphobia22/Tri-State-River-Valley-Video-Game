@@ -56,6 +56,13 @@ jobs:
           assert all(not a['src'].startswith('http') for a in manifest['icons'])
           print('PASS: playable root, offline bundle, local assets and correct Pages base paths')
           PY
+      - name: Preserve the playable Pages site even when Pages has not been enabled yet
+        uses: actions/upload-artifact@v4
+        with:
+          name: river-valley-pages-site
+          path: _site/
+          include-hidden-files: true
+          if-no-files-found: error
       - uses: actions/configure-pages@v5
         with:
           enablement: true
