@@ -1,3 +1,13 @@
+# River Valley v1.9.0 — original articulated hero
+
+The player now has a detailed procedural character built from the supplied hero reference sheets, with curls, glasses, skull gaiter, gold chain, black outdoor outfit, cargo pants, boots and backpack. The previous cylinder/hat avatar is replaced by pose-driven scene-graph geometry; a seated copy rides in the vehicle. Animations include walking, sprinting, cosmetic jump, fishing, wildlife tracking, farming and campfire cooking.
+
+See docs/HERO_CHARACTER_v1.9.0.md for implementation, art provenance, limitations and test evidence. This is the separate family game, not the engineering digital twin.
+
+# River Valley Family Adventure — v1.9.0 hero and animations
+
+The original browser game now has an articulated playable hero matching the supplied animation reference: curls, glasses, skull-pattern gaiter, gold-colored chain, backpack, black outdoor outfit, cargo pants and hiking boots. Distinct procedural poses animate idle, walk/run/sprint, jump/land, interact/farm, fishing, non-graphic wildlife tracking, campfire cooking and driving. The character and vehicle driver are entirely local Three.js meshes. The art-sheet pictures are references, not a pre-rigged character model. See game/docs/HERO_CHARACTER_v1.9.0.md.
+
 # River Valley Family Adventure v1.8.2 — handcrafted River Valley graphics
 
 The separate family game now includes **original local procedural PBR masonry**, styled brick/clapboard/limestone near-player building walls and darkened glass; **cell-streamed, seasonal InstancedMesh foliage** in town, oak-grove, countryside, and Ohio River bank zones; and **frame-budgeted quadtree terrain transitions** that keep the entire previous terrain visible until the next terrain is ready, then fade it out.
