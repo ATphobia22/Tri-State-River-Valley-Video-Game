@@ -537,7 +537,8 @@ function updateVisuals(dt,stamp){
  if(stamp-lastVegetationTime>250){refreshVegetation(false,stamp);lastVegetationTime=stamp;}
  updateBuildingLOD();
  const yaw=heroInspection?playerHeading+Math.PI:cameraYaw,dist=heroInspection?30:cameraDist,dx=Math.sin(yaw)*dist,dz=Math.cos(yaw)*dist;
- const tx=player.x+dx,tz=player.z+dz,ty=heroInspection?height(player.x,player.z)+12:height(tx,tz)+Math.max(23,cameraDist*.34);
+ const tx=player.x+dx,tz=player.z+dz,desiredY=heroInspection?height(player.x,player.z)+12:height(tx,tz)+Math.max(23,cameraDist*.34);
+ const ty=heroInspection?desiredY:MOTION.cameraClearance({playerX:player.x,playerZ:player.z,lookHeight:height(player.x,player.z)+6+heroHeightOffset,cameraX:tx,cameraZ:tz,desiredY,groundAt:height,maxLift:75});
  camera.position.lerp(new G.Vector3(tx,ty,tz),Math.min(1,dt*4.5));
  camera.lookAt(player.x,height(player.x,player.z)+(heroInspection?10.5:6),player.z);
  renderer.render(scene,camera);
