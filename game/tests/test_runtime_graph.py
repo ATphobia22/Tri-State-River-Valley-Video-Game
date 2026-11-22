@@ -15,7 +15,7 @@ class RuntimeGraphAudit(unittest.TestCase):
         self.assertEqual(result["errors"], [])
         self.assertTrue(result["ok"])
         self.assertGreaterEqual(result["scripts"], 14)
-        self.assertEqual(result["models"], 6)
+        self.assertEqual(result["models"], 8)  # Six existing game models plus two skinned character LODs
 
     def test_rejects_untrusted_remote_and_missing_scripts(self):
         with tempfile.TemporaryDirectory() as folder:
