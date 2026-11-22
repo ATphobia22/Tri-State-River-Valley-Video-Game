@@ -642,6 +642,7 @@ function closeCounty(){$('countyPanel').hidden=true;}
 function travelCounty(){
  if(!COUNTY||!started)return;
  const loc=COUNTY.stage(countySelected);if(!loc)return;
+ if(!isWorld3D()){toast('The county destination requires 3D mode. Select 3D, then visit again.');return;}
  const result=C.visitCountyRegion(save,countySelected);
  save=result.save;player.x=loc.x;player.z=loc.z;
  suspension.reset();motion.reset({facing:playerHeading});scout?.reset();motionState=motion.snapshot();heroHeightOffset=0;
