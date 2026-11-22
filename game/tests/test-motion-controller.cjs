@@ -64,7 +64,7 @@ test('new gameplay rig and all offline bundles explicitly load before entry poin
  assert.ok(html.indexOf('src/motion-controller.js')<html.indexOf('src/game.js'));
  assert.match(sw,/\.\/src\/motion-controller\.js/);
  assert.match(game,/ValleyMotion/);
- assert.match(game,/heroHeightOffset:/);
+ assert.match(game,/heroHeightOffset,groundShadowReady:/);
  assert.match(game,/motionState:/);
  assert.match(game,/MOTION\.cameraClearance/);
 });
