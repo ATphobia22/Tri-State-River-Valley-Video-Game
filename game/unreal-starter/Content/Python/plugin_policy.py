@@ -12,6 +12,11 @@ PROFILES = {
     "database": ["SQLiteSupport"],
     "optimization": ["OodleTexture"],
     "ml": ["NNERuntimeCoreML", "NNERuntimeIREE", "NNERuntimeORT", "NNERuntimeRDG"],
+    "performance": ["SignificanceManager", "PerformanceMonitor", "Reflex"],
+    "physics": ["ChaosCloth", "ChaosClothAsset", "ChaosFlesh", "ChaosVehiclesPlugin", "PhysicsControl", "ChaosCaching", "Fracture"],
+    "rendering": ["MovieRenderPipeline", "MovieRenderPipelineRenderPasses", "ProceduralMeshComponent", "LiDARPointCloud", "OpenColorIO", "VirtualHeightfieldMesh", "ComputeFramework", "HDRIBackdrop"],
+    "profiling": ["WorldMetrics", "RenderTrace"],
+    "scripting": ["PythonScriptPlugin", "EditorScriptingUtilities", "SequencerScripting"],
     "editor": ["PythonScriptPlugin", "EditorScriptingUtilities"],
 }
 # Suggested identifiers require validation against the locally installed engine.
