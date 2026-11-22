@@ -5,7 +5,6 @@ on:
     paths:
       - 'game/**'
       - '.github/workflows/deploy-pages.yml'
-      - 'README.md'
   workflow_dispatch:
 
 permissions:
