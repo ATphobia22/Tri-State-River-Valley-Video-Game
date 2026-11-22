@@ -22,7 +22,7 @@ let roofInstances=null,tourCurve=null;
 let activeTerrainSegments=16,terrainDetail='auto',visualEffects='full';
 let time=15.5,weather='clear',season='summer',keys=new Set(),pointerDown=false,pointerX=0,pointerY=0,cameraYaw=.2,cameraDist=74,mapZoom=1;
 let demArray,grid=DATA.grid,staticMap=null,needsMap=true,lastUI=0,lastFrame=0,lastPersist=0;
-let referenceEnabled=!!(REF&&REF.imageDataUrl),referenceImage=null,referenceDrape=null;
+let referenceEnabled=false,referenceImage=null,referenceDrape=null;
 const activeRoads=REF&&Array.isArray(REF.roadsPacked)&&REF.roadsPacked.length>400?REF.roadsPacked:DATA.roads;
 const activeBuildings=REF&&Array.isArray(REF.buildingsPacked)&&REF.buildingsPacked.length>1000?REF.buildingsPacked:DATA.buildings;
 const G=window.THREE;
@@ -661,7 +661,6 @@ function bindUI(){
  for(const [id,key] of [['cineGrain','grain'],['cineStats','showStats']])$(id).addEventListener('change',e=>{cinemaPrefs[key]=e.target.checked;syncCinemaControls();saveCinemaPrefs();});
  $('weather').addEventListener('change',e=>setWeather(e.target.value));$('season').addEventListener('change',e=>setSeason(e.target.value));
  $('time').addEventListener('input',e=>{time=Number(e.target.value);save.time=time;$('timeLabel').textContent=C.formatTime(time);});$('time').addEventListener('change',()=>persist());
- $('referenceOverlay').checked=referenceEnabled;
  $('referenceOverlay').addEventListener('change',e=>{referenceEnabled=!!e.target.checked;needsMap=true;updateReferenceDrape();toast(referenceEnabled?(referenceImage?'🛰️ Geographic overhead reference enabled. Not a surveyed terrain.':'🛰️ Reference image is not loaded yet.'):'🌾 Stylized landscape restored.');});
  $('terrainDetail').addEventListener('change',e=>{terrainDetail=e.target.value;applyTerrainLOD(true);});
  $('visualEffects').addEventListener('change',e=>{visualEffects=e.target.value;applyTerrainLOD(true);toast(visualEffects==='full'?'✨ Cinematic lighting enabled.':'⚡ Reduced atmosphere for performance.');});

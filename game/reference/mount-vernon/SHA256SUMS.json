@@ -1,8 +1,8 @@
 {
-  "control-points.geojson": "0751e29fd6dde2538f9ad1cf4d90a29eede346a1c5a6adbec32b93c3ec8f9782",
-  "registration.json": "f8d5a186d1fe7b5c49637627f2edded929b54a6c58df2312400164e4a90221fb",
-  "buildings.geojson": "81bbc95cc5e284b4a0c46290f0d975931da30c453164a3e37165aa1ebaba5caa",
-  "digitized-overview.png": "ff0800615a2b49ceb6e7d367b5b7d1ff8f44d533d1590fdb50eecdad15c69371",
+  "overhead.jpg": "726a240ca62d22f980c8ec89087cf1305b8760267a936ae51083d582eb0627df",
   "roads.geojson": "70ee190daba161eae496d3567d4a4273f5883e84c6b687aba62331f6cfbaffe3",
-  "overhead.jpg": "726a240ca62d22f980c8ec89087cf1305b8760267a936ae51083d582eb0627df"
+  "buildings.geojson": "81bbc95cc5e284b4a0c46290f0d975931da30c453164a3e37165aa1ebaba5caa",
+  "control-points.geojson": "0751e29fd6dde2538f9ad1cf4d90a29eede346a1c5a6adbec32b93c3ec8f9782",
+  "registration.json": "b242592ad47d39b1ef45a9d0622357dbc4d3c6af9c3277a9c1def37cec26bcaa",
+  "digitized-overview.png": "ff0800615a2b49ceb6e7d367b5b7d1ff8f44d533d1590fdb50eecdad15c69371"
 }
