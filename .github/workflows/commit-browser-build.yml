@@ -63,6 +63,6 @@ jobs:
           git add game/game.html game/River_Valley_Family_Adventure_OFFLINE.html game/assets/models/river_explorer_rigged.glb game/assets/models/river_explorer_manifest.json game/data/hero-model.js
           git diff --cached --check
           if ! git diff --cached --quiet; then
-            git commit -m "build(game): synchronize tested v1.12.0 visual-quality release"
+            git commit -m "build(game): synchronize tested v1.12.1 visual-quality release"
             git push origin HEAD:main
           fi

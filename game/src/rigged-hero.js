@@ -112,6 +112,19 @@ function skullGaiterPrint(THREE){
  mesh.position.set(0,-.29,-1.57);mesh.renderOrder=3;
  return mesh;
 }
+// Use the GLB's own image bufferViews instead of ignoring the eight baked textures.
+// Extracting from the BIN chunk ensures no third-party hosts or runtime downloads.
+function extractEmbeddedImage(parsed,textureIndex){
+ const doc=parsed?.json,texture=doc?.textures?.[textureIndex];
+ if(!Number.isInteger(textureIndex)||!texture||!Number.isInteger(texture.source))throw Error('Invalid embedded GLB texture index');
+ const image=doc.images?.[texture.source],view=doc.bufferViews?.[image?.bufferView];
+ if(!image||!Number.isInteger(image.bufferView)||!view||!['image/png','image/jpeg','image/webp'].includes(image.mimeType)||image.uri)throw Error('Embedded GLB image required; external images prohibited');
+ const offset=view.byteOffset||0,length=view.byteLength;
+ if(!Number.isSafeInteger(offset)||!Number.isSafeInteger(length)||offset<0||length<12||offset+length>parsed.bin.size)throw Error('GLB image bufferView outside BIN chunk');
+ const bytes=new Uint8Array(parsed.raw,parsed.bin.offset+offset,length);
+ if(image.mimeType==='image/png'&&(bytes[0]!==137||bytes[1]!==80||bytes[2]!==78||bytes[3]!==71))throw Error('Invalid embedded PNG signature');
+ return {bytes,mimeType:image.mimeType,source:'GLB_BIN',name:image.name||''};
+}
 function create(THREE,{seated=false,samplePose}={}){
  if(!THREE?.SkinnedMesh||!THREE?.Bone||!THREE?.Skeleton||typeof samplePose!=='function')throw Error('Skinned Three.js and pose sampler required');
  const global=typeof globalThis!=='undefined'?globalThis:{};
@@ -133,16 +146,50 @@ function create(THREE,{seated=false,samplePose}={}){
  const meshNode=doc.nodes.find(n=>n.skin!==undefined);
  if(!meshNode)throw Error('Missing GLB skin node');
  const meshDoc=doc.meshes[meshNode.mesh],meshes=[],materials=[];
+ const embeddedTextureState={expected:0,loaded:0,failed:0};
+ const pendingBlobUrls=new Set(),gpuTextureMaps=new Set();
+ const browserImageSupport=typeof document!=='undefined'&&typeof Blob==='function'&&typeof URL!=='undefined'&&typeof URL.createObjectURL==='function'&&typeof THREE.TextureLoader==='function';
  for(const spec of doc.materials||[]){
   const pbr=spec.pbrMetallicRoughness||{},c=pbr.baseColorFactor||[.5,.5,.5,1];
-  const map=/\bskin\b/.test(spec.name)?skinTexture(THREE):weaveTexture(THREE,spec.name);
   const bumpMap=weaveBumpTexture(THREE,spec.name);
-  materials.push(new THREE.MeshStandardMaterial({name:spec.name,
+  const material=new THREE.MeshStandardMaterial({name:spec.name,
    color:new THREE.Color().setRGB(c[0],c[1],c[2],THREE.LinearSRGBColorSpace),
    metalness:pbr.metallicFactor??0,roughness:pbr.roughnessFactor??.9,
-   map,bumpMap,bumpScale:/\bskin\b/.test(spec.name)?.006:/\bboots\b/.test(spec.name)?.023:.013,
+   bumpMap,bumpScale:/\bskin\b/.test(spec.name)?.006:/\bboots\b/.test(spec.name)?.023:.013,
    transparent:spec.alphaMode==='BLEND',opacity:c[3],
-   side:spec.doubleSided?THREE.DoubleSide:THREE.FrontSide,depthWrite:spec.alphaMode!=='BLEND'}));
+   side:spec.doubleSided?THREE.DoubleSide:THREE.FrontSide,depthWrite:spec.alphaMode!=='BLEND'});
+  materials.push(material);
+  const index=pbr.baseColorTexture?.index;
+  if(Number.isInteger(index)&&browserImageSupport){
+   try{
+    const image=extractEmbeddedImage(parsed,index),url=URL.createObjectURL(new Blob([image.bytes],{type:image.mimeType}));
+    pendingBlobUrls.add(url);embeddedTextureState.expected++;
+    const texture=new THREE.TextureLoader().load(url,loaded=>{
+     URL.revokeObjectURL(url);pendingBlobUrls.delete(url);
+     if(!scene.userData.disposed){loaded.userData.riverEmbeddedSource='GLB_BIN';embeddedTextureState.loaded++;}
+    },undefined,err=>{
+     URL.revokeObjectURL(url);pendingBlobUrls.delete(url);
+     if(scene.userData.disposed)return;
+     embeddedTextureState.failed++;
+     material.map=/\bskin\b/.test(spec.name)?skinTexture(THREE):weaveTexture(THREE,spec.name);
+     material.needsUpdate=true;
+     console.warn('Embedded River GLB texture fell back to local procedural fabric:',spec.name,String(err));
+    });
+    texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
+    texture.minFilter=THREE.LinearMipmapLinearFilter;texture.anisotropy=2;
+    texture.userData.riverEmbeddedSource='GLB_BIN';
+    gpuTextureMaps.add(texture);material.map=texture;
+    material.userData.riverEmbeddedTextureIndex=index;material.needsUpdate=true;
+   }catch(err){
+    embeddedTextureState.failed++;
+    material.map=/\bskin\b/.test(spec.name)?skinTexture(THREE):weaveTexture(THREE,spec.name);
+    material.needsUpdate=true;
+    console.warn('River GLB embedded texture cannot be used:',spec.name,String(err));
+   }
+  }else if(Number.isInteger(index)){
+   // Headless Node or older browsers keep a local procedural compatibility fallback.
+   material.map=/\bskin\b/.test(spec.name)?skinTexture(THREE):weaveTexture(THREE,spec.name);
+  }
  }
  for(const prim of meshDoc.primitives){
   const pos=source.dataAccessor(parsed,prim.attributes.POSITION),norm=source.dataAccessor(parsed,prim.attributes.NORMAL),skinIDs=source.dataAccessor(parsed,prim.attributes.JOINTS_0),weight=source.dataAccessor(parsed,prim.attributes.WEIGHTS_0),idx=source.dataAccessor(parsed,prim.indices);
@@ -276,8 +323,8 @@ function create(THREE,{seated=false,samplePose}={}){
   currentState=pose.state;lastPose=pose;return {state:currentState,pose};
  }
  if(seated)update({state:'drive',stamp:100,dt:.5});
- function dispose(){if(mixer)mixer.stopAllAction();footContacts.reset();if(gaiterPrint){gaiterPrint.geometry.dispose();gaiterPrint.material.map?.dispose();gaiterPrint.material.dispose();gaiterPrint.parent?.remove(gaiterPrint);}for(const m of meshes){m.geometry.dispose();m.parent?.remove(m)}for(const g of propsGeo)g.dispose();for(const m of materials){m.map?.dispose();m.bumpMap?.dispose();m.dispose();}for(const p of Object.values(props))p.parent?.remove(p);scene.clear();}
- return {root:scene,joints,props,meshes,skinned:true,gaiterDecalReady:!!gaiterPrint,get activeClip(){return activeClipName},get clipMixerReady(){return !!mixer&&clipActions.size>=9},get footContacts(){return footContacts.snapshot()},clips:(doc.animations||[]).map(a=>a.name),update,dispose,features:['curly-hair','glasses','skull-gaiter','black-shirt','gold-chain','cargo-pants','adventure-boots','backpack'],get state(){return currentState},get pose(){return lastPose}};
+ function dispose(){scene.userData.disposed=true;for(const url of pendingBlobUrls)URL.revokeObjectURL(url);pendingBlobUrls.clear();if(mixer)mixer.stopAllAction();footContacts.reset();if(gaiterPrint){gaiterPrint.geometry.dispose();gaiterPrint.material.map?.dispose();gaiterPrint.material.dispose();gaiterPrint.parent?.remove(gaiterPrint);}for(const m of meshes){m.geometry.dispose();m.parent?.remove(m)}for(const g of propsGeo)g.dispose();for(const m of materials){m.map?.dispose();m.bumpMap?.dispose();m.dispose();}for(const texture of gpuTextureMaps)texture.dispose();gpuTextureMaps.clear();for(const p of Object.values(props))p.parent?.remove(p);scene.clear();}
+ return {root:scene,joints,props,meshes,skinned:true,gaiterDecalReady:!!gaiterPrint,get activeClip(){return activeClipName},get clipMixerReady(){return !!mixer&&clipActions.size>=9},get embeddedTextures(){return {...embeddedTextureState}},get footContacts(){return footContacts.snapshot()},clips:(doc.animations||[]).map(a=>a.name),update,dispose,features:['curly-hair','glasses','skull-gaiter','black-shirt','gold-chain','cargo-pants','adventure-boots','backpack'],get state(){return currentState},get pose(){return lastPose}};
 }
-return Object.freeze({create});
+return Object.freeze({create,extractEmbeddedImage});
 });
