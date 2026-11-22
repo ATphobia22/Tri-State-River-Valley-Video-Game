@@ -1,3 +1,7 @@
+# v1.9.5 — Natural movement, physical jump and terrain-aware camera
+
+The existing offline 3D game now uses a frame-rate-independent movement controller with acceleration, braking and smooth turns; the J key and mobile JUMP lift River above the terrain; the rig refines cadence and tool grips; a procedural contact shadow anchors the hero and vehicle; and the follow camera gains sampled terrain clearance. No additional renderer, external runtime service, or licensed assets were added. Browser and gameplay tests enforce the behavior. [Design, research and verification notes](docs/GAMEPLAY_FEEL_v1.9.5.md).
+
 # v1.9.4 — Contact-aware boot planting, fabric detail and glasses
 
 River now has a short-duration world-space foot stance latch with slope-sampled ankle pitch, local procedural ripstop/weave materials over new GLB UV0 coordinates, transparent glasses lenses and additional skull gaiter details. Changes are deterministic and offline; the original v1.9.3 skin and fallback remain. Full provenance and acceptance boundaries: [v1.9.4 art pass](docs/HERO_ART_PASS_v1.9.4.md).
