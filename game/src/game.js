@@ -328,14 +328,25 @@ function detailedBuilding(rec){
    }
    // Near-camera windows follow each source footprint segment rather than world axes.
    const winMat=mats?mats.glass:new G.MeshBasicMaterial({color:0x234d5d,side:G.DoubleSide});
+   // One GPU draw per building's windows; preserve placement and material.
+   const winPositions=[],winIndices=[];
    for(let k=0;k<Math.min(pts.length,6);k++){
      const [x0,z0]=pts[k],[x1,z1]=pts[(k+1)%pts.length],dx=x1-x0,dz=z1-z0,len=Math.hypot(dx,dz);
      if(len<13||roofY-Math.max(...terrainY)<8)continue;
      const theta=-Math.atan2(dz,dx),nx=Math.sin(theta),nz=Math.cos(theta);
      for(let j=1;j<=Math.min(3,Math.floor(len/15));j++){
-       const t=j/(Math.min(3,Math.floor(len/15))+1),win=new G.Mesh(new G.PlaneGeometry(Math.min(5,len*.12),4),winMat);
-       win.position.set(x0+dx*t+nx*.42,roofY-6,z0+dz*t+nz*.42);win.rotation.y=theta;g.add(win);
+       const t=j/(Math.min(3,Math.floor(len/15))+1),x=x0+dx*t+nx*.42,y=roofY-6,z=z0+dz*t+nz*.42;
+       const w=Math.min(5,len*.12)/2,h=2,ux=Math.cos(theta)*w,uz=-Math.sin(theta)*w;
+       const base=winPositions.length/3;
+       winPositions.push(x-ux,y-h,z-uz,x+ux,y-h,z+uz,x-ux,y+h,z-uz,x+ux,y+h,z+uz);
+       winIndices.push(base,base+1,base+2,base+2,base+1,base+3);
      }
+   }
+   if(winIndices.length){
+     const winGeo=new G.BufferGeometry();
+     winGeo.setAttribute('position',new G.Float32BufferAttribute(winPositions,3));
+     winGeo.setIndex(winIndices);winGeo.computeVertexNormals();
+     g.add(new G.Mesh(winGeo,winMat));
    }
  }catch(_){/* Invalid derived footprint: display walls and keep running. */}
  g.userData.index=rec.i;g.userData.facade=mats?.family||'classic';return g;
@@ -356,7 +367,10 @@ function updateBuildingLOD(force=false){
  if(!buildingMesh)return;
  if(!force&&Math.hypot(player.x-detailLast.x,player.z-detailLast.z)<42)return;
  detailLast={...player};
- let near=buildingItems.map((b,i)=>({i,dist:Math.hypot(b.x-player.x,b.z-player.z)})).filter(p=>p.dist<330).sort((a,b)=>a.dist-b.dist).slice(0,85);
+ // Driving favors near silhouettes; distant buildings remain batched instances.
+ const detailCap=save.mode==='drive'?(innerWidth<920?24:38):(innerWidth<920?38:64);
+ let near=buildingItems.map((b,i)=>({i,dist:Math.hypot(b.x-player.x,b.z-player.z)}))
+  .filter(p=>p.dist<(save.mode==='drive'?270:330)).sort((a,b)=>a.dist-b.dist).slice(0,detailCap);
  const want=new Set(near.map(x=>x.i));
  for(const [i,g] of detailBuildings){if(!want.has(i)){
    detailGroup.remove(g);g.traverse(obj=>{if(obj.isMesh)obj.geometry.dispose();});detailBuildings.delete(i);
