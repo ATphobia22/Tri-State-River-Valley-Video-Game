@@ -1,4 +1,12 @@
-# River Valley Family Adventure v1.8 — georeferenced 3D game reference
+# River Valley Family Adventure — game source and creative pipeline
+
+**Priority:** a visually appealing, responsive, playable family adventure. Road placement, river shape, terrain, and architectural details are **art-directed**, not constrained by real-world survey verification. The government overhead data is a useful optional guide, not a prerequisite for release.
+
+**GitHub Pages game:** https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/ (requires first-time repository Pages activation: Settings → Pages → Source: GitHub Actions). See the [deployment builder](tools/build_pages.py), [tests](tests/test_pages_build.py), [visual priorities](docs/GAME_ART_AND_RUNTIME_PRIORITIES.md), and [repository README](../README.md).
+
+**Offline download:** `River_Valley_Family_Adventure_OFFLINE.html`. The generated GitHub Pages site serves the fully bundled game as both `index.html` and `game.html`; its PWA icons and caching are relative to any site subpath. There is no backend or login.
+
+## Original v1.8 reference-layer release notes
 
 New v1.8 horizontal map reference: after the official IGIO download step, the 3D scene and 2D overview use authoritative overhead imagery, digitized street centerlines, and building footprints via a shared WGS84-to-game registration. The overhead imagery identifies as **2023 in central Mount Vernon**; official 2025 leaf-on imagery is a distinct source and is not assumed to be the default raster. The *roof heights*, game DEM, and stops remain illustrative. See [`docs/MOUNT_VERNON_GEOREFERENCE_V1_8.md`](docs/MOUNT_VERNON_GEOREFERENCE_V1_8.md) and [`reference/mount-vernon/registration.json`](reference/mount-vernon/registration.json) after data acquisition. Settings → official overhead reference toggles the art reference without changing local save data.
 
@@ -27,7 +35,7 @@ See docs/OPEN_WORLD_V1_7_RELEASE.md. The browser WebGL hardware/render quality a
 A **standalone family-game project** hosted in its dedicated GitHub repository; entirely separate from Tri-State Systems Manager and the engineering GitHub repositories. The GitHub source repository is public; game saves remain private to each browser. A stylized Mount Vernon, Indiana / Ohio–Wabash regional preview, **not a surveyed or historically faithful replica**.
 
 ## Play
-- **Online:** https://river-valley-family-adventure-3e955781.base44.app/game.html
+- **Online (GitHub Pages):** https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/ once Pages is enabled (previous Base44 mirror: https://river-valley-family-adventure-3e955781.base44.app/game)
 - **Windows offline:** double-click `Open_River_Valley_Windows.cmd` after extracting this ZIP, or open `River_Valley_Family_Adventure_OFFLINE.html` in Chrome or Edge.
 - **iPhone:** use the HTTPS game page in Safari, confirm offline game cached, then Share > Add to Home Screen. Direct iOS Files Quick Look is not a game browser.
 
