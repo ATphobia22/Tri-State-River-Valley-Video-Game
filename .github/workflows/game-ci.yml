@@ -67,10 +67,10 @@ jobs:
           assert not scripts, f'External script dependencies found: {scripts}'
           assert html.stat().st_size>2_000_000
           assert 'window.ValleyReference=' in html.read_text()
-          assert len(list((root/'assets/models').glob('*.glb')))==5
+          assert len(list((root/'assets/models').glob('*.glb')))==6
           assert (root/'src/open-world.js').exists()
           assert (root/'docs/OPEN_WORLD_V1_7_RELEASE.md').exists()
-          print('PASS: self-contained offline HTML, 5 GLBs, gameplay source and release evidence')
+          print('PASS: self-contained offline HTML, 6 GLBs, gameplay source and release evidence')
           PY
       - name: Install Chromium for real WebGL character tests
         run: |
@@ -90,6 +90,8 @@ jobs:
           name: river-valley-offline-game
           path: |
             game/River_Valley_Family_Adventure_OFFLINE.html
+            game/assets/models/river_explorer_rigged.glb
+            game/assets/models/river_explorer_manifest.json
             game/docs/OPEN_WORLD_V1_7_RELEASE.md
             game/docs/MOUNT_VERNON_GEOREFERENCE_V1_8.md
             game/reference/mount-vernon/digitized-overview.png

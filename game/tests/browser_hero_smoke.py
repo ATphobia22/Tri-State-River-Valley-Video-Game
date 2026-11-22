@@ -35,6 +35,9 @@ def inspect(page, *, mobile: bool):
     state = lambda: page.evaluate("window.RiverValleyDebug.getState()")
     assert state()["renderMode"] == "webgl", "WebGL fallback cannot validate hero stage"
     assert state()["heroParts"] >= 10
+    assert state()["heroSkinned"] is True, "Rigged GLB did not instantiate: procedural fallback used"
+    assert state()["heroBoneCount"] >= 17
+    assert state()["heroClipCount"] >= 9
 
     page.locator("#playBtn").click(timeout=15_000)
     page.wait_for_function(
@@ -75,7 +78,7 @@ def inspect(page, *, mobile: bool):
         timeout=15_000,
     )
     assert not issues, f"Uncaught page errors: {issues}"
-    return dict(mobile=mobile, webgl=True, heroModel=True, heroParts=state()["heroParts"],
+    return dict(mobile=mobile, webgl=True, heroModel=True, heroParts=state()["heroParts"], heroSkinned=state()["heroSkinned"], heroClips=state()["heroClipCount"],
                 studioOpened=True, posesTested=5, driveWorks=True,
                 pageErrors=issues, screenshotFolder=str(OUT))
 
