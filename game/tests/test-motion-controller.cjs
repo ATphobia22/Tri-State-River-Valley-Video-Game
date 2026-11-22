@@ -48,6 +48,15 @@ test('drive stays ground-bound; clamp and bad frame times never corrupt state',(
  assert.throws(()=>m.step({position:{x:NaN,z:0}}),TypeError);
  assert.throws(()=>Motion.create({walkSpeed:-10}),RangeError);
 });
+test('follow camera clearance raises its target above an intervening ridge',()=>{
+ const high=Motion.cameraClearance({playerX:0,playerZ:0,lookHeight:6,cameraX:0,cameraZ:100,
+ desiredY:35,groundAt:(x,z)=>z>40&&z<60?40:0});
+ assert.ok(high>35&&high<=125,'ridge raises camera but remains clamped');
+ const flat=Motion.cameraClearance({playerX:0,playerZ:0,lookHeight:6,cameraX:0,cameraZ:100,
+ desiredY:35,groundAt:()=>0});
+ assert.equal(flat,35);
+ assert.throws(()=>Motion.cameraClearance({playerX:NaN,playerZ:0,lookHeight:6,cameraX:0,cameraZ:0,desiredY:10}),TypeError);
+});
 test('new gameplay rig and all offline bundles explicitly load before entry point',()=>{
  const fs=require('node:fs'),path=require('node:path'),root=path.resolve(__dirname,'..');
  const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),sw=fs.readFileSync(path.join(root,'sw.js'),'utf8'),game=fs.readFileSync(path.join(root,'src/game.js'),'utf8');
@@ -57,4 +66,5 @@ test('new gameplay rig and all offline bundles explicitly load before entry poin
  assert.match(game,/ValleyMotion/);
  assert.match(game,/heroHeightOffset:/);
  assert.match(game,/motionState:/);
+ assert.match(game,/MOTION\.cameraClearance/);
 });
