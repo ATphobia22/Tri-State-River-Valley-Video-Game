@@ -12,7 +12,9 @@ function create({capacity=3600,eventCapacity=96}={}){
  if(!Number.isInteger(eventCapacity)||eventCapacity<8||eventCapacity>500)throw RangeError('Invalid event capacity');
  const frames=[],events=[];let startedAt=null,lastStamp=null;
  function observe(ms,{stamp=0,drawCalls=0,triangles=0,x=null,z=null,scene=null,mode=null,quality=null,terrainTiles=null,terrainQueued=null}={}){
-  if(!finite(ms)||ms<1||ms>250||!finite(stamp))return;
+  // Record genuine slow frames, even when software WebGL takes 250–3000ms.
+  // Discard only implausible/paused-tab intervals; never censor a real hitch.
+  if(!finite(ms)||ms<1||ms>3000||!finite(stamp))return;
   if(lastStamp!==null&&(stamp<=lastStamp||stamp-lastStamp>3000)){lastStamp=stamp;return;}
   lastStamp=stamp;if(startedAt===null)startedAt=stamp;
   if(frames.length>=capacity)frames.shift();
