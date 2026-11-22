@@ -20,7 +20,10 @@ test('full revised River asset uses same current 27-bone skinned rig and 13 clip
  assert.equal(doc.animations.length,13);
  assert.equal(manifest.sha256,crypto.createHash('sha256').update(binary).digest('hex'));
  assert.ok(manifest.triangleCount>10500,'the character still has the low-poly placeholder topology');
- assert.ok(manifest.triangleCount<25000,'mobile character geometry budget exceeded');
+ const phone=JSON.parse(fs.readFileSync(path.join(root,'assets/models/river_explorer_lod1_manifest.json'),'utf8'));
+ assert.ok(manifest.triangleCount<40000,'showcase geometry cap exceeded');
+ assert.ok(phone.triangleCount<25000,'actual balanced mobile geometry budget exceeded');
+ assert.ok(phone.triangleCount<manifest.triangleCount,'mobile model did not simplify geometry');
  assert.ok(manifest.vertexCount>8000,'must add actual detail to GLB, not merely runtime shaders');
  assert.equal(manifest.usesExternalResources,false);
 });
