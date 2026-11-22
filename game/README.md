@@ -91,7 +91,7 @@ The offline test **really disables networking** after a cache warm-up, navigates
 
 | Release | Changes | Implementation record |
 | --- | --- | --- |
-| **v1.10.1** | Batched building windows and terrain seam skirts, staged LOD sampling, degenerate-triangle cleanup and per-scene frame diagnostics | [Mobile performance/rig evidence](docs/MOBILE_PERFORMANCE_AND_RIG_v1.10.1.md) |
+| **v1.10.1** | Pooled terrain/foliage materials; batched windows and seam skirts; deferred driving road redrape; generated 27-joint mesh cleanup and real idle crossfades; hand/boot inspection; per-scene diagnostics | [Mobile performance/rig evidence](docs/MOBILE_PERFORMANCE_AND_RIG_v1.10.1.md) |
 | **v1.10.0** | Posey County Atlas, four regional vignettes, Scout behavior, hunting/fishing/cooking/farming upgrades and painted terrain | [County expansion](docs/POSEY_COUNTY_EXPANSION_v1.10.md) |
 | **v1.9.7** | Polygon-aware footprint collision and visual wheel suspension | [Physics/character evidence](docs/PHYSICS_CHARACTER_HARDWARE_v1.9.7.md) |
 | **v1.9.6** | 27-joint hands, 13 animation clips, procedural environment, biome audio and FPS export | [World refinement](docs/WORLD_REFINEMENT_v1.9.6.md) |
@@ -109,3 +109,7 @@ The offline test **really disables networking** after a cache warm-up, navigates
 **Do not claim** the following as shipped or certified: continuous 1:1 surveyed Posey County, authoritative road/roof/elevation meshes, full dynamic rigid-body physics, licensed recorded motion/audio packs, physical iPhone/Windows hardware acceptance or regulatory-grade spatial fidelity. Full county data acquisition, licensing, scene streaming, GPU measurements and device validation remain production tasks. [Current roadmap](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/issues/6).
 
 The project `package.json` currently declares `UNLICENSED`. A public repository is not by itself an open-source license for its original code, imagery or models.
+
+### Open-source terrain research (references, not installed dependencies)
+
+The terrain/LOD/render techniques applied to the current Three.js runtime were screened against [the cited source-project inventory](docs/OPEN_SOURCE_TERRAIN_VISUAL_RESEARCH_2026-11-22.md). No alternative Godot/Unity/Unreal/Cesium engine or externally licensed terrain/character content was added to the browser game.
