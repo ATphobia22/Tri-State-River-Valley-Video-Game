@@ -35,7 +35,7 @@ if(!COLLISION?.create||!AUDIO?.create||!PROBE?.create)throw new Error('Offline c
 if(!VEHICLE?.create)throw new Error('Offline vehicle suspension required');
 const soundscape=AUDIO.create(),frameProbe=PROBE.create(),suspension=VEHICLE.create();
 let vehicleState=suspension.snapshot();
-let lastGpuTune=0,activePixelRatio=0,probeScene='downtown',lastProbeSceneAt=0,cameraGoal=null;
+let lastGpuTune=0,activePixelRatio=0,probeScene='downtown',lastProbeSceneAt=0,cameraGoal=null,roadRefreshQueued=false,detailFastLast=false;
 let collisionWorld=COLLISION.create(),lastFootstepAt=0,lastCollision=null,terrainDecor=null;
 let motionState=motion.snapshot(),heroHeightOffset=0,groundShadow=null;
 const streamingGovernor=STREAM?STREAM.createGovernor({maxTiles:innerWidth<781?110:200,minTiles:innerWidth<781?60:85,targetFPS:30}):null;
@@ -189,10 +189,12 @@ function commitTerrainLOD(job){
  terrainStats={tiles:job.leaves.length,triangles:job.leaves.length*QT.WIDTH*QT.WIDTH*2,levels:{}};
  for(const tile of job.leaves)terrainStats.levels[tile.depth]=(terrainStats.levels[tile.depth]||0)+1;
  activeTerrainSegments=QT.WIDTH;
- if(roadMesh){scene.remove(roadMesh);roadMesh.geometry.dispose();roadMesh.material.dispose();roadMesh=null;buildRoads();}
- updateBuildingLOD(true);
- if(referenceEnabled)updateReferenceDrape();
- refreshVegetation(true);
+ // Do not regenerate road ribbons, buildings and texture drapes in the
+ // same frame that commits the terrain while driving. Existing geometry
+ // remains visible and is reconciled when vehicle movement settles.
+ roadRefreshQueued=!!roadMesh;
+ if(!started){roadRefreshQueued=false;}
+ if(referenceEnabled&&!started)updateReferenceDrape();
  const labels=Object.entries(terrainStats.levels).map(([l,n])=>`L${l}:${n}`).join(' · ');
  const label=`Quadtree SSE ${terrainDetail.toUpperCase()} · ${job.leaves.length} tiles · ${labels}`;
  if($('lodLabel'))$('lodLabel').textContent=label;lastLODLabel=label;
@@ -381,10 +383,12 @@ function buildBuildings(){
 }
 function updateBuildingLOD(force=false){
  if(!buildingMesh)return;
- if(!force&&Math.hypot(player.x-detailLast.x,player.z-detailLast.z)<42)return;
- detailLast={...player};
- // Driving favors near silhouettes; distant buildings remain batched instances.
- const detailCap=save.mode==='drive'?(innerWidth<920?24:38):(innerWidth<920?38:64);
+ const fastDriving=save.mode==='drive'&&currentTravelSpeed>42;
+ if(!force&&fastDriving===detailFastLast&&Math.hypot(player.x-detailLast.x,player.z-detailLast.z)<(fastDriving?180:42))return;
+ detailFastLast=fastDriving;detailLast={...player};
+ // In high-speed drive mode show the instanced skyline and avoid uploading
+ // dozens of new textured wall/roof buffers in the driving frame.
+ const detailCap=fastDriving?0:save.mode==='drive'?(innerWidth<920?24:38):(innerWidth<920?38:64);
  let near=buildingItems.map((b,i)=>({i,dist:Math.hypot(b.x-player.x,b.z-player.z)}))
   .filter(p=>p.dist<(save.mode==='drive'?270:330)).sort((a,b)=>a.dist-b.dist).slice(0,detailCap);
  const want=new Set(near.map(x=>x.i));
@@ -614,7 +618,13 @@ function updateVisuals(dt,stamp){
  applyTerrainLOD();
  if(terrainTransition)terrainTransition.pump(save.mode==='drive'?(visualEffects==='lite'?3:5):(visualEffects==='lite'?6:10));
  fadeRetiringTerrain(stamp);
- if(stamp-lastVegetationTime>250){refreshVegetation(false,stamp);lastVegetationTime=stamp;}
+ if(roadRefreshQueued && (save.mode!=='drive'||currentTravelSpeed<15) && !terrainTransition?.status().pending){
+   const refreshAt=performance.now();roadRefreshQueued=false;
+   if(roadMesh){scene.remove(roadMesh);roadMesh.geometry.dispose();roadMesh.material.dispose();roadMesh=null;buildRoads();}
+   if(referenceEnabled)updateReferenceDrape();
+   frameProbe.mark('road-redrape-after-lod',{stamp:performance.now(),x:player.x,z:player.z,ms:performance.now()-refreshAt,tiles:terrainStats.tiles});
+ }
+ if(stamp-lastVegetationTime>(save.mode==='drive'?650:250)){refreshVegetation(false,stamp);lastVegetationTime=stamp;}
  updateBuildingLOD();
  const yaw=heroInspection?playerHeading+Math.PI:cameraYaw,dist=heroInspection?30:cameraDist,dx=Math.sin(yaw)*dist,dz=Math.cos(yaw)*dist;
  const tx=player.x+dx,tz=player.z+dz,desiredY=heroInspection?height(player.x,player.z)+12:height(tx,tz)+Math.max(23,cameraDist*.34);
@@ -1089,7 +1099,7 @@ function init(){
  if(!tryRenderer()){view='2d';$('quality').value='2d';}else view='3d';
  resize();updateHUD();mapDraw(mapCtx,mapCanvas.width,mapCanvas.height,false);
  requestAnimationFrame(loop);
- window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,heroPreviewReady:!!heroPreviewStage,heroInspection,heroPreviewPose,heroState,heroModel:!!heroController,heroProfile:HERO?.PROFILE?.id||null,heroSkinned:!!heroController?.skinned,scout:scout?.snapshot()||null,scoutBond:save.scoutBond,countyRegion:save.countyRegion,countyVisited:[...save.countyVisited],countyBoundaryVertices:COUNTY_DATA?.boundary?.length||0,countyVignettes:countyVignettes?.counts||null,collision:collisionWorld.snapshot(),vehicleSuspension:suspension.snapshot(),worldPaint:terrainDecor?.counts||null,lastCollision,audio:soundscape.snapshot(),performance:frameProbe.summary(),performanceScenes:frameProbe.cohorts(),pixelRatio:activePixelRatio,heroHeightOffset,groundShadowReady:!!groundShadow,motionState:motion.snapshot(),heroTexturedMeshes:heroController?.meshes?.filter(m=>!!m.material?.map).length||0,heroFootContacts:heroController?.footContacts||null,heroBoneCount:heroController?.skinned?Object.keys(heroController.joints).length:0,heroClipCount:heroController?.clips?.length||0,heroParts:heroController?Object.keys(heroController.joints).length:0,terrainTransition:terrainTransition?.status()||null,vegetation:biomeStreamer?.snapshot()||null,facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,imageryYear:REF?.metadata?.downtownTileYear||null},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),resetPerformance:()=>frameProbe.reset(),capturePerformance:()=>frameProbe.report({renderer:'WebGL',viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio||1},mode:save.mode,quality:visualEffects,userAgent:navigator.userAgent}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
+ window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,heroPreviewReady:!!heroPreviewStage,heroInspection,heroPreviewPose,heroState,heroModel:!!heroController,heroProfile:HERO?.PROFILE?.id||null,heroSkinned:!!heroController?.skinned,scout:scout?.snapshot()||null,scoutBond:save.scoutBond,countyRegion:save.countyRegion,countyVisited:[...save.countyVisited],countyBoundaryVertices:COUNTY_DATA?.boundary?.length||0,countyVignettes:countyVignettes?.counts||null,collision:collisionWorld.snapshot(),vehicleSuspension:suspension.snapshot(),worldPaint:terrainDecor?.counts||null,lastCollision,audio:soundscape.snapshot(),performance:frameProbe.summary(),performanceScenes:frameProbe.cohorts(),terrainTransition:terrainTransition?.status()||null,roadRefreshQueued,pixelRatio:activePixelRatio,heroHeightOffset,groundShadowReady:!!groundShadow,motionState:motion.snapshot(),heroTexturedMeshes:heroController?.meshes?.filter(m=>!!m.material?.map).length||0,heroFootContacts:heroController?.footContacts||null,heroBoneCount:heroController?.skinned?Object.keys(heroController.joints).length:0,heroClipCount:heroController?.clips?.length||0,heroParts:heroController?Object.keys(heroController.joints).length:0,terrainTransition:terrainTransition?.status()||null,vegetation:biomeStreamer?.snapshot()||null,facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,imageryYear:REF?.metadata?.downtownTileYear||null},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),resetPerformance:()=>frameProbe.reset(),capturePerformance:()=>frameProbe.report({renderer:'WebGL',viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio||1},mode:save.mode,quality:visualEffects,userAgent:navigator.userAgent}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
 }
 init();
 })();
