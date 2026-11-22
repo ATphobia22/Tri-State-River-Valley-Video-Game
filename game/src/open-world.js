@@ -14,7 +14,23 @@ function approachSite(id,yaw=0,distance=34){const site=SITES[id];if(!site)return
 function farmPick(save,now){const a=save.farmPlots||[],ready=a.findIndex(t=>t>0&&t<=now);if(ready>=0)return {index:ready,action:'harvest'};const empty=a.findIndex(t=>t===0);if(empty>=0)return {index:empty,action:'plant'};return {index:0,action:'growing'};}
 function sceneWorld(T,scene,ground){
  const root=new T.Group();root.name='River Valley in-world activities';scene.add(root);
- const mats={wood:new T.MeshLambertMaterial({color:0x8b5936}),woodLight:new T.MeshLambertMaterial({color:0xb18b5f}),iron:new T.MeshLambertMaterial({color:0x374d52}),clay:new T.MeshLambertMaterial({color:0xa56648}),soil:new T.MeshLambertMaterial({color:0x594932}),leaf:new T.MeshLambertMaterial({color:0x538440}),corn:new T.MeshLambertMaterial({color:0xf4cb4b}),water:new T.MeshPhongMaterial({color:0x5bb4c3,shininess:72,transparent:true,opacity:.94}),glow:new T.MeshBasicMaterial({color:0xffc767}),smoke:new T.MeshLambertMaterial({color:0xd2d1c4,transparent:true,opacity:.25,depthWrite:false}),animal:new T.MeshLambertMaterial({color:0xa8784b}),cream:new T.MeshLambertMaterial({color:0xebd5ad}),roof:new T.MeshLambertMaterial({color:0x655344})};
+ const texture=(base,kind)=>{
+  if(typeof document==='undefined')return null;
+  const canvas=document.createElement('canvas');canvas.width=canvas.height=128;
+  const ctx=canvas.getContext('2d');if(!ctx)return null;
+  ctx.fillStyle=base;ctx.fillRect(0,0,128,128);
+  let seed=kind==='soil'?91744:38614;
+  const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+  for(let i=0;i<520;i++){
+   const x=rand()*128,y=rand()*128,r=.5+rand()*2;
+   ctx.fillStyle=kind==='soil'?'rgba(31,20,12,.23)':'rgba(253,237,200,.1)';
+   ctx.fillRect(x,y,r,r);
+  }
+  if(kind==='timber')for(let y=0;y<128;y+=8){ctx.fillStyle='rgba(42,27,15,.13)';ctx.fillRect(0,y,128,1);}
+  const map=new T.CanvasTexture(canvas);map.wrapS=map.wrapT=T.RepeatWrapping;
+  map.colorSpace=T.SRGBColorSpace;map.generateMipmaps=true;map.minFilter=T.LinearMipmapLinearFilter;return map;
+ };
+ const mats={wood:new T.MeshStandardMaterial({color:0x8b5936,roughness:.94,map:texture('#c8a37a','timber')}),woodLight:new T.MeshLambertMaterial({color:0xb18b5f}),iron:new T.MeshLambertMaterial({color:0x374d52}),clay:new T.MeshLambertMaterial({color:0xa56648}),soil:new T.MeshStandardMaterial({color:0x594932,roughness:.98,map:texture('#cab391','soil')}),leaf:new T.MeshLambertMaterial({color:0x538440}),corn:new T.MeshLambertMaterial({color:0xf4cb4b}),water:new T.MeshPhongMaterial({color:0x5bb4c3,shininess:72,transparent:true,opacity:.94}),glow:new T.MeshBasicMaterial({color:0xffc767}),smoke:new T.MeshLambertMaterial({color:0xd2d1c4,transparent:true,opacity:.25,depthWrite:false}),animal:new T.MeshLambertMaterial({color:0xa8784b}),cream:new T.MeshLambertMaterial({color:0xebd5ad}),roof:new T.MeshLambertMaterial({color:0x655344}),barn:new T.MeshStandardMaterial({color:0x9c5040,roughness:.87}),tin:new T.MeshStandardMaterial({color:0x677c7e,roughness:.46,metalness:.25})};
  const make=(geo,mat,parent,pos,rotation)=>{let m=new T.Mesh(geo,mat);if(pos)m.position.set(...pos);if(rotation)m.rotation.set(...rotation);parent.add(m);return m;};
  const cube=(parent,mat,x,y,z,w,h,d)=>make(new T.BoxGeometry(w,h,d),mat,parent,[x,y,z]);
  const cyl=(parent,mat,x,y,z,r1,r2,h,n=10)=>make(new T.CylinderGeometry(r1,r2,h,n),mat,parent,[x,y,z]);
@@ -29,6 +45,14 @@ function sceneWorld(T,scene,ground){
  cube(deer,mats.animal,0,7,0,7,5,13);cube(deer,mats.cream,0,5,-5.5,4.3,1.4,4);cube(deer,mats.animal,0,10,-6.5,3,7,3);ball(deer,mats.animal,0,13,-7,2.9);
  for(const side of [-1,1]){for(const z of [-4.2,4.2])cube(deer,mats.animal,side*2.2,2,z,1.4,5,1.2);const antler=cyl(deer,mats.wood,side*2,17,-7,.45,.7,6,6);antler.rotation.z=side*.27;}
  const tail=make(new T.ConeGeometry(1.8,4,5),mats.cream,deer,[0,8,7],[Math.PI/2,0,0]);
+ const turkey=new T.Group();turkey.name='Animated turkey';hunt.add(turkey);
+ ball(turkey,mats.animal,0,4,0,3.8);ball(turkey,mats.cream,0,6,-2.5,1.7);
+ for(let n=0;n<7;n++){const t=(n-3)*.32;const feather=make(new T.ConeGeometry(1.1,7,5),mats.animal,turkey,[Math.sin(t)*5,5.8,3.8],[Math.PI/2,0,-t]);}
+ for(const sx of [-1,1])cyl(turkey,mats.wood,sx*1.6,1,-.3,.22,.25,2.2,5);
+ const rabbit=new T.Group();rabbit.name='Animated rabbit';hunt.add(rabbit);
+ ball(rabbit,mats.animal,0,2.3,0,2.6);ball(rabbit,mats.animal,0,3,-3.2,1.7);
+ for(const sx of [-1,1]){const ear=make(new T.ConeGeometry(.68,4,6),mats.cream,rabbit,[sx*.9,6,-3.4]);ear.rotation.z=sx*.14;}
+ const wildlife={deer,turkey,rabbit};
  const aimRing=new T.Group();hunt.add(aimRing);make(new T.TorusGeometry(5,.7,6,20),mats.glow,aimRing,[0,10,-3]);cyl(aimRing,mats.glow,0,6,-3,.5,.5,5);
  // River fishing. A real pier and moving bobber in world space.
  const fish=groups.fish;for(const side of [-1,1])for(let z=-20;z<=52;z+=18)cyl(fish,mats.wood,side*14,-5,z,2,2,16,8);
@@ -36,6 +60,11 @@ function sceneWorld(T,scene,ground){
  const rod=cyl(fish,mats.iron,-10,10,-20,.45,.8,23,7);rod.rotation.z=.35;
  const line=new T.Group();fish.add(line);const float=ball(line,new T.MeshLambertMaterial({color:0xf4cb4b}),0,0,0,1.75);cyl(line,mats.water,0,-1.1,0,.7,.7,1.4);
  const ripple=make(new T.TorusGeometry(4,.2,4,24),mats.water,line,[0,-.2,0],[Math.PI/2,0,0]);
+ const fishModel=new T.Group();fishModel.name='Jumping fish when the bobber dips';line.add(fishModel);
+ const fishBody=make(new T.SphereGeometry(2.1,12,8),mats.iron,fishModel,[0,0,0]);fishBody.scale.set(1.3,.6,.5);
+ const fishTail=make(new T.ConeGeometry(1.6,3.2,6),mats.water,fishModel,[-3,0,0]);fishTail.rotation.z=Math.PI/2;
+ for(const z of [-1,1])cyl(fish,mats.woodLight,30,1,z*23,2,2,9,8);
+ for(let k=0;k<8;k++){const z=-32+k*12;cyl(fish,mats.leaf,-34,3,z,.7,.8,6,5);}
  // Nine persistent three-dimensional corn plots. Visible stages come from save slots.
  const field=groups.farm;const patches=[],crops=[];
  for(let i=0;i<9;i++){
@@ -48,6 +77,20 @@ function sceneWorld(T,scene,ground){
  }
  for(let i=0;i<7;i++){const x=-75+i*25;cyl(field,mats.wood,x,5,-72,1.5,1.5,10,6);cube(field,mats.woodLight,x,7,-72,26,1.1,1.5);}
  const hay=cyl(field,mats.corn,73,6,55,7,7,12,10);hay.rotation.z=Math.PI/2;
+ // Layered barn, grain tower, walking rows, pump, scarecrow and raised beds
+ // replace the featureless farm lot without altering saved nine-plot economy.
+ cube(field,mats.barn,88,11,-43,42,22,36);
+ const barnRoof=make(new T.ConeGeometry(28,12,4),mats.roof,field,[88,27,-43]);barnRoof.rotation.y=Math.PI/4;
+ cube(field,mats.wood,88,7,-24,12,14,1);
+ for(let k=0;k<5;k++)cube(field,mats.woodLight,88,1,-8+k*8,16,.5,1.2);
+ const silo=cyl(field,mats.tin,139,18,-50,9,9,36,13);make(new T.ConeGeometry(9,8,13),mats.roof,field,[139,40,-50]);
+ for(let i=0;i<6;i++)cube(field,mats.soil,-83+i*29,.05,100,18,.4,55);
+ const pump=cyl(field,mats.tin,-95,5,-12,2,2,9,10);cyl(field,mats.tin,-95,11,-12,5,4,3,9);
+ const scarecrow=new T.Group();field.add(scarecrow);scarecrow.position.set(35,0,85);
+ cyl(scarecrow,mats.wood,0,7,0,.6,.6,14);
+ cube(scarecrow,mats.woodLight,0,11,0,13,1.4,1.4);
+ ball(scarecrow,mats.corn,0,15,0,2.5);
+ make(new T.ConeGeometry(4,3,9),mats.roof,scarecrow,[0,18,0]);
  // Campfire kitchen with animated flame and smoke. Meals affect the shared local pantry.
  const kitchen=groups.cook;const tables=cube(kitchen,mats.woodLight,-18,4,-15,22,4,15);for(const x of [-27,-9])for(const z of [-20,-10])cube(kitchen,mats.wood,x,1,z,2,7,2);
  for(let i=0;i<11;i++){const t=i/11*Math.PI*2;cube(kitchen,mats.iron,Math.sin(t)*8,1,Math.cos(t)*8,5,3,4);}
@@ -55,28 +98,44 @@ function sceneWorld(T,scene,ground){
  for(let i=0;i<4;i++)make(new T.ConeGeometry(2+i*.5,8+i*2,5),i%2?mats.corn:mats.glow,flames,[(i-1.5)*2.2,5,0]);
  cyl(kitchen,mats.iron,0,8,0,7,6,5,12);cyl(kitchen,mats.wood,0,11,0,7.5,7.5,1,12);
  const smoke=[];for(let i=0;i<8;i++)smoke.push(ball(kitchen,mats.smoke,0,15+i*5,0,2+i*.52));
+ // Cutting board, cast iron skillet, serving bowl, food and shelter details.
+ const board=cube(kitchen,mats.woodLight,-20,7.1,-15,11,.4,7);
+ const skillet=cyl(kitchen,mats.iron,-4,12,0,4.7,4.7,.8,15);
+ cyl(kitchen,mats.iron,3.8,12,0,.55,.6,9,7).rotation.z=Math.PI/2;
+ const food=new T.Group();kitchen.add(food);
+ for(let k=0;k<6;k++)ball(food,k%2?mats.corn:mats.leaf,-4+Math.sin(k*2.7)*2.7,13.1,Math.cos(k*2.7)*2.7,.9);
+ cube(kitchen,mats.woodLight,-29,4.3,23,20,1,10);
+ for(const x of [-38,-20])cyl(kitchen,mats.wood,x,1,23,1,1,6,7);
  const campLight=new T.PointLight(0xffb066,.64,160,2);campLight.position.set(0,16,0);kitchen.add(campLight);
- const world={root,groups,deer,aimRing,float,line,ripple,patches,crops,flames,smoke,campLight,counts:{activitySites:4,animalModels:1,fieldPlots:9,animatedSmokePuffs:8},
+ const world={root,groups,deer,wildlife,fishModel,aimRing,float,line,ripple,patches,crops,flames,smoke,food,campLight,counts:{activitySites:4,animalModels:3,fieldPlots:9,animatedSmokePuffs:8,barnModels:1,grainSilos:1},
   update({stamp=0,save,activity,huntRound,fishRound,aim=.5,weather='clear'}){
    const tick=stamp*.001;
    // Local animation is deterministic and tied to game clock, not browser FPS.
-   deer.position.set(huntRound?(huntRound.target-.5)*67:Math.sin(tick*.48)*31,ground(SITES.hunt.x+(huntRound?(huntRound.target-.5)*67:Math.sin(tick*.48)*31),SITES.hunt.z-5)-ground(SITES.hunt.x,SITES.hunt.z),-5);
-   deer.rotation.y=Math.sin(tick*.9)*.13;
+   const targetX=huntRound?(huntRound.target-.5)*67:Math.sin(tick*.48)*31;
+   for(const [kind,animal] of Object.entries(wildlife)){
+    animal.visible=kind===(huntRound?.kind||'deer');
+    animal.position.set(targetX,ground(SITES.hunt.x+targetX,SITES.hunt.z-5)-ground(SITES.hunt.x,SITES.hunt.z)+(kind==='rabbit'?.6:0),-5);
+    animal.rotation.y=Math.sin(tick*(kind==='rabbit'?1.7:.9))*.14;
+   }
    deer.children.forEach((c,i)=>{if(i>=3&&i<=6)c.rotation.x=Math.sin(tick*3+i*1.5)*.13;});
+   turkey.rotation.z=Math.sin(tick*4)*.04;rabbit.rotation.z=Math.sin(tick*4.5)*.055;
    aimRing.position.set((aim-.5)*67,0,-5);aimRing.visible=activity==='hunt'&&!!huntRound;
    line.position.set(15,-3,40);line.visible=activity==='fish';
    const biting=fishRound&&Date.now()>=fishRound.biteAt&&Date.now()<=fishRound.biteAt+700;
    float.position.y=Math.sin(tick*5)*.45-(biting?2.5:0);
+   fishModel.visible=!!biting;fishModel.position.set(0,(biting?2.5:0)+Math.abs(Math.sin(tick*7))*1.3,0);
+   fishTail.rotation.y=Math.sin(tick*13)*.45;
    float.material.color.setHex(biting?0xff5c43:0xf4cb4b);
    ripple.scale.setScalar(biting?1.6:1+.15*Math.sin(tick*4));
    for(let i=0;i<9;i++){const t=save.farmPlots[i],growing=t>Date.now(),ready=t>0&&!growing;
-    const c=crops[i];c.visible=t>0;c.scale.y=ready?1:growing?.28:.001;
+    const c=crops[i];c.visible=t>0;c.scale.y=ready?1:growing?Math.max(.18,1-Math.min(8000,t-Date.now())/9700):.001;
    }
    flames.scale.y=1+Math.sin(tick*10)*.13;
    smoke.forEach((m,i)=>{m.position.y=16+((i*5+tick*5)%43);m.position.x=Math.sin(tick+i*2)*2.7;m.position.z=Math.cos(tick*.65+i)*2;m.scale.setScalar(.65+.36*(i/8));});
    campLight.intensity=weather==='rain'?.3:.65+Math.sin(tick*11)*.1;
+   food.visible=save.inventory.meals>0||activity==='cook';food.rotation.y=tick*.12;
   },
-  dispose(){scene.remove(root);root.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();/* shared materials disposed below */}});Object.values(mats).forEach(m=>m.dispose());}
+  dispose(){scene.remove(root);root.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();/* shared materials disposed below */}});Object.values(mats).forEach(m=>{m.map?.dispose();m.dispose();});}
  };
  return world;
 }
