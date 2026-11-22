@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+"""Package the playable, offline-first family game at the root of GitHub Pages.
+
+The built HTML includes the engine, models and imagery. Never publish a redirect
+or a nested source file as the site's homepage.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import shutil
+from pathlib import Path
+
+
+def build(game_root: Path, destination: Path) -> None:
+    game_root = Path(game_root)
+    destination = Path(destination)
+    hosted = game_root / "game.html"
+    offline = game_root / "River_Valley_Family_Adventure_OFFLINE.html"
+    if not hosted.is_file() or not offline.is_file():
+        raise FileNotFoundError("Run npm --prefix game run build before packaging Pages")
+    html = hosted.read_text(encoding="utf-8")
+    if "window.ValleyReference=" not in html or len(html) < 2_000_000:
+        raise ValueError("Refusing incomplete or non-georeferenced HTML build")
+    if "serviceWorker.register('./game-sw.js'" not in html:
+        raise ValueError("Hosted game lacks its relative-scope offline registration")
+
+    destination.mkdir(parents=True, exist_ok=True)
+    for name in ("index.html", "game.html"):
+        (destination / name).write_text(html, encoding="utf-8")
+    shutil.copyfile(offline, destination / "offline.html")
+
+    # Keep the service worker confined to this GitHub Pages project subpath,
+    # while ensuring both /repo/ and /repo/index.html are usable offline.
+    sw = (game_root / "game-sw.js").read_text(encoding="utf-8")
+    anchor = "const GAME_PATHS=new Set([SHELL,ALIAS]);"
+    if anchor not in sw:
+        raise ValueError("Game service-worker contract changed; review caching logic")
+    sw = sw.replace(
+        anchor,
+        "const INDEX=new URL('index.html',ROOT).pathname;\n"
+        "const ROOT_PATH=ROOT.pathname;\n"
+        "const GAME_PATHS=new Set([SHELL,ALIAS,INDEX,ROOT_PATH]);",
+    )
+    old = "await Promise.all([c.put(SHELL,response.clone()),c.put(ALIAS,response.clone())]);"
+    new = ("await Promise.all([c.put(SHELL,response.clone()),c.put(ALIAS,response.clone()),"
+           "c.put(INDEX,response.clone()),c.put(ROOT_PATH,response.clone())]);")
+    if old not in sw:
+        raise ValueError("Service-worker precache contract changed")
+    sw = sw.replace(old, new)
+    (destination / "game-sw.js").write_text(sw, encoding="utf-8")
+
+    # The hosted-site manifest formerly referenced images on a different host.
+    # All installation icons now live on GitHub Pages under relative paths.
+    manifest = json.loads((game_root / "manifest.webmanifest").read_text(encoding="utf-8"))
+    manifest["id"] = "./"
+    manifest["start_url"] = "./"
+    manifest["scope"] = "./"
+    for icon in manifest["icons"]:
+        icon["src"] = "./assets/" + Path(icon["src"]).name
+        src = game_root / icon["src"]
+        dst = destination / icon["src"]
+        if not src.is_file():
+            raise FileNotFoundError(f"Missing PWA icon: {src}")
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, dst)
+    (destination / "game.webmanifest").write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+
+    preview = game_root / "reference/mount-vernon/digitized-overview.png"
+    if preview.is_file():
+        shutil.copyfile(preview, destination / "map-reference.png")
+    (destination / ".nojekyll").write_text("", encoding="utf-8")
+    print(f"GitHub Pages: playable root HTML, offline download, local icons: {destination}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--game-root", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--output", type=Path, default=Path("_site"))
+    args = parser.parse_args()
+    build(args.game_root, args.output)
