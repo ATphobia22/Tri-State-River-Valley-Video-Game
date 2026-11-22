@@ -57,7 +57,7 @@ function install(){
   message(blob?'Your Home Sweet Home intro is saved locally for offline playback.':'No local intro selected; the game starts normally.');
  };
  function stop(){
-  video.pause();video.hidden=true;video.removeAttribute('src');video.load();
+  video.pause();video.hidden=true;skip.hidden=true;video.removeAttribute('src');video.load();
   if(finish){const callback=finish;finish=null;callback();}
  }
  skip.addEventListener('click',stop);
@@ -67,7 +67,7 @@ function install(){
   if(bypass){bypass=false;return;}
   if(!clipURL)return;
   e.stopImmediatePropagation();e.preventDefault();
-  video.src=clipURL;video.hidden=false;video.currentTime=0;
+  video.src=clipURL;video.hidden=false;skip.hidden=false;video.currentTime=0;
   finish=()=>{bypass=true;play.click();};
   // play() is called synchronously from the real user tap to preserve iOS audio permission.
   const result=video.play();
@@ -82,7 +82,7 @@ function install(){
   }catch(err){message('Intro rejected: '+String(err.message));}
  });
  clearBtn.addEventListener('click',async()=>{
-  if(finish){finish=null;video.pause();video.hidden=true;}
+  if(finish){finish=null;video.pause();video.hidden=true;skip.hidden=true;}
   setClip(null);input.value='';
   try{await clear();}catch(_){}
  });
