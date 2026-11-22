@@ -9,6 +9,13 @@ const SITES=Object.freeze({
  farm:{x:-1260,z:-850,title:'Valley Family Farm',label:'🌽 Crop Field',kind:'field'},
  cook:{x:-740,z:-210,title:'Oak Grove Camp Kitchen',label:'🍳 Country Kitchen',kind:'kitchen'}
 });
+function huntTargetAt(round,now){
+ if(!round||!Number.isFinite(round.target))return .5;
+ if(!Number.isFinite(round.baseTarget)||!Number.isFinite(round.startedAt)||!Number.isFinite(now))return round.target;
+ const seconds=Math.max(0,Math.min(12,(now-round.startedAt)/1000));
+ const x=round.baseTarget+Math.sin(seconds*1.35)*.075;
+ return Math.max(.08,Math.min(.92,x));
+}
 function closestSite(p,radius=130){let match=null,d=Infinity;for(const [id,s] of Object.entries(SITES)){const ds=Math.hypot(p.x-s.x,p.z-s.z);if(ds<radius&&ds<d){d=ds;match=id;}}return match;}
 function approachSite(id,yaw=0,distance=34){const site=SITES[id];if(!site)return null;const a=Number.isFinite(yaw)?yaw:0,d=Number.isFinite(distance)?Math.max(0,Math.min(distance,100)):34;return {x:site.x+Math.sin(a)*d,z:site.z+Math.cos(a)*d};}
 function farmPick(save,now){const a=save.farmPlots||[],ready=a.findIndex(t=>t>0&&t<=now);if(ready>=0)return {index:ready,action:'harvest'};const empty=a.findIndex(t=>t===0);if(empty>=0)return {index:empty,action:'plant'};return {index:0,action:'growing'};}
@@ -121,7 +128,7 @@ function sceneWorld(T,scene,ground){
    turkey.rotation.z=Math.sin(tick*4)*.04;rabbit.rotation.z=Math.sin(tick*4.5)*.055;
    aimRing.position.set((aim-.5)*67,0,-5);aimRing.visible=activity==='hunt'&&!!huntRound;
    line.position.set(15,-3,40);line.visible=activity==='fish';
-   const biting=fishRound&&Date.now()>=fishRound.biteAt&&Date.now()<=fishRound.biteAt+700;
+   const biting=fishRound&&Date.now()>=fishRound.biteAt&&Date.now()<=fishRound.biteAt+1100;
    float.position.y=Math.sin(tick*5)*.45-(biting?2.5:0);
    fishModel.visible=!!biting;fishModel.position.set(0,(biting?2.5:0)+Math.abs(Math.sin(tick*7))*1.3,0);
    fishTail.rotation.y=Math.sin(tick*13)*.45;
@@ -139,5 +146,5 @@ function sceneWorld(T,scene,ground){
  };
  return world;
 }
-return {SITES,closestSite,approachSite,farmPick,sceneWorld};
+return {SITES,closestSite,approachSite,farmPick,huntTargetAt,sceneWorld};
 });
