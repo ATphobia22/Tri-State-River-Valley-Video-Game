@@ -1,3 +1,7 @@
+# v1.9.6 — World collision, better character rig, painted roofs, field stones, biome sound and FPS exports
+
+Added hashed building collision and slope checks, 27-joint finger-aware River rig with 13 authored animation clips, local roof shingle materials, two instanced terrain-detail layers, procedurally generated biomes/footsteps, and a user-exportable per-device performance report. All systems reuse the existing offline Three.js game; no third-party assets are silently installed. Physical iPhone validation and precise mesh/vehicle physics are still outstanding. [Full evidence and limitations](docs/WORLD_REFINEMENT_v1.9.6.md).
+
 # v1.9.5 — Natural movement, physical jump and terrain-aware camera
 
 The existing offline 3D game now uses a frame-rate-independent movement controller with acceleration, braking and smooth turns; the J key and mobile JUMP lift River above the terrain; the rig refines cadence and tool grips; a procedural contact shadow anchors the hero and vehicle; and the follow camera gains sampled terrain clearance. No additional renderer, external runtime service, or licensed assets were added. Browser and gameplay tests enforce the behavior. [Design, research and verification notes](docs/GAMEPLAY_FEEL_v1.9.5.md).
