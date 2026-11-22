@@ -2,7 +2,7 @@
 
 **A free, offline-first, family-friendly 3D exploration game** set in a stylized Ohio–Wabash River Valley inspired by Mount Vernon and Posey County, Indiana. Explore on foot or by car, fish, track wildlife, grow crops, cook by the campfire, discover regional destinations, and adventure with Scout the dog. Game progress lives in **three local browser save slots**; no sign-in or gameplay server is required.
 
-**Current playable release: v1.10.2** · Three.js / WebGL · Browser and downloadable offline HTML · Windows and iPhone browser controls
+**Current playable release: v1.11.0** · Three.js / WebGL · Browser and downloadable offline HTML · Windows and iPhone browser controls
 
 [**Play on GitHub Pages**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Direct game page](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/game.html) · [Download single-file offline game](game/River_Valley_Family_Adventure_OFFLINE.html) · [Game technical guide](game/README.md)
 
@@ -97,6 +97,10 @@ The v1.10.0 gameplay release and the later **offline-replay gate hardening (PR #
 | [`game/tests/`](game/tests/) | Game logic, geometry, offline build and browser acceptance tests |
 | [`game/tools/`](game/tools/) | Deterministic asset construction, packaging and audits |
 | [`game/docs/`](game/docs/) | Release notes, source provenance, graphics research and verification |
+
+## River Explorer playable model rebuild — v1.11.0
+
+The **existing 27-joint, 13-clip skinned GLB** is re-sculpted with organic round-toe boots, an oval shaped gear pack, curved translucent glasses, smaller more natural eyes, finer short curls, subtler printed gaiter and eight original PNG microtextures **embedded directly in the GLB**. Game materials also use local skin/cloth/nylon/leather bump detail. Character Studio provides front, three-quarter, side and rear views, improved neutral lighting, larger mobile framing and hideable controls. This is a substantial stylized 3D rebuild, **not** yet a photoreal recreation of the concept illustrations. [Mesh, texture, rig and visual QA evidence](game/docs/RIVER_MODEL_REBUILD_v1.11.0.md).
 
 ## River Explorer reference art pass — v1.10.2
 

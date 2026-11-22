@@ -12,15 +12,15 @@
  function create(THREE,Hero){
   if(!THREE||!Hero||typeof Hero.create!=='function')throw new TypeError('Three.js and ValleyHero required');
   const scene=new THREE.Scene();
-  scene.background=new THREE.Color(0x10282c);
+  scene.background=new THREE.Color(0x182c2d);
   const camera=new THREE.PerspectiveCamera(37,1,.1,150);
-  const hemisphere=new THREE.HemisphereLight(0xc8e4e8,0x48483e,1.65);
+  const hemisphere=new THREE.HemisphereLight(0xc5d8dc,0x4d4e45,1.12);
   scene.add(hemisphere);
-  const key=new THREE.DirectionalLight(0xffd6a6,3.3);
+  const key=new THREE.DirectionalLight(0xffd9b8,2.10);
   key.position.set(-16,28,-17);scene.add(key);
-  const fill=new THREE.DirectionalLight(0xa4cfeb,2);
+  const fill=new THREE.DirectionalLight(0xbad5e4,1.05);
   fill.position.set(13,16,-10);scene.add(fill);
-  const rim=new THREE.DirectionalLight(0xffba73,2.1);
+  const rim=new THREE.DirectionalLight(0xffc692,1.20);
   rim.position.set(2,17,19);scene.add(rim);
   const hero=Hero.create(THREE);
   hero.root.position.set(0,.7,0);
@@ -40,7 +40,7 @@
   const halo=add(new THREE.Mesh(new THREE.TorusGeometry(11,.18,6,60),
     new THREE.MeshBasicMaterial({color:0x8ebec0,transparent:true,opacity:.35})));
   halo.position.set(0,9,5);
-  let width=900,height=650,lastState='idle',focus='full';
+  let width=900,height=650,lastState='idle',focus='full',viewAngle='front';
   function resize(w,h){
    width=Math.max(240,Math.floor(Number.isFinite(w)?w:900));
    height=Math.max(280,Math.floor(Number.isFinite(h)?h:650));
@@ -60,8 +60,8 @@
     camera.position.set(phone?2.6:3.5,phone?3.6:4.0,phone?-15:-13);
     camera.lookAt(0,1.1,-.6);
    }else{
-    camera.position.set(phone?2:2.5,phone?12.8:12.5,phone?-51:-34);
-    camera.lookAt(phone?-1.8:-2.2,phone?3.7:8,0);
+    camera.position.set(phone?2.3:2.7,phone?12.1:12.1,phone?-38:-29);
+    camera.lookAt(phone?-1.0:-1.2,phone?7.8:8.1,0);
    }
    camera.updateProjectionMatrix();
   }
@@ -69,12 +69,18 @@
    if(!['full','face','right-hand','boots'].includes(next))throw new RangeError('Invalid character inspection focus');
    focus=next;resize(width,height);
   }
+  function setAngle(next){
+   const angles={front:0,'three-quarter':-Math.PI/4,side:-Math.PI/2,back:Math.PI};
+   if(!Object.prototype.hasOwnProperty.call(angles,next))throw new RangeError('Invalid model turnaround angle');
+   viewAngle=next;
+   hero.root.rotation.y=angles[next];
+  }
   function update({state='idle',stamp=0,dt=.016}={}){
    if(!Hero.STATES.includes(state))state='idle';
    lastState=state;
    const result=hero.update({state,stamp,dt});
    ring.rotation.z=Math.sin(stamp/2900)*.035;
-   rim.intensity=2.1+Math.sin(stamp/1600)*.17;
+   rim.intensity=1.20+Math.sin(stamp/1600)*.10;
    return result;
   }
   function render(renderer){
@@ -91,7 +97,7 @@
    if(hero.root.parent)hero.root.parent.remove(hero.root);
   }
   resize(width,height);
-  return Object.freeze({scene,camera,hero,resize,setFocus,update,render,dispose,get state(){return lastState;},get focus(){return focus;}});
+  return Object.freeze({scene,camera,hero,resize,setFocus,setAngle,update,render,dispose,get state(){return lastState;},get focus(){return focus;},get angle(){return viewAngle;}});
  }
  return Object.freeze({create});
 });

@@ -32,36 +32,82 @@ function weaveTexture(THREE,name){
  texture.anisotropy=2;texture.needsUpdate=true;
  return texture;
 }
+// Original, locally synthesized micro-bump patterns. No licensed image assets.
+function weaveBumpTexture(THREE,name){
+ if(typeof document==='undefined'||!/\b(shirt|cargo|pocket|pack|strap|boots|gaiter|skin)\b/.test(name))return null;
+ const c=document.createElement('canvas');c.width=c.height=128;
+ const ctx=c.getContext('2d');if(!ctx)return null;
+ const skin=/\bskin\b/.test(name),leather=/\bboots\b/.test(name);
+ ctx.fillStyle='#808080';ctx.fillRect(0,0,128,128);
+ let seed=skin?19741:leather?31622:40387;
+ const rnd=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+ for(let y=0;y<128;y+=skin?3:2)for(let x=0;x<128;x+=skin?3:2){
+  const g=Math.floor(104+rnd()*50);ctx.fillStyle='rgb('+g+','+g+','+g+')';
+  ctx.fillRect(x,y,skin?1:2,skin?1:1);
+ }
+ if(!skin&&!leather){
+  ctx.fillStyle='rgba(20,20,20,.07)';
+  for(let i=0;i<128;i+=9){ctx.fillRect(i,0,1,128);ctx.fillRect(0,i,128,1);}
+ }
+ const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;
+ t.generateMipmaps=true;t.minFilter=THREE.LinearMipmapLinearFilter;t.anisotropy=2;return t;
+}
+function skinTexture(THREE){
+ if(typeof document==='undefined')return null;
+ const c=document.createElement('canvas');c.width=c.height=128;
+ const ctx=c.getContext('2d');if(!ctx)return null;
+ ctx.fillStyle='#e8d3bf';ctx.fillRect(0,0,128,128);
+ let seed=18937;
+ const rnd=()=>{seed=(Math.imul(seed,1103515245)+12345)>>>0;return seed/4294967296;};
+ for(let i=0;i<2500;i++){
+  const x=rnd()*128,y=rnd()*128,a=.018+rnd()*.05;
+  ctx.fillStyle=rnd()>.5?'rgba(124,61,41,'+a+')':'rgba(255,245,221,'+a+')';
+  ctx.fillRect(x,y,1+rnd()*.7,1+rnd()*.7);
+ }
+ const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;
+ t.colorSpace=THREE.SRGBColorSpace;t.minFilter=THREE.LinearMipmapLinearFilter;
+ t.generateMipmaps=true;t.anisotropy=2;return t;
+}
 function skullGaiterPrint(THREE){
  // Original self-generated cloth graphic, not a sampled reference-sheet raster.
  if(typeof document==='undefined')return null;
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=160;
  const ctx=canvas.getContext('2d');if(!ctx)return null;
- ctx.fillStyle='rgba(222,221,210,.87)';
+ // Restrained cheekbones / teeth on curved fabric, not a cartoon grin.
+ ctx.fillStyle='rgba(226,218,202,.81)';
  for(const side of [-1,1]){
   ctx.save();ctx.translate(128,0);ctx.scale(side,1);
-  ctx.beginPath();ctx.moveTo(12,40);ctx.bezierCurveTo(36,27,74,40,98,57);
-  ctx.lineTo(89,70);ctx.lineTo(56,75);ctx.lineTo(21,61);ctx.closePath();ctx.fill();ctx.restore();
+  ctx.beginPath();ctx.moveTo(10,67);ctx.bezierCurveTo(27,50,48,53,68,62);
+  ctx.bezierCurveTo(77,68,73,78,57,82);ctx.bezierCurveTo(41,78,24,77,10,67);
+  ctx.closePath();ctx.fill();ctx.restore();
  }
- ctx.beginPath();ctx.moveTo(128,37);ctx.lineTo(112,59);ctx.lineTo(125,67);
- ctx.lineTo(128,59);ctx.lineTo(131,67);ctx.lineTo(144,59);ctx.closePath();ctx.fill();
- ctx.fillStyle='rgba(224,221,205,.85)';
- ctx.beginPath();ctx.moveTo(51,90);ctx.quadraticCurveTo(128,78,205,90);
- ctx.lineTo(199,121);ctx.quadraticCurveTo(128,134,57,121);ctx.closePath();ctx.fill();
- ctx.strokeStyle='rgba(14,21,23,.83)';ctx.lineWidth=4;
- ctx.beginPath();ctx.moveTo(52,96);ctx.quadraticCurveTo(128,86,204,96);ctx.stroke();
- for(let i=0;i<10;i++){const x=66+i*13.4;ctx.beginPath();ctx.moveTo(x,95);ctx.lineTo(x+1,122);ctx.stroke();}
- ctx.strokeStyle='rgba(212,210,193,.27)';ctx.lineWidth=2;
- ctx.beginPath();ctx.moveTo(37,35);ctx.quadraticCurveTo(18,88,48,133);ctx.stroke();
- ctx.beginPath();ctx.moveTo(219,35);ctx.quadraticCurveTo(238,88,208,133);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(128,59);ctx.lineTo(119,77);
+ ctx.quadraticCurveTo(128,89,137,77);ctx.closePath();ctx.fill();
+ ctx.fillStyle='rgba(219,212,193,.75)';
+ ctx.beginPath();ctx.moveTo(73,95);ctx.quadraticCurveTo(128,88,183,95);
+ ctx.lineTo(178,121);ctx.quadraticCurveTo(128,132,78,121);ctx.closePath();ctx.fill();
+ ctx.strokeStyle='rgba(30,33,33,.86)';ctx.lineWidth=2.8;
+ ctx.beginPath();ctx.moveTo(75,98);ctx.quadraticCurveTo(128,93,181,98);ctx.stroke();
+ for(let i=0;i<12;i++){
+  const x=81+i*8.6,yy=99-2.7*Math.sin(Math.PI*i/11);
+  ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+1.6,122);ctx.stroke();
+ }
+ ctx.strokeStyle='rgba(210,210,194,.24)';ctx.lineWidth=1.4;
+ for(const x of [48,208]){
+  ctx.beginPath();ctx.moveTo(x,58);ctx.quadraticCurveTo(x+(x<128?-16:16),92,x,127);ctx.stroke();
+ }
  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
  texture.wrapS=texture.wrapT=THREE.ClampToEdgeWrapping;
  texture.anisotropy=2;texture.generateMipmaps=true;texture.minFilter=THREE.LinearMipmapLinearFilter;
- const geo=new THREE.PlaneGeometry(2.14,1.20,12,1),pos=geo.attributes.position;
- for(let i=0;i<pos.count;i++)pos.setZ(i,.23*Math.pow(Math.abs(pos.getX(i))/1.07,2));
+ const geo=new THREE.PlaneGeometry(2.04,1.14,16,6),pos=geo.attributes.position;
+ for(let i=0;i<pos.count;i++){
+  const x=pos.getX(i),y=pos.getY(i);
+  pos.setZ(i,.26*Math.pow(Math.abs(x)/1.02,2)+.032*Math.sin(y*8+x*3));
+ }
  geo.computeVertexNormals();
- const material=new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,
-  alphaTest:.055,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});
+ const material=new THREE.MeshStandardMaterial({map:texture,color:0xf3eee3,roughness:.95,
+  transparent:true,depthWrite:false,alphaTest:.045,side:THREE.DoubleSide,
+  polygonOffset:true,polygonOffsetFactor:-1});
  const mesh=new THREE.Mesh(geo,material);mesh.name='River/skull-gaiter-fabric-print';
  mesh.position.set(0,-.29,-1.57);mesh.renderOrder=3;
  return mesh;
@@ -89,9 +135,14 @@ function create(THREE,{seated=false,samplePose}={}){
  const meshDoc=doc.meshes[meshNode.mesh],meshes=[],materials=[];
  for(const spec of doc.materials||[]){
   const pbr=spec.pbrMetallicRoughness||{},c=pbr.baseColorFactor||[.5,.5,.5,1];
-  const map=weaveTexture(THREE,spec.name);
-  materials.push(new THREE.MeshStandardMaterial({name:spec.name,color:new THREE.Color().setRGB(c[0],c[1],c[2],THREE.LinearSRGBColorSpace),metalness:pbr.metallicFactor??0,roughness:pbr.roughnessFactor??.9,map,
-   transparent:spec.alphaMode==='BLEND',opacity:c[3],side:spec.doubleSided?THREE.DoubleSide:THREE.FrontSide,depthWrite:spec.alphaMode!=='BLEND'}));
+  const map=/\bskin\b/.test(spec.name)?skinTexture(THREE):weaveTexture(THREE,spec.name);
+  const bumpMap=weaveBumpTexture(THREE,spec.name);
+  materials.push(new THREE.MeshStandardMaterial({name:spec.name,
+   color:new THREE.Color().setRGB(c[0],c[1],c[2],THREE.LinearSRGBColorSpace),
+   metalness:pbr.metallicFactor??0,roughness:pbr.roughnessFactor??.9,
+   map,bumpMap,bumpScale:/\bskin\b/.test(spec.name)?.006:/\bboots\b/.test(spec.name)?.023:.013,
+   transparent:spec.alphaMode==='BLEND',opacity:c[3],
+   side:spec.doubleSided?THREE.DoubleSide:THREE.FrontSide,depthWrite:spec.alphaMode!=='BLEND'}));
  }
  for(const prim of meshDoc.primitives){
   const pos=source.dataAccessor(parsed,prim.attributes.POSITION),norm=source.dataAccessor(parsed,prim.attributes.NORMAL),skinIDs=source.dataAccessor(parsed,prim.attributes.JOINTS_0),weight=source.dataAccessor(parsed,prim.attributes.WEIGHTS_0),idx=source.dataAccessor(parsed,prim.indices);
@@ -225,7 +276,7 @@ function create(THREE,{seated=false,samplePose}={}){
   currentState=pose.state;lastPose=pose;return {state:currentState,pose};
  }
  if(seated)update({state:'drive',stamp:100,dt:.5});
- function dispose(){if(mixer)mixer.stopAllAction();footContacts.reset();if(gaiterPrint){gaiterPrint.geometry.dispose();gaiterPrint.material.map?.dispose();gaiterPrint.material.dispose();gaiterPrint.parent?.remove(gaiterPrint);}for(const m of meshes){m.geometry.dispose();m.parent?.remove(m)}for(const g of propsGeo)g.dispose();for(const m of materials){m.map?.dispose();m.dispose();}for(const p of Object.values(props))p.parent?.remove(p);scene.clear();}
+ function dispose(){if(mixer)mixer.stopAllAction();footContacts.reset();if(gaiterPrint){gaiterPrint.geometry.dispose();gaiterPrint.material.map?.dispose();gaiterPrint.material.dispose();gaiterPrint.parent?.remove(gaiterPrint);}for(const m of meshes){m.geometry.dispose();m.parent?.remove(m)}for(const g of propsGeo)g.dispose();for(const m of materials){m.map?.dispose();m.bumpMap?.dispose();m.dispose();}for(const p of Object.values(props))p.parent?.remove(p);scene.clear();}
  return {root:scene,joints,props,meshes,skinned:true,gaiterDecalReady:!!gaiterPrint,get activeClip(){return activeClipName},get clipMixerReady(){return !!mixer&&clipActions.size>=9},get footContacts(){return footContacts.snapshot()},clips:(doc.animations||[]).map(a=>a.name),update,dispose,features:['curly-hair','glasses','skull-gaiter','black-shirt','gold-chain','cargo-pants','adventure-boots','backpack'],get state(){return currentState},get pose(){return lastPose}};
 }
 return Object.freeze({create});
