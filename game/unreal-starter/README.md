@@ -336,3 +336,31 @@ The current Three.js game cannot load Unreal-specific plugins directly.
 Consequently this feature adds **audit code, test coverage and an
 implementation map** only, not an Unreal compiled binary, multiplayer service,
 GPU capture or new playable game content.
+
+## Virtual Production and miscellaneous plugin inventory
+
+The scanner includes `virtual_production_capture`,
+`virtual_production_authoring`, `virtual_production_stage` and `misc`
+candidate profiles. IDs are search hints, **not confirmed Unreal descriptor
+names**; inspect the installed UE 5.8 tree before enabling. The audit tool
+reports local evidence and never enables plugins on its own.
+
+```powershell
+python game/unreal-starter/Content/Python/plugin_policy.py --profile virtual_production_capture --engine-plugins "C:\Program Files\Epic Games\UE_5.8\Engine\Plugins"
+python game/unreal-starter/Content/Python/plugin_policy.py --profile virtual_production_stage --engine-plugins "C:\Program Files\Epic Games\UE_5.8\Engine\Plugins"
+```
+
+| User-supplied family | River Valley application | Decision |
+| --- | --- | --- |
+| Take Recorder, Live Link, Camera Calibration, CineCameraRigs, VirtualCamera, LevelSnapshots | Capture authentic body/camera performances, compare benchmark poses, and produce reproducible cinematic shots | Highest-value candidates once UE assets and a capture device exist |
+| Motion Design, Actor Modifier, Cloners and Effectors, Property Animator, Material Designer, Geometry Mask | Procedural cinematic title and set dressing | Optional editor-only authoring, no runtime dependency |
+| Camera Calibration ML, Capture Manager, LiveLink device bridges, timecode/timed data monitor | Tracked performance and multisensor synchronization | Specialized gear-dependent workflow; defer until supported hardware and licensed SDKs are known |
+| nDisplay, ICVFX, LED wall calibration, Switchboard, NVIDIA Rivermax, DMX, Texture Share, Stage Monitor | LED volume and broadcast stage workflow | Out of scope for standalone Windows and browser game; exclude from default packages |
+| Chaos Niagara | Future river spray/debris simulation driven by native physics | Evaluate only with a UE native Niagara system and profiled frame times |
+| LevelStreamingPersistence | Optional native streaming-world state | Needs a concrete world-streaming implementation and save/load tests |
+| Default Install Bundle Manager, MakeCookedEditorAsDLC | Dynamic content distribution / cooked editor tooling | Not needed for bundled offline game; do not enable by default |
+| Storm Sync, Multi-User Take Recorder, virtual production roles | Crew collaboration | Not required by single-player gameplay; no network services by default |
+
+A plugin-catalog pass does not prove correct camera tracking, visual similarity,
+animation quality, scene captures, cook/package, or successful offline Windows
+Shipping execution. Keep all such claims evidence-gated.
