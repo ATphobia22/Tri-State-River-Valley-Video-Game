@@ -25,7 +25,7 @@ test('invalid geometry is ignored, invalid motion throws',()=>{
  assert.equal(world.snapshot().obstacles,0);
  assert.throws(()=>world.move({x:0,z:0},{x:Infinity,z:0}));
 });
-test('soundscape biome and material cues are deterministic and don't require audio hardware',()=>{
+test('soundscape biome cues are deterministic without audio hardware',()=>{
  assert.equal(Sound.biomeAt(0,1400),'shore');
  assert.equal(Sound.biomeAt(1200,-800),'woods');
  assert.equal(Sound.biomeAt(-1400,-800),'farm');
