@@ -39,6 +39,7 @@ def inspect(page, *, mobile: bool):
     assert state()["heroBoneCount"] >= 27
     assert state()["heroClipCount"] >= 9
     assert state()["heroTexturedMeshes"] >= 6, "Procedural cloth maps missing from WebGL character"
+    assert state()["heroGaiterPrintReady"] is True, "Skull-print fabric not rendered"
     assert state()["heroFootContacts"] is not None, "Terrain contact solver missing"
     assert state()["groundShadowReady"] is True, "Player contact shadow mesh missing"
     assert state()["motionState"] is not None, "Kinematic locomotion controller missing"
