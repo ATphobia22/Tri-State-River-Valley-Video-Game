@@ -9,7 +9,13 @@
   const cells=new Map(),valid=[];
   for(const b of buildings){
    if(!b||![b.x,b.z,b.dx,b.dz,b.h].every(Number.isFinite)||b.dx<=0||b.dz<=0||b.h<=0)continue;
-   const item={x:b.x,z:b.z,halfX:b.dx/2,halfZ:b.dz/2,height:b.h};
+   const points=Array.isArray(b.points)&&b.points.length>=3&&b.points.every(p=>Array.isArray(p)&&p.length>=2&&p.slice(0,2).every(Number.isFinite))?
+     b.points.map(p=>[p[0],p[1]]):null;
+   const minPX=points?Math.min(...points.map(p=>p[0])):b.x-b.dx/2;
+   const maxPX=points?Math.max(...points.map(p=>p[0])):b.x+b.dx/2;
+   const minPZ=points?Math.min(...points.map(p=>p[1])):b.z-b.dz/2;
+   const maxPZ=points?Math.max(...points.map(p=>p[1])):b.z+b.dz/2;
+   const item={x:(minPX+maxPX)/2,z:(minPZ+maxPZ)/2,halfX:(maxPX-minPX)/2,halfZ:(maxPZ-minPZ)/2,height:b.h,points};
    valid.push(item);
    const minX=Math.floor((item.x-item.halfX-radius)/cell),maxX=Math.floor((item.x+item.halfX+radius)/cell);
    const minZ=Math.floor((item.z-item.halfZ-radius)/cell),maxZ=Math.floor((item.z+item.halfZ+radius)/cell);
@@ -18,7 +24,23 @@
    }
   }
   const candidate=(x,z)=>cells.get(Math.floor(x/cell)+','+Math.floor(z/cell))||[];
-  const overlaps=(x,z,b)=>Math.abs(x-b.x)<b.halfX+radius&&Math.abs(z-b.z)<b.halfZ+radius;
+  // Disk against footprint edges, with winding-independent inside test.
+  // The disk is the horizontal cross-section of the capsule. Only buildings
+  // with actual polygon rings receive exact footprint tests.
+  const overlaps=(x,z,b)=>{
+   if(Math.abs(x-b.x)>=b.halfX+radius||Math.abs(z-b.z)>=b.halfZ+radius)return false;
+   if(!b.points)return true;
+   let inside=false,r2=radius*radius;
+   for(let i=0,j=b.points.length-1;i<b.points.length;j=i++){
+    const [ax,az]=b.points[j],[bx,bz]=b.points[i],dx=bx-ax,dz=bz-az;
+    if((az>z)!==(bz>z)&&x<(bx-ax)*(z-az)/(bz-az)+ax)inside=!inside;
+    const len=dx*dx+dz*dz;if(len<=1e-12)continue;
+    const t=clamp(((x-ax)*dx+(z-az)*dz)/len,0,1);
+    const ex=x-(ax+t*dx),ez=z-(az+t*dz);
+    if(ex*ex+ez*ez<r2)return true;
+   }
+   return inside;
+  };
   function blocked(x,z,fromX=x,fromZ=z){
    for(const b of candidate(x,z)){
     if(overlaps(x,z,b)&&!overlaps(fromX,fromZ,b))return true;
@@ -35,6 +57,8 @@
    const tooSteep=(a,b,ox,oz)=>{
     if(airborne)return false;
     const rise=height(a,b)-height(ox,oz),length=Math.hypot(a-ox,b-oz);
+    // Stair-step threshold permits small vertical risers independent of
+    // horizontal run, while long steep hills remain impassable.
     return rise>stepHeight&&rise/Math.max(length,.001)>slopeMax;
    };
    for(let i=0;i<steps;i++){
