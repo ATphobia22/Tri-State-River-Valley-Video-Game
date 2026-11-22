@@ -60,6 +60,10 @@ test('hero studio exposes face focus and Chromium captures on mobile/desktop',()
  const stage=fs.readFileSync(path.join(root,'src/hero-stage.js'),'utf8');
  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
  const smoke=fs.readFileSync(path.join(root,'tests/browser_hero_smoke.py'),'utf8');
+ const rig=fs.readFileSync(path.join(root,'src/rigged-hero.js'),'utf8');
+ assert.match(rig,/skullGaiterPrint/);
+ assert.match(rig,/River\/skull-gaiter-fabric-print/);
+ assert.match(rig,/gaiterDecalReady/);
  assert.match(stage,/focus==='face'/);
  assert.match(stage,/\['full','face','right-hand','boots'\]/);
  assert.match(html,/<option value="face">Gaiter and glasses close-up<\/option>/);
