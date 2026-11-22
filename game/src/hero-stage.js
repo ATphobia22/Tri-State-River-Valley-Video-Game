@@ -111,7 +111,7 @@
    if(hero.root.parent)hero.root.parent.remove(hero.root);
   }
   resize(width,height);
-  return Object.freeze({scene,camera,hero,resize,setFocus,setAngle,setSkeletonVisible,update,render,dispose,get skeletonVisible(){return !!skeletonHelper?.visible;},get skeletonBoneCount(){return hero.skinned?Object.keys(hero.joints).length:0;},get state(){return lastState;},get focus(){return focus;},get angle(){return viewAngle;}});
+  return Object.freeze({scene,camera,hero,resize,setFocus,setAngle,setSkeletonVisible,update,render,dispose,get skeletonVisible(){return !!skeletonHelper?.visible;},get skeletonBoneCount(){return skeletonHelper?.bones?.length||0;},get state(){return lastState;},get focus(){return focus;},get angle(){return viewAngle;}});
  }
  return Object.freeze({create});
 });
