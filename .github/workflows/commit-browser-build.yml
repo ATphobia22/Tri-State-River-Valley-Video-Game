@@ -4,7 +4,11 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/commit-browser-build.yml'
-      - 'game/src/streaming-policy.js'
+      - 'game/src/**'
+      - 'game/tests/**'
+      - 'game/index.html'
+      - 'game/sw.js'
+      - 'game/build_*.py'
   workflow_dispatch:
 
 permissions:
@@ -59,6 +63,6 @@ jobs:
           git add game/game.html game/River_Valley_Family_Adventure_OFFLINE.html
           git diff --cached --check
           if ! git diff --cached --quiet; then
-            git commit -m "build(game): synchronize tested v1.8.1 browser release"
+            git commit -m "build(game): synchronize tested v1.8.2 browser release"
             git push origin HEAD:main
           fi

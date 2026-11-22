@@ -1,3 +1,11 @@
+# River Valley Family Adventure v1.8.2 — handcrafted River Valley graphics
+
+The separate family game now includes **original local procedural PBR masonry**, styled brick/clapboard/limestone near-player building walls and darkened glass; **cell-streamed, seasonal InstancedMesh foliage** in town, oak-grove, countryside, and Ohio River bank zones; and **frame-budgeted quadtree terrain transitions** that keep the entire previous terrain visible until the next terrain is ready, then fade it out.
+
+The **Performance** visual effects mode now limits active tree instances. These are fictional art-directed districts and procedural props; the game's source GPS/datum limitations remain unchanged. No textures, images, or map requests are downloaded while playing.
+
+See [v1.8.2 graphics release notes](docs/GRAPHICS_RELEASE_v1.8.2.md) and [studio architecture reference adaptation](docs/STUDIO_REFERENCE_ADAPTATION.md).
+
 # River Valley Family Adventure v1.8.1 — performance-guided studio integration
 
 This browser-game revision uses the supplied private AAA studio documents as **technical guides**, without importing proprietary source files or Unreal Engine services. It introduces a test-driven terrain frame-budget governor with safe cooldowns, driving look-ahead, and a headless game-asset dependency gate. See [Studio reference adaptation](docs/STUDIO_REFERENCE_ADAPTATION.md).

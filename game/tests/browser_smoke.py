@@ -14,7 +14,7 @@ soup.head.insert(0,shim)
 html=str(soup)
 errors=[];results={}
 with sync_playwright() as p:
-    browser=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox','--disable-dev-shm-usage','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-features=WebRtcHideLocalIpsWithMdns'])
+    browser=p.chromium.launch(executable_path=('/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else p.chromium.executable_path),headless=True,args=['--no-sandbox','--disable-dev-shm-usage','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-features=WebRtcHideLocalIpsWithMdns'])
     page=browser.new_page(viewport={'width':1365,'height':790},device_scale_factor=1)
     page.on('console',lambda msg: errors.append(('console',msg.text)) if msg.type=='error' else None)
     page.on('pageerror',lambda err: errors.append(('pageerror',str(err))))

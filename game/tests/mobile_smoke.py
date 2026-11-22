@@ -8,7 +8,7 @@ shim=bs.new_tag('script')
 shim.string="const __store={};Object.defineProperty(window,'localStorage',{configurable:true,value:{getItem(k){return __store[k]||null},setItem(k,v){__store[k]=String(v)}}});"
 bs.head.insert(0,shim)
 with sync_playwright() as p:
- browser=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox','--disable-dev-shm-usage','--enable-unsafe-swiftshader'])
+ browser=p.chromium.launch(headless=True,executable_path=('/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else p.chromium.executable_path),args=['--no-sandbox','--disable-dev-shm-usage','--enable-unsafe-swiftshader'])
  page=browser.new_page(viewport={'width':390,'height':844},device_scale_factor=2,is_mobile=True,has_touch=True)
  problems=[]
  page.on('pageerror',lambda e:problems.append(str(e)))

@@ -28,6 +28,12 @@ After loading the website online once, its service worker caches the HTML for us
 - Explore six family-friendly discovery areas, enjoy Scout the dog, use driving mode, customize weather/seasons/daylight, unlock the cottage and save progression locally.
 - WebGL graphics are optional; when unavailable, a separate illustrated canvas fallback keeps core activities accessible.
 
+## v1.8.2 graphics release: original procedural materials, foliage and seamless terrain
+
+The hosted, offline-capable family adventure now provides original PBR brick/siding/limestone materials, nearby seasonal vegetation cells with GPU instancing, and complete staged terrain LOD swaps with a short fade. All resources remain local in the compiled playable HTML; the real Mount Vernon aerial/streets are a toggleable **reference only**, not a geospatial engineering claim.
+
+[Read graphics implementation and tests](game/docs/GRAPHICS_RELEASE_v1.8.2.md).
+
 ## v1.8.1 studio-reference improvements
 
 Adaptive terrain complexity now responds to sustained browser frame-time pressure while preserving manual quality settings; its quadtree camera target preloads a small distance ahead when driving. The new [Studio Architecture Adaptation](game/docs/STUDIO_REFERENCE_ADAPTATION.md) maps private guide concepts to actual game modules without publishing private source material. A headless [runtime dependency audit](game/tools/audit_runtime_graph.py) now checks every required JavaScript module against the offline cache and checks original GLB binary headers. The current game runs in the browser; it does not pretend to use UE5 World Partition or its server components.
