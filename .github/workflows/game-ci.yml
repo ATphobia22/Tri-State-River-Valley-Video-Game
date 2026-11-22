@@ -23,6 +23,8 @@ jobs:
         run: python -m pip install -r game/requirements.txt
       - name: Check Python syntax
         run: python -m compileall -q game
+      - name: Rebuild independent offline and hosted game
+        run: npm --prefix game run build
       - name: Validate gameplay, terrain, models and offline cache
         run: npm --prefix game test
       - name: Verify official Indiana GIS provenance, counts and coordinate tests
@@ -49,8 +51,10 @@ jobs:
           assert Path('game/data/reference-bundle.js').stat().st_size>800_000
           print('PASS: 2023 downtown reference, 709 roads, 4,819 footprints, imagery provenance, checksums')
           PY
-      - name: Rebuild independent offline and hosted game
-        run: npm --prefix game run build
+      - name: Audit runtime script and model dependencies before packaging
+        run: |
+          python game/tools/audit_runtime_graph.py
+          python -m unittest discover -s game/tests -p test_runtime_graph.py -v
       - name: Verify bundled game is self-contained and complete
         run: |
           python - <<'PY'

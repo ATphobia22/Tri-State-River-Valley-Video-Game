@@ -28,6 +28,10 @@ After loading the website online once, its service worker caches the HTML for us
 - Explore six family-friendly discovery areas, enjoy Scout the dog, use driving mode, customize weather/seasons/daylight, unlock the cottage and save progression locally.
 - WebGL graphics are optional; when unavailable, a separate illustrated canvas fallback keeps core activities accessible.
 
+## v1.8.1 studio-reference improvements
+
+Adaptive terrain complexity now responds to sustained browser frame-time pressure while preserving manual quality settings; its quadtree camera target preloads a small distance ahead when driving. The new [Studio Architecture Adaptation](game/docs/STUDIO_REFERENCE_ADAPTATION.md) maps private guide concepts to actual game modules without publishing private source material. A headless [runtime dependency audit](game/tools/audit_runtime_graph.py) now checks every required JavaScript module against the offline cache and checks original GLB binary headers. The current game runs in the browser; it does not pretend to use UE5 World Partition or its server components.
+
 ## Art direction and world-building policy
 
 **Game feel and visual quality take precedence over survey accuracy.** Official Indiana aerial imagery, street centerlines and building footprints are optional artist references for plausible town layout. Road width, topography, building heights, activity placement, vegetation, rivers and scenic details may be simplified or exaggerated for better exploration, visibility and frame rate. No verified datum or engineering-grade terrain is required to ship this **fictional game**.
@@ -62,4 +66,4 @@ The About field itself is GitHub repository metadata, separate from this README.
 
 ## Verification boundaries
 
-CI proves deterministic game rules, basic graphics geometry, compiled offline bundles and deploy packaging; it does not prove a given phone's WebGL performance, installation behavior or an accurate reconstruction of real buildings. No copyrighted third-party game models should be added without a verified compatible license. The earlier engineering source archive is retained under `legacy/` but is not active game code.
+CI proves deterministic game rules, basic ****** geometry, compiled offline bundles and deploy packaging; it does not prove a given phone's WebGL performance, installation behavior or an accurate reconstruction of real buildings. No copyrighted third-party game models should be added without a verified compatible license. The earlier engineering source archive is retained under `legacy/` but is not active game code.

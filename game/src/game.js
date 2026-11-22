@@ -25,6 +25,9 @@ let demArray,grid=DATA.grid,staticMap=null,needsMap=true,lastUI=0,lastFrame=0,la
 let referenceEnabled=false,referenceImage=null,referenceDrape=null;
 const activeRoads=REF&&Array.isArray(REF.roadsPacked)&&REF.roadsPacked.length>400?REF.roadsPacked:DATA.roads;
 const activeBuildings=REF&&Array.isArray(REF.buildingsPacked)&&REF.buildingsPacked.length>1000?REF.buildingsPacked:DATA.buildings;
+const STREAM=window.ValleyStreamingPolicy;
+const streamingGovernor=STREAM?STREAM.createGovernor({maxTiles:innerWidth<781?110:200,minTiles:innerWidth<781?60:85,targetFPS:30}):null;
+let currentTravelSpeed=0;
 const G=window.THREE;
 const rand=(function(){let v=78932;return function(){v=(Math.imul(v,1664525)+1013904223)>>>0;return v/4294967296;}})();
 const LIMIT=C.LIMIT, TWO=LIMIT*2;
@@ -123,7 +126,7 @@ function tryRenderer(){
 // Active leaf tiles are selected by local screen-space height error, not one global mesh resolution.
 // Neighboring tile edges use their coarse neighbor's samples for exact junction alignment.
 function buildTerrain(){applyTerrainLOD(true);}
-function terrainBudget(){return visualEffects==='lite'?110:200;}
+function terrainBudget(){const userCap=visualEffects==='lite'?110:200;return terrainDetail==='auto'&&streamingGovernor?Math.min(userCap,streamingGovernor.tileBudget()):userCap;}
 function desiredPixelError(){return ({auto:8,high:3.5,medium:14,low:28})[terrainDetail]||8;}
 function tileColorMesh(tile,index){
  const n=QT.WIDTH,ge=new G.PlaneGeometry(tile.width,tile.width,n,n);
@@ -165,7 +168,10 @@ function applyTerrainLOD(force=false){
  if(!scene||!QT)return;
  if(!force&&Math.hypot(player.x-terrainAt.x,player.z-terrainAt.z)<100&&Math.abs(cameraDist-terrainAt.dist)<45&&Math.abs(innerHeight-terrainAt.viewHeight)<90)return;
  terrainAt={x:player.x,z:player.z,dist:cameraDist,viewHeight:innerHeight};
- const leaves=QT.selectTiles({height:sourceHeight,limit:LIMIT,cameraX:player.x,cameraZ:player.z,cameraAltitude:Math.max(52,cameraDist*.65),viewportHeight:Math.max(innerHeight,350),pixelError:desiredPixelError(),maxDepth:6,minDepth:2,maxTiles:terrainBudget(),roughnessFloor:.015});
+ // Light predictive LOD focus for movement; terrain and object coordinate frame remain unchanged.
+ const ahead=STREAM?STREAM.lookAheadDistance(currentTravelSpeed)*.3:0;
+ const focusX=player.x-Math.sin(playerHeading)*ahead,focusZ=player.z-Math.cos(playerHeading)*ahead;
+ const leaves=QT.selectTiles({height:sourceHeight,limit:LIMIT,cameraX:focusX,cameraZ:focusZ,cameraAltitude:Math.max(52,cameraDist*.65),viewportHeight:Math.max(innerHeight,350),pixelError:desiredPixelError(),maxDepth:6,minDepth:2,maxTiles:terrainBudget(),roughnessFloor:.015});
  const next=QT.makeTileIndex(leaves,LIMIT);
  for(const leaf of leaves)leaf.samples=QT.tileSamples(sourceHeight,leaf,next);
  const newMeshes=leaves.map(t=>tileColorMesh(t,next));
@@ -579,13 +585,14 @@ function stepTour(dt){if(!touring)return;
 function update(dt,stamp){
  if(!started)return;
  if(activity)return;
+ currentTravelSpeed=0;
  if(touring)stepTour(dt);else{
   let x=0,z=0;
   if(keys.has('w')||keys.has('arrowup')||keys.has('up'))z-=1;
   if(keys.has('s')||keys.has('arrowdown')||keys.has('down'))z+=1;
   if(keys.has('a')||keys.has('arrowleft')||keys.has('left'))x-=1;
   if(keys.has('d')||keys.has('arrowright')||keys.has('right'))x+=1;
-  if(x||z){const length=Math.hypot(x,z),speed=save.mode==='drive'?230:(keys.has('shift')?105:72);
+  if(x||z){const length=Math.hypot(x,z),speed=save.mode==='drive'?230:(keys.has('shift')?105:72);currentTravelSpeed=speed;
    const wx=(x*Math.cos(cameraYaw)+z*Math.sin(cameraYaw))/length,wz=(z*Math.cos(cameraYaw)-x*Math.sin(cameraYaw))/length;
    player.x+=wx*speed*dt;player.z+=wz*speed*dt;playerHeading=Math.atan2(-wx,-wz);
    const p=C.clampPosition(player);player.x=p.x;player.z=p.z;
@@ -641,9 +648,11 @@ function renderMinigameScene(stamp){
  VFX.render($('activityScene'),activity,stamp,{aim,target:huntRound?.target,kind:huntRound?.kind,biting:!!(fishRound&&Date.now()>=fishRound.biteAt&&Date.now()<=fishRound.biteAt+700)});
 }
 function loop(stamp){
+ const rawFrameMs=lastFrame?stamp-lastFrame:16;
  const dt=Math.min(.065,Math.max(.001,(stamp-lastFrame)/1000||.016));lastFrame=stamp;
  if(started){update(dt,stamp);if(renderer&&view==='3d')updateVisuals(dt,stamp);else update2d();}
  else if(renderer&&view!=='2d'){updateVisuals(dt,stamp);}
+ if(renderer&&view==='3d'&&terrainDetail==='auto'&&streamingGovernor){const budget=streamingGovernor.observe(rawFrameMs,stamp);if(budget.changed)applyTerrainLOD(true);}
  renderMinigameScene(stamp);updateCinema(stamp);if(backdropOpen&&STORY&&stamp-backdropLast>66){if(shotPlaying&&stamp-shotStart>=SHOT_DURATION){applyShot(shotIndex+1);shotStart=stamp;}STORY.render($('stageCanvas'),backdropLocation,cinemaPrefs.look,stamp,cinemaPrefs.quality);backdropLast=stamp;}requestAnimationFrame(loop);
 }
 function bindUI(){
@@ -717,7 +726,7 @@ function init(){
  if(!tryRenderer()){view='2d';$('quality').value='2d';}else view='3d';
  resize();updateHUD();mapDraw(mapCtx,mapCanvas.width,mapCanvas.height,false);
  requestAnimationFrame(loop);
- window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,imageryYear:REF?.metadata?.downtownTileYear||null},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
+ window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,imageryYear:REF?.metadata?.downtownTileYear||null},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
 }
 init();
 })();

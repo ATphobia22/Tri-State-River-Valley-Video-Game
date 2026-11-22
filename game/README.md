@@ -1,3 +1,9 @@
+# River Valley Family Adventure v1.8.1 — performance-guided studio integration
+
+This browser-game revision uses the supplied private AAA studio documents as **technical guides**, without importing proprietary source files or Unreal Engine services. It introduces a test-driven terrain frame-budget governor with safe cooldowns, driving look-ahead, and a headless game-asset dependency gate. See [Studio reference adaptation](docs/STUDIO_REFERENCE_ADAPTATION.md).
+
+**Creative priority:** an attractive, responsive fictional Ohio–Wabash River Valley game. Geographic data is optional reference material; geographic survey verification is not a release prerequisite.
+
 # River Valley Family Adventure — game source and creative pipeline
 
 **Priority:** a visually appealing, responsive, playable family adventure. Road placement, river shape, terrain, and architectural details are **art-directed**, not constrained by real-world survey verification. The government overhead data is a useful optional guide, not a prerequisite for release.

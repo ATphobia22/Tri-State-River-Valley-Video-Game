@@ -1,0 +1,64 @@
+name: Sync generated River Valley browser release
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/commit-browser-build.yml'
+      - 'game/src/streaming-policy.js'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: river-game-generated-release
+  cancel-in-progress: false
+
+jobs:
+  build-and-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install project dependencies
+        run: python -m pip install -r game/requirements.txt
+      - name: Build the actual updated offline and hosted game
+        run: npm --prefix game run build
+      - name: Verify before recording generated game files
+        run: |
+          npm --prefix game test
+          python game/tools/audit_runtime_graph.py
+          python -m unittest discover -s game/tests -p test_runtime_graph.py -v
+          python -m unittest discover -s game/tests -p test_reference_python.py -v
+          python -m unittest discover -s game/tests -p test_pages_build.py -v
+          python game/tools/build_pages.py --output /tmp/river-pages-build
+          python - <<'PY'
+          from pathlib import Path
+          root=Path('game')
+          offline=root/'River_Valley_Family_Adventure_OFFLINE.html'
+          hosted=root/'game.html'
+          assert offline.stat().st_size>2_000_000
+          assert hosted.stat().st_size>2_000_000
+          assert 'ValleyStreamingPolicy' in hosted.read_text()
+          assert 'window.ValleyReference=' in offline.read_text()
+          print('Release verified:',offline.stat().st_size,hosted.stat().st_size)
+          PY
+      - name: Commit generated browser files to main
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add game/game.html game/River_Valley_Family_Adventure_OFFLINE.html
+          git diff --cached --check
+          if ! git diff --cached --quiet; then
+            git commit -m "build(game): synchronize tested v1.8.1 browser release"
+            git push origin HEAD:main
+          fi
