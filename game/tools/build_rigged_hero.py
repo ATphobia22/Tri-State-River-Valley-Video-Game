@@ -27,7 +27,12 @@ BONES = [
  ('RightUpperArm',2,(2.5,.35,0)),('RightForearm',8,(2.6,0,0)),('RightHand',9,(2.1,0,0)),
  ('LeftUpperLeg',0,(-1.35,-.38,0)),('LeftLowerLeg',11,(0,-3.25,0)),('LeftFoot',12,(0,-2.74,-.25)),
  ('RightUpperLeg',0,(1.35,-.38,0)),('RightLowerLeg',14,(0,-3.25,0)),('RightFoot',15,(0,-2.74,-.25))
-]
+] 
+# Ten independent finger/thumb joints, local to each hand; no licensed rig assets.
+FINGER_NAMES=['Thumb','Index','Middle','Ring','Pinky']
+for side,hand_idx,sign in [('Left',7,-1),('Right',10,1)]:
+ for digit in range(5):
+  BONES.append((side+FINGER_NAMES[digit],hand_idx,(sign*(.50 if digit==0 else .44),-.28,-.30+(digit-.9)*.19)))
 WORLD=[]
 for name,parent,v in BONES:
  q=WORLD[parent] if parent is not None else (0,0,0)
@@ -162,7 +167,13 @@ for side,upper,lower,hand in [(-1,5,6,7),(1,8,9,10)]:
  arm_tube('shirt',side,upper,lower,hand)
  box('gaiter',(side*7.2,11.98,0),(.83,.87,1),rigid(hand))
  uv_ball('skin',(side*7.60,11.98,-.07),(.57,.47,.48),rigid(hand),7,9)
- for finger in range(4):box('skin',(side*7.86,11.67,-.36+finger*.21),(.33,.30,.13),rigid(hand))
+ # Individual skinned finger geometry follows each new finger bone.
+ for finger in range(5):
+  finger_joint=17+(0 if side==-1 else 5)+finger
+  world_x=side*(7.45+(.50 if finger==0 else .44))
+  world_y=11.98-.28
+  world_z=-.07-.30+(finger-.9)*.19
+  tube('skin',(world_x,world_y,world_z),(world_x+side*(.28 if finger==0 else .40),world_y-.12,world_z-.04),.11,rigid(finger_joint),7)
 for i in range(18):
  t=i/18*math.pi
  a=(1.58*math.cos(t),12.07-.9*math.sin(t),-1.46)
