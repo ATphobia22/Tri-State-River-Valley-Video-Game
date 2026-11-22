@@ -62,6 +62,25 @@
   function snapshot(){return {vx,vz,speed:Math.hypot(vx,vz),heading,heightOffset:air,airborne:air>0,landing:landingSeconds>0};}
   return Object.freeze({step,reset,snapshot});
  }
+ // Keep the third-person camera line-of-sight above locally sampled terrain.
+ // This is deterministic clearance only, not a collision test against buildings.
+ function cameraClearance({playerX,playerZ,lookHeight,cameraX,cameraZ,desiredY,groundAt,margin=3,samples=8,maxLift=90}={}){
+  if(![playerX,playerZ,lookHeight,cameraX,cameraZ,desiredY].every(Number.isFinite))
+   throw new TypeError('Camera clearance needs finite world coordinates');
+  if(typeof groundAt!=='function')return desiredY;
+  const count=clamp(Math.floor(Number.isFinite(samples)?samples:8),2,32);
+  const clearance=clamp(Number.isFinite(margin)?margin:3,0,15);
+  const lift=clamp(Number.isFinite(maxLift)?maxLift:90,0,250);
+  let y=desiredY;
+  for(let i=1;i<=count;i++){
+   const t=i/(count+1),x=playerX+(cameraX-playerX)*t,z=playerZ+(cameraZ-playerZ)*t;
+   const h=groundAt(x,z);
+   if(!Number.isFinite(h))continue;
+   // At fraction t, y(t)=lookHeight+(cameraY-lookHeight)*t.
+   y=Math.max(y,lookHeight+(h+clearance-lookHeight)/t);
+  }
+  return Math.min(desiredY+lift,y);
+ }
  // A cheap ground-contact cue, shared by walking/driving, without expensive
  // dynamic shadow-map passes or downloaded textures. Not physically cast light.
  function createContactShadow(THREE){
@@ -83,5 +102,5 @@
   mesh.userData.dispose=()=>{mesh.geometry.dispose();texture.dispose();material.dispose();};
   return mesh;
  }
- return Object.freeze({create,createContactShadow});
+ return Object.freeze({create,createContactShadow,cameraClearance});
 });
