@@ -2,7 +2,7 @@
 
 [**Play the game**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Repository overview](../README.md) · [Offline HTML download](River_Valley_Family_Adventure_OFFLINE.html) · [GitHub Actions](../.github/workflows/game-ci.yml)
 
-**Version 1.10.2** · Offline-first browser game · Original Three.js/WebGL world · Three local save slots · No account or server required.
+**Version 1.11.0** · Offline-first browser game · Original Three.js/WebGL world · Three local save slots · No account or server required.
 
 This `game/` directory contains the **playable family adventure**. It is separate from the Tri-State Systems Manager digital twin. The official geographical references are used to orient the fictional game; game terrain, fictional towns, models, river effects and heights are not survey or regulatory products.
 
@@ -91,6 +91,7 @@ The offline test **really disables networking** after a cache warm-up, navigates
 
 | Release | Changes | Implementation record |
 | --- | --- | --- |
+| **v1.11.0** | Rebuilt sculpted mesh, curved eyewear, new hair/boots/backpack geometry, eight embedded original microtextures, neutral studio lighting and four-view inspection | [River model rebuild](docs/RIVER_MODEL_REBUILD_v1.11.0.md) |
 | **v1.10.2** | Short-sleeve/exposed-forearm skinning, refined gaiter and eyewear, fingerless grips, equipment and boot details; face-focused Character Studio QA | [Reference art pass](docs/RIVER_ART_REFINEMENT_v1.10.2.md) |
 | **v1.10.1** | Pooled terrain/foliage materials; batched windows and seam skirts; deferred driving road redrape; generated 27-joint mesh cleanup and real idle crossfades; hand/boot inspection; per-scene diagnostics | [Mobile performance/rig evidence](docs/MOBILE_PERFORMANCE_AND_RIG_v1.10.1.md) |
 | **v1.10.0** | Posey County Atlas, four regional vignettes, Scout behavior, hunting/fishing/cooking/farming upgrades and painted terrain | [County expansion](docs/POSEY_COUNTY_EXPANSION_v1.10.md) |
