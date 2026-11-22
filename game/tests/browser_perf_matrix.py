@@ -23,9 +23,9 @@ SCENES = [
     ("riverbank", "riverfront"),
 ]
 PRESETS = [
-    ("full", "full", "high"),
+    ("showcase", "cinematic", "high"),
     ("balanced", "full", "medium"),
-    ("performance", "lite", "low"),
+    ("battery-saver", "lite", "low"),
 ]
 
 
