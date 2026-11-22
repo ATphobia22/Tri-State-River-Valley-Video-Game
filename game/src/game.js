@@ -159,6 +159,19 @@ function disposeTerrainMeshes(meshes){
 }
 function commitTerrainLOD(job){
  const committedAt=performance.now();
+ // A single seam mesh replaces one skirt draw call per LOD leaf. Tile vertices
+ // remain unchanged; coarse/fine borders still use the exact edge samples.
+ const seams=[],total=job.meshes.reduce((n,m)=>n+(m.userData.seamPositions?.length||0),0);
+ if(total){
+   const combined=new Float32Array(total);let offset=0;
+   for(const mesh of job.meshes){const positions=mesh.userData.seamPositions||[];
+     combined.set(positions,offset);offset+=positions.length;delete mesh.userData.seamPositions;}
+   const geom=new G.BufferGeometry();geom.setAttribute('position',new G.Float32BufferAttribute(combined,3));
+   geom.computeVertexNormals();
+   const seam=new G.Mesh(geom,new G.MeshLambertMaterial({color:0x4d694e,side:G.DoubleSide}));
+   seam.name='River/batched-terrain-seam-skirts';seam.frustumCulled=false;
+   job.meshes.push(seam);
+ }
  const old=terrainMeshes;
  for(const m of job.meshes)scene.add(m);
  terrainMeshes=job.meshes;terrainMesh=job.meshes[0];terrainIndex=job.index;
@@ -230,9 +243,7 @@ function tileColorMesh(tile,index){
    }
  }
  ['top','bottom','left','right'].forEach(addEdge);
- if(skirts.length){const g=new G.BufferGeometry();g.setAttribute('position',new G.Float32BufferAttribute(skirts,3));g.computeVertexNormals();
-  const seam=new G.Mesh(g,new G.MeshLambertMaterial({color:0x4d694e,side:G.DoubleSide}));seam.userData.lodSkirt=true;seam.frustumCulled=false;mesh.add(seam);
- }
+ if(skirts.length)mesh.userData.seamPositions=skirts;
  return mesh;
 }
 function applyTerrainLOD(force=false,immediate=false){
