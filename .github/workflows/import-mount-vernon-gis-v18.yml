@@ -96,7 +96,7 @@ jobs:
           assert 'window.ValleyReference=' in s and 'data:image/jpeg;base64,' in s
           assert html.stat().st_size>2_000_000
           assert 'rva-game-1.8.0' in (root/'game.html').read_text()
-          assert 'window.ValleyGeoReference=' in s
+          assert 'ValleyGeoReference' in s  # UMD adapter attaches through its root parameter
           files=sorted(p for p in root.rglob('*') if p.is_file() and p.name!='CHECKSUMS.sha256' and not p.name.endswith('.pyc') and '__pycache__' not in p.parts)
           (root/'CHECKSUMS.sha256').write_text('\n'.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+str(p.relative_to(root)) for p in files)+'\n')
           print('PASS: official reference embedded, independently hashed; offline bytes',html.stat().st_size)
