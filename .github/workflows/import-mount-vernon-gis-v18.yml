@@ -1,0 +1,114 @@
+name: Import official Mount Vernon game reference v1.8
+on:
+  push:
+    paths:
+      - .github/workflows/import-mount-vernon-gis-v18.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-mount-vernon-gis-v18
+  cancel-in-progress: false
+
+jobs:
+  import-mount-vernon:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download and hash-verify exact game patch and authoritative reference snapshot
+        env:
+          PATCH_URL: https://media.base44.com/files/public/6b0206f1718ffb2e3e955781/be3ef59e3_River_Valley_v1_8_GIS_Patch.zip
+          PATCH_SHA256: f4e77986e8169bc2f197d12b3ecde10de38793a3c1808afb146bcb85c55873e7
+          GIS_URL: https://river-valley-family-adventure-3e955781.base44.app/official-mount-vernon-reference-v1-8.zip
+          GIS_SHA256: fe5a43b467fb4e5b7d43e928690eb2e6b8aeb43c7bd80929b1b96eeb56fbff2d
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 3 --max-time 180 -o /tmp/rvgis-patch.zip "$PATCH_URL"
+          printf '%s  %s\n' "$PATCH_SHA256" /tmp/rvgis-patch.zip | sha256sum -c -
+          curl -fLsS --retry 3 --max-time 180 -o /tmp/mount-vernon-reference.zip "$GIS_URL"
+          printf '%s  %s\n' "$GIS_SHA256" /tmp/mount-vernon-reference.zip | sha256sum -c -
+      - name: Apply game patch and original GIS data without deleting legacy source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import json
+          target=Path('game')
+          assert (target/'src/game.js').is_file(), 'Game repository missing prior release'
+          for archive_file in ('/tmp/rvgis-patch.zip','/tmp/mount-vernon-reference.zip'):
+              with ZipFile(archive_file) as archive:
+                  entries=archive.infolist()
+                  assert archive.testzip() is None, 'Corrupt archive'
+                  assert sum(x.file_size for x in entries)<70_000_000, 'Unreviewed data size'
+                  for entry in entries:
+                      rel=Path(entry.filename)
+                      assert rel.parts and not rel.is_absolute() and '..' not in rel.parts, 'Path traversal blocked'
+                      assert ((entry.external_attr>>16)&0o170000)!=0o120000, 'Symlink blocked'
+                  archive.extractall(target)
+                  print('Extracted',len(entries),'entries from',archive_file)
+          ref=target/'reference/mount-vernon'
+          data=json.loads((ref/'registration.json').read_text())
+          buildings=json.loads((ref/'buildings.geojson').read_text())
+          roads=json.loads((ref/'roads.geojson').read_text())
+          assert data['projection']=='EPSG:4326'
+          assert data['identifiedDowntownTileYear']=='2023'
+          assert data['buildingFootprintCount']==len(buildings['features'])==4819
+          assert data['roadLineCount']==len(roads['features'])==709
+          assert data['buildingsRenderedInGame']>=4000
+          assert data['verticalDatumVerified'] is False
+          assert (target/'data/reference-bundle.js').stat().st_size>800_000
+          images=json.loads((ref/'SHA256SUMS.json').read_text())
+          from hashlib import sha256
+          for filename,digest in images.items():
+              assert sha256((ref/filename).read_bytes()).hexdigest()==digest, f'Hash mismatch: {filename}'
+          readme=Path('README.md')
+          text=readme.read_text()
+          heading='## Mount Vernon GIS art reference (v1.8)\n'
+          if heading not in text:
+              text=text.rstrip()+'\n\n'+heading+'\nThe game now includes a separate, offline Indiana GIO aerial reference with 709 official road centerlines and 4,819 LiDAR-derived building polygons. The downtown imagery identifies as 2023, and the terrain elevations, artistic roof heights and game-stop locations are NOT surveyed. See game/docs/MOUNT_VERNON_GEOREFERENCE_V1_8.md and game/reference/mount-vernon/registration.json. This does not change the Tri-State Systems Manager repository.\n'
+              readme.write_text(text)
+          print('Validated: official horizontal reference',len(roads['features']),'roads',len(buildings['features']),'buildings')
+          PY
+      - name: Test gameplay, coordinate registration, reference imagery and offline packaging
+        run: |
+          set -euo pipefail
+          python -m pip install -r game/requirements.txt
+          npm --prefix game test
+          (cd game && python -m unittest discover -s tests -p test_reference_python.py -v)
+          npm --prefix game run build
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          root=Path('game')
+          html=root/'River_Valley_Family_Adventure_OFFLINE.html'
+          s=html.read_text()
+          assert 'window.ValleyReference=' in s and 'data:image/jpeg;base64,' in s
+          assert html.stat().st_size>2_000_000
+          assert 'rva-game-1.8.0' in (root/'game.html').read_text()
+          assert 'window.ValleyGeoReference=' in s
+          files=sorted(p for p in root.rglob('*') if p.is_file() and p.name!='CHECKSUMS.sha256' and not p.name.endswith('.pyc') and '__pycache__' not in p.parts)
+          (root/'CHECKSUMS.sha256').write_text('\n'.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+str(p.relative_to(root)) for p in files)+'\n')
+          print('PASS: official reference embedded, independently hashed; offline bytes',html.stat().st_size)
+          PY
+      - name: Commit verified independent game geodata release to main
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A game README.md
+          git diff --cached --check
+          if ! git diff --cached --quiet; then
+            git commit -m "feat(game): register Mount Vernon 2023 orthophoto and official roads/buildings"
+            git push origin HEAD:main
+          fi
