@@ -2,7 +2,7 @@
 
 [**Play the game**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Repository overview](../README.md) · [Offline HTML download](River_Valley_Family_Adventure_OFFLINE.html) · [GitHub Actions](../.github/workflows/game-ci.yml)
 
-**Version 1.12.1** · Offline-first browser game · Original Three.js/WebGL world · Three local save slots · No account or server required.
+**Version 1.13.0** · Offline-first browser game · Original Three.js/WebGL world · Three local save slots · No account or server required.
 
 This `game/` directory contains the **playable family adventure**. It is separate from the Tri-State Systems Manager digital twin. The official geographical references are used to orient the fictional game; game terrain, fictional towns, models, river effects and heights are not survey or regulatory products.
 

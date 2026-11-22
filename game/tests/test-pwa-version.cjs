@@ -7,7 +7,7 @@ const get=f=>fs.readFileSync(path.join(root,f),'utf8');
 test('offline release uses a v1.12 service-worker cache and generated host tracks that cache',()=>{
  const worker=get('game-sw.js');
  const version=worker.match(/const CACHE='([^']+)'/)[1];
- assert.equal(version,'rva-game-1.12.1');
+ assert.equal(version,'rva-game-1.13.0');
  assert.match(get('game.html'),new RegExp(version.replaceAll('.','\\.')));
 });
 test('hosted PWA uses relative URLs compatible with GitHub Pages subpaths',()=>{
