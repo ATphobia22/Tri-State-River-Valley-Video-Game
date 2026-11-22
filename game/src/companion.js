@@ -19,7 +19,7 @@ function rewardBond(raw,action,now){
  let save=C.validateSave(raw),t=Math.floor(finite(now,0));
  if(save.pet===false)return {save,result:'disabled'};
  if(!['pet','fetch'].includes(action))return {save,result:'invalid'};
- if(t<=0||t-save.scoutLastRewardAt<20000)return {save,result:'cooldown'};
+ if(t<=0||(save.scoutLastRewardAt>0&&t-save.scoutLastRewardAt<20000))return {save,result:'cooldown'};
  const amount=action==='fetch'?2:1;
  save.scoutBond=Math.min(100,save.scoutBond+amount);
  save.scoutLastRewardAt=t;
