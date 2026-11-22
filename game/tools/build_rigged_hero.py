@@ -119,8 +119,14 @@ for side,hip,shin,foot in [(-1,11,12,13),(1,14,15,16)]:
 loft_y('gaiter',[(0,12.15,-.17,1.1,1.10),(0,13.00,-.15,1.32,1.13),(0,13.72,-.19,1.36,1.08)],0,0,rigid(3))
 uv_ball('skin',(0,14.28,0),(1.54,1.72,1.3),rigid(4))
 box('gaiter',(0,13.78,-1.16),(2.43,1.6,.34),rigid(4))
+# Small skull-nose bridge and cheek strokes. Geometry stays bound to head.
+tube('mask',(-.25,14.16,-1.393),(0,13.88,-1.45),.085,rigid(4),6)
+tube('mask',(.25,14.16,-1.393),(0,13.88,-1.45),.085,rigid(4),6)
+for side in [-1,1]:
+ tube('mask',(side*.70,14.04,-1.435),(side*1.08,13.67,-1.39),.062,rigid(4),6)
 for i in range(8):box('mask',((i-3.5)*.245,13.42,-1.39),(.20,.38,.10),rigid(4))
 for side in [-1,1]:
+ box('lens',(side*.68,14.82,-1.455),(.88,.66,.021),rigid(4))
  uv_ball('mask',(side*.65,14.17,-1.42),(.44,.20,.08),rigid(4),6,10)
  uv_ball('glasses',(side*.65,14.78,-1.41),(.22,.24,.07),rigid(4),6,9)
  for dy in [-.39,.39]:tube('glasses',(side*.20,14.85+dy,-1.45),(side*1.19,14.85+dy,-1.45),.075,rigid(4),6)
@@ -203,8 +209,11 @@ for material,p in parts.items():
  nor=acc(pack_f(flat(norm)),5126,'VEC3',len(norm),34962)
  joints=acc(struct.pack('<%dH'%(len(vertex)*4),*flat(p['joints'])),5123,'VEC4',len(vertex),34962)
  weights=acc(pack_f(flat(p['weights'])),5126,'VEC4',len(vertex),34962)
+ # UV0 supplies native game-owned repeating microfabric textures. No network texture files.
+ uvs=[(v[0]*.18+v[2]*.045,v[1]*.20+v[2]*.05) for v in vertex]
+ uv=acc(pack_f(flat(uvs)),5126,'VEC2',len(vertex),34962)
  indices=acc(struct.pack('<%dH'%len(p['indices']),*p['indices']),5123,'SCALAR',len(p['indices']),34963)
- prim.append({'attributes':{'POSITION':pos,'NORMAL':nor,'JOINTS_0':joints,'WEIGHTS_0':weights},'indices':indices,'material':list(PALETTE).index(material)})
+ prim.append({'attributes':{'POSITION':pos,'NORMAL':nor,'JOINTS_0':joints,'WEIGHTS_0':weights,'TEXCOORD_0':uv},'indices':indices,'material':list(PALETTE).index(material)})
 
 nodes=[{'name':'RiverExplorer','children':[1,2]},{'name':'RiverSkin','mesh':0,'skin':0}]
 for i,(name,parent,trans) in enumerate(BONES):
