@@ -72,6 +72,7 @@ def inspect(page, *, mobile: bool):
     )
     page.locator("#heroShowSkeleton").check(timeout=15_000)
     assert state()["heroRigOverlay"] is True, "Studio skeleton overlay did not activate"
+    assert state()["heroStudioSkeletonBones"] == 27, "Skeleton inspector must observe all 27 real bones"
     assert state()["heroBoneCount"] == 27, "Live rig differs from claimed GLB bone count"
     prefix = "mobile" if mobile else "desktop"
     page.screenshot(path=str(OUT / f"{prefix}-27-joint-live-skeleton.png"))
