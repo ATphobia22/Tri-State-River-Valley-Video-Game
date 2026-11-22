@@ -11,7 +11,7 @@ if('serviceWorker' in navigator && ['https:','http:'].includes(location.protocol
   navigator.serviceWorker.register('./game-sw.js',{scope:'./'}).then(async reg=>{
     try {
       await navigator.serviceWorker.ready;
-      const cache=await caches.open('rva-game-1.9.5');
+      const cache=await caches.open('rva-game-1.9.6');
       const scoped=new URL('./game.html',location.href).pathname;
       const saved=await cache.match(scoped);
       const el=document.getElementById('offlineStatus');
