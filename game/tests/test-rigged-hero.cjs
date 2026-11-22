@@ -18,18 +18,23 @@ test('original self-contained GLB is independently reproducible with real skin, 
  assert.equal(doc.skins[0].joints.length,17);
  assert.equal(doc.animations.length,9);
  assert.ok(doc.materials.length>=14);
+ assert.ok(doc.materials.some(m=>m.name==='River lens'&&m.alphaMode==='BLEND'));
  assert.ok(doc.meshes[0].primitives.length>=12);
  assert.equal(doc.buffers.length,1);
  assert.equal(doc.buffers[0].uri,undefined);
  for(const p of doc.meshes[0].primitives){
   const attr=p.attributes;
   for(const field of ['POSITION','NORMAL','JOINTS_0','WEIGHTS_0'])assert.ok(Number.isInteger(attr[field]),field);
+  assert.ok(Number.isInteger(attr.TEXCOORD_0),'GLB texture coordinates missing');
+  const uv=Model.dataAccessor(parsed,attr.TEXCOORD_0);
+  assert.equal(uv.channels,2);
   const positions=Model.dataAccessor(parsed,attr.POSITION);
   const weights=Model.dataAccessor(parsed,attr.WEIGHTS_0);
   const joints=Model.dataAccessor(parsed,attr.JOINTS_0);
   assert.equal(positions.channels,3);
   assert.equal(weights.channels,4);
   assert.equal(weights.count,positions.count);
+  assert.equal(uv.count,positions.count);
   assert.equal(joints.count,positions.count);
   for(let i=0;i<weights.count;i++){
    let total=0;
@@ -55,6 +60,8 @@ test('runtime decodes SkinnedMeshes and drives actual shoulder, knee and hand at
   assert.equal(hero.meshes.length,doc.meshes[0].primitives.length);
   assert.ok(hero.meshes.every(mesh=>mesh.isSkinnedMesh&&mesh.skeleton.bones.length===17));
   assert.ok(hero.clips.includes('FishingCast'));
+  assert.ok('left' in hero.footContacts && 'right' in hero.footContacts);
+  assert.ok(hero.meshes.every(mesh=>mesh.geometry.attributes.uv?.count===mesh.geometry.attributes.position.count));
   const s=hero.update({state:'walk',stamp:950,dt:.065,groundAt:(x,z)=>.25*Math.sin(x/10)+.1*Math.cos(z/10),heading:.33});
   assert.equal(s.state,'walk');
   for(const name of ['LeftUpperLeg','RightUpperLeg','LeftLowerLeg','RightLowerLeg']){
@@ -77,4 +84,5 @@ test('game boot, cache and headless ground sampler all point to the real rig',()
  for(const file of ['./data/hero-model.js','./src/rigged-hero.js'])assert.ok(sw.includes(file));
  assert.match(game,/groundAt:height,heading:playerHeading/);
  assert.match(game,/heroSkinned:!!heroController\?\.skinned/);
+ assert.match(game,/heroTexturedMeshes:/);
 });

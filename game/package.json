@@ -1,6 +1,6 @@
 {
   "name": "river-valley-family-adventure",
-  "version": "1.9.3",
+  "version": "1.9.4",
   "private": true,
   "description": "Offline-first family 3D river valley adventure, independently developed from Tri-State Systems Manager",
   "scripts": {
