@@ -136,8 +136,10 @@ function create(THREE,{seated=false,samplePose}={}){
   const moving=['walk','run','sprint'].includes(pose.state),amp=pose.state==='walk'?.36:pose.state==='run'?.66:pose.state==='sprint'?.92:0;
   const targets={
    Spine:[pose.torso*.28,0,0],Chest:[pose.torso*.72,0,0],Neck:[pose.head||0,0,0],Head:[0,0,pose.headTurn||0],
-   LeftUpperArm:[pose.leftArm*.6,1.12+(pose.armSpread||.08)+.15*pose.leftArm,0],
-   RightUpperArm:[pose.rightArm*.6,-1.12-(pose.armSpread||.08)-.15*pose.rightArm,0],
+   // Relaxed hands hang beside the cargo pants instead of forming an A-pose.
+   // Activity grips still override this baseline using the same 27 joints.
+   LeftUpperArm:[pose.leftArm*.6,1.38+(pose.armSpread||.08)+.15*pose.leftArm,0],
+   RightUpperArm:[pose.rightArm*.6,-1.38-(pose.armSpread||.08)-.15*pose.rightArm,0],
    LeftForearm:[0,-.15-pose.leftElbow*.55,0],RightForearm:[0,.15+pose.rightElbow*.55,0]
   };
   if(['fish','hunt','cook','drive','interact','farm'].includes(pose.state)){
