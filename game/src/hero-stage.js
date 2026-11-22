@@ -40,17 +40,31 @@
   const halo=add(new THREE.Mesh(new THREE.TorusGeometry(11,.18,6,60),
     new THREE.MeshBasicMaterial({color:0x8ebec0,transparent:true,opacity:.35})));
   halo.position.set(0,9,5);
-  let width=900,height=650,lastState='idle';
+  let width=900,height=650,lastState='idle',focus='full';
   function resize(w,h){
    width=Math.max(240,Math.floor(Number.isFinite(w)?w:900));
    height=Math.max(280,Math.floor(Number.isFinite(h)?h:650));
    const phone=width<781;
    camera.aspect=width/height;
    camera.fov=phone?42:37;
-   // Look slightly right of the hero: leave space for the right-hand pose UI.
-   camera.position.set(phone?2:2.5,phone?12.8:12.5,phone?-51:-34);
-   camera.lookAt(phone?-1.8:-2.2,phone?3.7:8,0);
+   // An independently framed art inspection of the CURRENT skinned GLB.
+   // Full-body camera keeps space for the pose panel; close views make
+   // 27-joint hand grips and boots auditable in headed browser captures.
+   if(focus==='right-hand'){
+    camera.position.set(10.8,13.4,phone?-12:-14);
+    camera.lookAt(7.7,11.8,-.4);
+   }else if(focus==='boots'){
+    camera.position.set(phone?2.6:3.5,phone?3.6:4.0,phone?-15:-13);
+    camera.lookAt(0,1.1,-.6);
+   }else{
+    camera.position.set(phone?2:2.5,phone?12.8:12.5,phone?-51:-34);
+    camera.lookAt(phone?-1.8:-2.2,phone?3.7:8,0);
+   }
    camera.updateProjectionMatrix();
+  }
+  function setFocus(next){
+   if(!['full','right-hand','boots'].includes(next))throw new RangeError('Invalid character inspection focus');
+   focus=next;resize(width,height);
   }
   function update({state='idle',stamp=0,dt=.016}={}){
    if(!Hero.STATES.includes(state))state='idle';
@@ -74,7 +88,7 @@
    if(hero.root.parent)hero.root.parent.remove(hero.root);
   }
   resize(width,height);
-  return Object.freeze({scene,camera,hero,resize,update,render,dispose,get state(){return lastState;}});
+  return Object.freeze({scene,camera,hero,resize,setFocus,update,render,dispose,get state(){return lastState;},get focus(){return focus;}});
  }
  return Object.freeze({create});
 });
