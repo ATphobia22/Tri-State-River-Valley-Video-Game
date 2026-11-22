@@ -187,3 +187,41 @@ a clean Editor compile, cook, package and a network-disabled Windows launch.
 Keep Editor, Developer and Program modules out of Shipping. A successful
 browser game CI run validates **only the existing browser game** and the
 optional art-lab's static policy tests, not an Unreal native executable.
+
+## UE 5.8 plugin inventory: Paper2D, accessibility, AI, animation and audio
+
+This is a **feature-to-plugin selection matrix**, not a request to enable
+every plugin in the editor. Unreal plugins can introduce experimental code,
+platform restrictions, licensing obligations and cook-time dependencies.
+Inspect the plugin descriptor, EngineVersion, supported target platforms,
+runtime/editor module types and redistribution rights before enabling.
+
+| Priority | Plugin family | River Valley use | Admission decision |
+| --- | --- | --- | --- |
+| High | **Control Rig, IK Rig, Skeletal Mesh Editing Tools, Animation Modifier Library** | River's hand grips, locomotion retargeting, bone corrections and asset preparation | Enable in an actual UE 5.8 Editor only after source import; validate the 27-joint/13-action browser baseline separately |
+| High | **Animation Warping, Motion Warping, Animation Locomotion Library** | Better foot planting, turn transitions and obstacle interactions | Prototype only after a native UE movement controller exists; do not assume these modify Three.js animations |
+| High | **Subtitles and Closed Captions, ScreenReader, SlateScreenReader, TextToSpeech** | Accessible prompts, narrative captions and screen-reader support | Design accessible browser controls separately; native Unreal accessibility requires platform-specific tests |
+| Medium | **Animation Budget Allocator, Animation Compression Library, Animation Sharing, AnimToTexture** | Reduce skeletal animation CPU/asset costs for NPC crowds and distant characters | Benchmark with real character counts; don't convert the hero to vertex textures without reviewing gameplay deformation |
+| Medium | **Pose Search, Chooser, Blend Stack, ContextualAnimation** | Future action selection and motion matching for hunting, fishing and driving | Requires compatible animation dataset and integration tests; not a plug-and-play improvement |
+| Medium | **MetaSound, Audio Modulation, Audio Synesthesia, Soundscape Plugin, AudioGameplay, Spatialization** | Offline river ambience, footstep zones, weather transitions and positional cues | Evaluate if native Unreal audio is pursued; existing browser soundscape stays independent |
+| Medium | **AIModule/AI Support, Environment Query Editor, ZoneGraph, MassAI, MassCrowd** | Optional animal behavior and pedestrian navigation | Only if native NPC scale warrants the complexity; preserve offline single-player operation |
+| Medium | **Paper2D** | Optional accessible 2D map or fallback scenes | Useful for a future native fallback, not required by existing HTML/Canvas 2D mode |
+| Low | **Control Rig Spline, Rig Mapper, Sequencer Anim Mixer, Live Link** | Optional animation capture, cinematic rigging and sequence review | Need concrete source footage, a supported rig and reproducible scene |
+| Low | **Chaos Cloth Generator, Deformer Graph, Optimus, ML Deformer Framework** | Higher-end garment, face and skin deformation | Require GPU/hardware evaluation, license checks and lower-spec fallback |
+| Low | **Audio Motor Sim, MotoSynth, Wave Tables, Synthesis and DSP Effects** | Optional vehicle-engine audio and procedural effects | Test offline behavior and sound quality; avoid bloating native builds |
+| Not now | **Learning Agents, HTN planner, ML Adapter, Unreal Animation Framework/UAF, AnimNext family, performance-capture plugins** | Specialized or evolving workflows | Do not activate without a bounded feature, version-specific documentation and tests |
+| Exclude | **IOS TapJoy Advertising Provider, Adjust Analytics Provider, Multicast Analytics Provider, Analytics Blueprint Library** | Ads, external analytics and tracking | Not appropriate for the free, anonymous, offline-first game |
+| Platform-only | **AndroidFileServer, GooglePAD, Android Background Service, MicrosoftSpatialSound** | Android deployment or platform-specific audio | No current Android package target or platform proof; do not enable globally |
+
+**Vendor/plugin caution:** DNACalib v6.12.2, GeneSplicer v9.8.2,
+RigLogic v10.3.0 and similar versioned packages must not be installed
+or redistributed based solely on their names. Confirm the actual provider,
+license, engine compatibility and permitted asset use first. Deprecated
+Nearest Neighbor ML Deformer variants should not be a new dependency.
+
+**Practical River character acceptance gate:** original GLB and Blender
+master available; inspect bone weights and facial gear; verify each named
+action (idle, locomotion, fishing, driving, etc.); produce and inspect
+runtime LODs; compare four camera views; run existing GLB static gate,
+browser rendering matrix, mobile and offline replay tests. Editor plugin
+enablement alone satisfies none of these release gates.
