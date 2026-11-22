@@ -1,0 +1,28 @@
+{
+  "name": "RiverExplorer",
+  "format": "glTF 2.0 GLB",
+  "license": "Project-original, no third-party asset",
+  "bytes": 249968,
+  "sha256": "48f781985794bbb918f10200f2a80db660ed9eeb763d4a6ef094d882d805b8e7",
+  "boneCount": 17,
+  "vertexCount": 3778,
+  "triangleCount": 6244,
+  "primitives": 14,
+  "materials": 15,
+  "clips": [
+    "Idle",
+    "Walk",
+    "Run",
+    "Sprint",
+    "FishingCast",
+    "Cook",
+    "Track",
+    "Drive",
+    "Interact"
+  ],
+  "footGroundY": [
+    0.28000000000000025,
+    0.28000000000000025
+  ],
+  "usesExternalResources": false
+}
