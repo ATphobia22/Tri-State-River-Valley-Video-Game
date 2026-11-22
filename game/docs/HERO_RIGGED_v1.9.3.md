@@ -1,4 +1,4 @@
-# River Explorer v1.9.4 — original rigged GLB release
+# River Explorer v1.9.3 — original rigged GLB release
 
 ## Character identity and source
 The two River character sheets supplied by the project owner are art direction, not meshes or motion capture. The original self-contained generator creates geometry from mathematical lofts, tapered limbs, custom tubes, spheres and boxes. The visual identity includes dark technical clothing, cargo pants, backpack/straps, tan leather details, curly dark hair, glasses, skull gaiter, dark gloves and hiking boots, plus a metallic gold chain. The result is stylized and is not a photogrammetric reproduction of either image.
