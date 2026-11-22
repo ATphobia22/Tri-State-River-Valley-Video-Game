@@ -301,3 +301,38 @@ References:
 - https://dev.epicgames.com/documentation/en-us/unreal-engine/API/PluginIndex/NNERuntimeIREE
 - https://dev.epicgames.com/documentation/en-us/unreal-engine/API/PluginIndex/NNERuntimeRDG
 - https://dev.epicgames.com/documentation/en-us/unreal-engine/neural-network-engine-in-unreal-engine
+
+## Performance / Chaos / rendering / scripting acceptance matrix
+
+The read-only auditor now exposes `performance`, `physics`, `rendering`,
+`profiling` and `scripting` profiles. Each name remains a *candidate* until
+an actual UE 5.8 `.uplugin` descriptor is found locally. Name/version mismatch
+is a validation gap; never silently enable a similarly named plugin.
+
+```powershell
+python game/unreal-starter/Content/Python/plugin_policy.py --profile physics --engine-plugins "C:\Program Files\Epic Games\UE_5.8\Engine\Plugins"
+python game/unreal-starter/Content/Python/plugin_policy.py --profile rendering --engine-plugins "C:\Program Files\Epic Games\UE_5.8\Engine\Plugins"
+python -m unittest discover -s game/unreal-starter/tests -p "test_*.py" -v
+```
+
+| Feature group | Preferred path | Do not claim until |
+| --- | --- | --- |
+| PerformanceMonitor, Significance Manager, Reflex | Profile CPU/GPU budgets and use distance-based update frequency if NPC scale warrants it | Hardware traces and frame-time comparisons on Windows |
+| Replication Graph, network traces, MsQuic | Exclude from offline single-player by default | A genuine multiplayer requirement and tested server architecture |
+| Chaos Vehicles, PhysicsControl, Chaos Cloth / Cloth Asset | Prototype driving suspension, planted feet, cloth backpack straps | Imported, cooked native assets with stable collision, rigs and real frame-time evidence |
+| Chaos Flesh, Tet Meshing, modular vehicles, Chaos Mover | Defer experimental, expensive simulation | Version compatibility and proof that quality gain justifies complexity |
+| Apex Destruction | Legacy technology; prefer Chaos Fracture when required | No new Apex dependency |
+| LiDAR Point Cloud Support, Virtual Heightfield Mesh | Possible native terrain authoring previews | Provenance, CRS, vertical datum and practical streaming tests |
+| Procedural Mesh Component, Compute Framework | Optional dynamic generated scenery or compute effects | Cooked native render and memory/CPU/GPU profiling |
+| HDRIBackdrop, Volumetrics, OCIO, Movie Render Queue | Native cinematic lighting, compositing and capture | Headed visual comparison, correct color pipeline and output renders |
+| Nanite Displaced Mesh, Mobile FSR, Cinematic Prestreaming | Platform-specific rendering options | Supported target hardware, UE 5.8 feature check and fallback |
+| PerformanceMonitor, World Metrics, GPU capture tools, Render Trace | Inspect bottlenecks; collect FPS, frame time, GPU and VRAM | Actual captured traces instead of estimates |
+| Project Launcher, Windows Device Profile Selector | Local Shipping cook/package workflow | Clean Windows launch with network disconnected |
+| Python Editor Script, Sequencer Scripting, editor integrations | Authoring automation only | Editor validation; no Shipping dependency |
+| Razer Chroma devices, Pre-Load Screen Movie Player | Cosmetic, optional | Hardware and accessibility checks; no default dependency |
+| MLflow, remote editing/collaboration integrations | Optional offline evaluation/export only | Data-governance review and explicit user requirement |
+
+The current Three.js game cannot load Unreal-specific plugins directly.
+Consequently this feature adds **audit code, test coverage and an
+implementation map** only, not an Unreal compiled binary, multiplayer service,
+GPU capture or new playable game content.
