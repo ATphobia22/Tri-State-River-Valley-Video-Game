@@ -40,7 +40,7 @@
   const halo=add(new THREE.Mesh(new THREE.TorusGeometry(11,.18,6,60),
     new THREE.MeshBasicMaterial({color:0x8ebec0,transparent:true,opacity:.35})));
   halo.position.set(0,9,5);
-  let width=900,height=650,lastState='idle',focus='full';
+  let width=900,height=650,lastState='idle',focus='full',viewAngle='front';
   function resize(w,h){
    width=Math.max(240,Math.floor(Number.isFinite(w)?w:900));
    height=Math.max(280,Math.floor(Number.isFinite(h)?h:650));
@@ -69,6 +69,12 @@
    if(!['full','face','right-hand','boots'].includes(next))throw new RangeError('Invalid character inspection focus');
    focus=next;resize(width,height);
   }
+  function setAngle(next){
+   const angles={front:0,'three-quarter':-Math.PI/4,side:-Math.PI/2,back:Math.PI};
+   if(!Object.prototype.hasOwnProperty.call(angles,next))throw new RangeError('Invalid model turnaround angle');
+   viewAngle=next;
+   hero.root.rotation.y=angles[next];
+  }
   function update({state='idle',stamp=0,dt=.016}={}){
    if(!Hero.STATES.includes(state))state='idle';
    lastState=state;
@@ -91,7 +97,7 @@
    if(hero.root.parent)hero.root.parent.remove(hero.root);
   }
   resize(width,height);
-  return Object.freeze({scene,camera,hero,resize,setFocus,update,render,dispose,get state(){return lastState;},get focus(){return focus;}});
+  return Object.freeze({scene,camera,hero,resize,setFocus,setAngle,update,render,dispose,get state(){return lastState;},get focus(){return focus;},get angle(){return viewAngle;}});
  }
  return Object.freeze({create});
 });
