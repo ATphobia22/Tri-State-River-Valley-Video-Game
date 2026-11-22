@@ -5,6 +5,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+# Superseded PR heads should not compete for SwiftShader CPU and create
+# artificial multi-minute rendering stalls in the scenario benchmark.
+concurrency:
+  group: river-valley-game-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -78,6 +83,8 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Test playable 3D hero on desktop and phone-sized Chromium
         run: python game/tests/browser_hero_smoke.py
+      - name: Capture controlled 24-condition world rendering matrix on SwiftShader
+        run: python game/tests/browser_perf_matrix.py --frames 18 --output /tmp/river-hero-visual-qa/perf-matrix.json
       - name: Prove fully offline gameplay and save-slot replay in Chromium
         run: python game/tests/offline_pwa_smoke.py --site-dir game --entry game.html
       - name: Preserve real browser screenshots and pose-inspection evidence

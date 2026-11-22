@@ -35,7 +35,7 @@ if(!COLLISION?.create||!AUDIO?.create||!PROBE?.create)throw new Error('Offline c
 if(!VEHICLE?.create)throw new Error('Offline vehicle suspension required');
 const soundscape=AUDIO.create(),frameProbe=PROBE.create(),suspension=VEHICLE.create();
 let vehicleState=suspension.snapshot();
-let lastGpuTune=0,activePixelRatio=0;
+let lastGpuTune=0,activePixelRatio=0,probeScene='downtown',lastProbeSceneAt=0,cameraGoal=null,roadRefreshQueued=false,detailFastLast=false;
 let collisionWorld=COLLISION.create(),lastFootstepAt=0,lastCollision=null,terrainDecor=null;
 let motionState=motion.snapshot(),heroHeightOffset=0,groundShadow=null;
 const streamingGovernor=STREAM?STREAM.createGovernor({maxTiles:innerWidth<781?110:200,minTiles:innerWidth<781?60:85,targetFPS:30}):null;
@@ -125,14 +125,14 @@ function mapDraw(targetCtx,width,height,focus){
 function tryRenderer(){
  if(!G||!G.WebGLRenderer)return false;
  try{
-  const canvas3d=canvas;renderer=new G.WebGLRenderer({canvas:canvas3d,antialias:true,powerPreference:'default',preserveDrawingBuffer:true});
+  const canvas3d=canvas;renderer=new G.WebGLRenderer({canvas:canvas3d,antialias:true,powerPreference:'default',preserveDrawingBuffer:false});
   activePixelRatio=Math.min(window.devicePixelRatio||1,1.25);renderer.setPixelRatio(activePixelRatio);
   renderer.setSize(window.innerWidth,window.innerHeight,false);
   renderer.outputColorSpace=G.SRGBColorSpace;
   renderer.toneMapping=G.ACESFilmicToneMapping;
   renderer.toneMappingExposure=1.25;
   scene=new G.Scene();scene.background=new G.Color('#a8bec2');scene.fog=new G.FogExp2('#bdd0ca',0.00019);
-  camera=new G.PerspectiveCamera(60,Math.max(1,innerWidth)/Math.max(1,innerHeight),.2,10500);
+  camera=new G.PerspectiveCamera(60,Math.max(1,innerWidth)/Math.max(1,innerHeight),.2,10500);cameraGoal=new G.Vector3();
   ambient=new G.HemisphereLight(0xd5e6ff,0x404e36,2.3);scene.add(ambient);
   sunLight=new G.DirectionalLight(0xffe1a8,2.3);sunLight.position.set(100,220,-180);scene.add(sunLight);
   facadePalette=POLISH?POLISH.make(G):null;buildTerrain();buildRiver();buildRoads();buildBuildings();buildTrees();if(PAINT)terrainDecor=PAINT.scatter(G,scene,height,{mobile:innerWidth<781,limit:LIMIT});buildBeacons();buildPlayer();buildHouse();buildOriginalModels();
@@ -152,12 +152,31 @@ function buildTerrain(){
  applyTerrainLOD(true,true);
 }
 function disposeTerrainMeshes(meshes){
+ // Tiles of one LOD generation share shader/material; dispose it once.
+ const materials=new Set();
  for(const m of meshes){
   if(m.parent)m.parent.remove(m);
-  m.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();obj.material.dispose();}});
+  m.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();
+   for(const mat of Array.isArray(obj.material)?obj.material:[obj.material])if(mat)materials.add(mat);
+  }});
  }
+ for(const material of materials)material.dispose();
 }
 function commitTerrainLOD(job){
+ const committedAt=performance.now();
+ // A single seam mesh replaces one skirt draw call per LOD leaf. Tile vertices
+ // remain unchanged; coarse/fine borders still use the exact edge samples.
+ const seams=[],total=job.meshes.reduce((n,m)=>n+(m.userData.seamPositions?.length||0),0);
+ if(total){
+   const combined=new Float32Array(total);let offset=0;
+   for(const mesh of job.meshes){const positions=mesh.userData.seamPositions||[];
+     combined.set(positions,offset);offset+=positions.length;delete mesh.userData.seamPositions;}
+   const geom=new G.BufferGeometry();geom.setAttribute('position',new G.Float32BufferAttribute(combined,3));
+   geom.computeVertexNormals();
+   const seam=new G.Mesh(geom,new G.MeshLambertMaterial({color:0x4d694e,side:G.DoubleSide}));
+   seam.name='River/batched-terrain-seam-skirts';seam.frustumCulled=false;
+   job.meshes.push(seam);
+ }
  const old=terrainMeshes;
  for(const m of job.meshes)scene.add(m);
  terrainMeshes=job.meshes;terrainMesh=job.meshes[0];terrainIndex=job.index;
@@ -175,13 +194,17 @@ function commitTerrainLOD(job){
  terrainStats={tiles:job.leaves.length,triangles:job.leaves.length*QT.WIDTH*QT.WIDTH*2,levels:{}};
  for(const tile of job.leaves)terrainStats.levels[tile.depth]=(terrainStats.levels[tile.depth]||0)+1;
  activeTerrainSegments=QT.WIDTH;
- if(roadMesh){scene.remove(roadMesh);roadMesh.geometry.dispose();roadMesh.material.dispose();roadMesh=null;buildRoads();}
- updateBuildingLOD(true);
- if(referenceEnabled)updateReferenceDrape();
- refreshVegetation(true);
+ // Do not regenerate road ribbons, buildings and texture drapes in the
+ // same frame that commits the terrain while driving. Existing geometry
+ // remains visible and is reconciled when vehicle movement settles.
+ roadRefreshQueued=!!roadMesh;
+ if(!started){roadRefreshQueued=false;}
+ if(referenceEnabled&&!started)updateReferenceDrape();
  const labels=Object.entries(terrainStats.levels).map(([l,n])=>`L${l}:${n}`).join(' · ');
  const label=`Quadtree SSE ${terrainDetail.toUpperCase()} · ${job.leaves.length} tiles · ${labels}`;
  if($('lodLabel'))$('lodLabel').textContent=label;lastLODLabel=label;
+ frameProbe.mark('terrain-lod-commit',{stamp:performance.now(),x:player.x,z:player.z,
+  ms:performance.now()-committedAt,tiles:terrainStats.tiles,detailBuildings:detailBuildings.size});
 }
 function fadeRetiringTerrain(stamp){
  if(!retiringTerrain)return;
@@ -194,6 +217,8 @@ function fadeRetiringTerrain(stamp){
 function terrainBudget(){const userCap=visualEffects==='lite'?110:200;return terrainDetail==='auto'&&streamingGovernor?Math.min(userCap,streamingGovernor.tileBudget()):userCap;}
 function desiredPixelError(){return ({auto:8,high:3.5,medium:14,low:28})[terrainDetail]||8;}
 function tileColorMesh(tile,index){
+ // Expensive elevation sampling now happens inside the bounded LOD pump.
+ if(!tile.samples)tile.samples=QT.tileSamples(sourceHeight,tile,index);
  const n=QT.WIDTH,ge=new G.PlaneGeometry(tile.width,tile.width,n,n);
  ge.rotateX(-Math.PI/2);ge.translate(tile.x0+tile.width/2,0,tile.z0+tile.width/2);
  const pos=ge.attributes.position,colors=[],tileUVs=[],rgb=new G.Color();
@@ -205,7 +230,9 @@ function tileColorMesh(tile,index){
   colors.push(Math.min(1,rgb.r+grain),Math.min(1,rgb.g+grain),Math.min(1,rgb.b+grain));
  }
  ge.setAttribute('color',new G.Float32BufferAttribute(colors,3));ge.setAttribute('uv',new G.Float32BufferAttribute(tileUVs,2));ge.computeVertexNormals();
- const mesh=new G.Mesh(ge,new G.MeshLambertMaterial({vertexColors:true,map:facadePalette?.terrainMap||null,side:G.DoubleSide}));
+ const terrainMaterial=index.terrainMaterial||(index.terrainMaterial=new G.MeshLambertMaterial({
+   vertexColors:true,map:facadePalette?.terrainMap||null,side:G.DoubleSide}));
+ const mesh=new G.Mesh(ge,terrainMaterial);
  mesh.userData.lod=tile.depth;mesh.frustumCulled=true;
  const skirts=[];
  function addEdge(side){
@@ -225,9 +252,7 @@ function tileColorMesh(tile,index){
    }
  }
  ['top','bottom','left','right'].forEach(addEdge);
- if(skirts.length){const g=new G.BufferGeometry();g.setAttribute('position',new G.Float32BufferAttribute(skirts,3));g.computeVertexNormals();
-  const seam=new G.Mesh(g,new G.MeshLambertMaterial({color:0x4d694e,side:G.DoubleSide}));seam.userData.lodSkirt=true;seam.frustumCulled=false;mesh.add(seam);
- }
+ if(skirts.length)mesh.userData.seamPositions=skirts;
  return mesh;
 }
 function applyTerrainLOD(force=false,immediate=false){
@@ -243,8 +268,8 @@ function applyTerrainLOD(force=false,immediate=false){
  const next=QT.makeTileIndex(leaves,LIMIT);
  const signature=season+'|'+leaves.map(t=>t.depth+':'+Math.round(t.x0)+':'+Math.round(t.z0)).join('|');
  // The active LOD remains live while the next full set is tessellated in batches.
- for(const leaf of leaves)leaf.samples=QT.tileSamples(sourceHeight,leaf,next);
- terrainTransition.schedule({signature,leaves,index:next},immediate);
+ const scheduled=terrainTransition.schedule({signature,leaves,index:next},immediate);
+ if(scheduled&&started)frameProbe.mark('terrain-lod-request',{stamp:performance.now(),x:player.x,z:player.z,tiles:leaves.length});
 }
 function updateReferenceDrape(){
  if(!scene||!G||!GEOREF)return;
@@ -328,14 +353,25 @@ function detailedBuilding(rec){
    }
    // Near-camera windows follow each source footprint segment rather than world axes.
    const winMat=mats?mats.glass:new G.MeshBasicMaterial({color:0x234d5d,side:G.DoubleSide});
+   // One GPU draw per building's windows; preserve placement and material.
+   const winPositions=[],winIndices=[];
    for(let k=0;k<Math.min(pts.length,6);k++){
      const [x0,z0]=pts[k],[x1,z1]=pts[(k+1)%pts.length],dx=x1-x0,dz=z1-z0,len=Math.hypot(dx,dz);
      if(len<13||roofY-Math.max(...terrainY)<8)continue;
      const theta=-Math.atan2(dz,dx),nx=Math.sin(theta),nz=Math.cos(theta);
      for(let j=1;j<=Math.min(3,Math.floor(len/15));j++){
-       const t=j/(Math.min(3,Math.floor(len/15))+1),win=new G.Mesh(new G.PlaneGeometry(Math.min(5,len*.12),4),winMat);
-       win.position.set(x0+dx*t+nx*.42,roofY-6,z0+dz*t+nz*.42);win.rotation.y=theta;g.add(win);
+       const t=j/(Math.min(3,Math.floor(len/15))+1),x=x0+dx*t+nx*.42,y=roofY-6,z=z0+dz*t+nz*.42;
+       const w=Math.min(5,len*.12)/2,h=2,ux=Math.cos(theta)*w,uz=-Math.sin(theta)*w;
+       const base=winPositions.length/3;
+       winPositions.push(x-ux,y-h,z-uz,x+ux,y-h,z+uz,x-ux,y+h,z-uz,x+ux,y+h,z+uz);
+       winIndices.push(base,base+1,base+2,base+2,base+1,base+3);
      }
+   }
+   if(winIndices.length){
+     const winGeo=new G.BufferGeometry();
+     winGeo.setAttribute('position',new G.Float32BufferAttribute(winPositions,3));
+     winGeo.setIndex(winIndices);winGeo.computeVertexNormals();
+     g.add(new G.Mesh(winGeo,winMat));
    }
  }catch(_){/* Invalid derived footprint: display walls and keep running. */}
  g.userData.index=rec.i;g.userData.facade=mats?.family||'classic';return g;
@@ -354,9 +390,14 @@ function buildBuildings(){
 }
 function updateBuildingLOD(force=false){
  if(!buildingMesh)return;
- if(!force&&Math.hypot(player.x-detailLast.x,player.z-detailLast.z)<42)return;
- detailLast={...player};
- let near=buildingItems.map((b,i)=>({i,dist:Math.hypot(b.x-player.x,b.z-player.z)})).filter(p=>p.dist<330).sort((a,b)=>a.dist-b.dist).slice(0,85);
+ const fastDriving=save.mode==='drive'&&currentTravelSpeed>42;
+ if(!force&&fastDriving===detailFastLast&&Math.hypot(player.x-detailLast.x,player.z-detailLast.z)<(fastDriving?180:42))return;
+ detailFastLast=fastDriving;detailLast={...player};
+ // In high-speed drive mode show the instanced skyline and avoid uploading
+ // dozens of new textured wall/roof buffers in the driving frame.
+ const detailCap=fastDriving?0:save.mode==='drive'?(innerWidth<920?24:38):(innerWidth<920?38:64);
+ let near=buildingItems.map((b,i)=>({i,dist:Math.hypot(b.x-player.x,b.z-player.z)}))
+  .filter(p=>p.dist<(save.mode==='drive'?270:330)).sort((a,b)=>a.dist-b.dist).slice(0,detailCap);
  const want=new Set(near.map(x=>x.i));
  for(const [i,g] of detailBuildings){if(!want.has(i)){
    detailGroup.remove(g);g.traverse(obj=>{if(obj.isMesh)obj.geometry.dispose();});detailBuildings.delete(i);
@@ -389,9 +430,9 @@ function buildTrees(){
  const crownMat=new G.MeshLambertMaterial({color:0xffffff,side:G.DoubleSide});
  const trunk=new G.InstancedMesh(new G.CylinderGeometry(.5,.95,6,5),barkMat,capacity);
  const crowns=[
-  new G.InstancedMesh(new G.IcosahedronGeometry(4.1,1),crownMat.clone(),capacity),
-  new G.InstancedMesh(new G.SphereGeometry(4.3,7,6),crownMat.clone(),capacity),
-  new G.InstancedMesh(new G.ConeGeometry(4.3,11,7),crownMat.clone(),capacity)
+  new G.InstancedMesh(new G.IcosahedronGeometry(4.1,1),crownMat,capacity),
+  new G.InstancedMesh(new G.SphereGeometry(4.3,7,6),crownMat,capacity),
+  new G.InstancedMesh(new G.ConeGeometry(4.3,11,7),crownMat,capacity)
  ];
  treeMeshes=[trunk,...crowns];
  for(const m of treeMeshes){m.count=0;m.frustumCulled=true;scene.add(m);}
@@ -582,14 +623,20 @@ function updateVisuals(dt,stamp){
  if(worldGame)worldGame.update({stamp,save,activity:worldActive,huntRound:worldHuntRound,fishRound:worldFishRound,aim:worldAim,weather});
  if(atmosphere)atmosphere.update(camera,time,weather,season,stamp);if(director3D)director3D.update(stamp,time,weather,cinemaPrefs.strength,cinemaPrefs.quality);
  applyTerrainLOD();
- if(terrainTransition)terrainTransition.pump(visualEffects==='lite'?8:12);
+ if(terrainTransition)terrainTransition.pump(save.mode==='drive'?(visualEffects==='lite'?3:5):(visualEffects==='lite'?6:10));
  fadeRetiringTerrain(stamp);
- if(stamp-lastVegetationTime>250){refreshVegetation(false,stamp);lastVegetationTime=stamp;}
+ if(roadRefreshQueued && (save.mode!=='drive'||currentTravelSpeed<15) && !terrainTransition?.status().pending){
+   const refreshAt=performance.now();roadRefreshQueued=false;
+   if(roadMesh){scene.remove(roadMesh);roadMesh.geometry.dispose();roadMesh.material.dispose();roadMesh=null;buildRoads();}
+   if(referenceEnabled)updateReferenceDrape();
+   frameProbe.mark('road-redrape-after-lod',{stamp:performance.now(),x:player.x,z:player.z,ms:performance.now()-refreshAt,tiles:terrainStats.tiles});
+ }
+ if(stamp-lastVegetationTime>(save.mode==='drive'?650:250)){refreshVegetation(false,stamp);lastVegetationTime=stamp;}
  updateBuildingLOD();
  const yaw=heroInspection?playerHeading+Math.PI:cameraYaw,dist=heroInspection?30:cameraDist,dx=Math.sin(yaw)*dist,dz=Math.cos(yaw)*dist;
  const tx=player.x+dx,tz=player.z+dz,desiredY=heroInspection?height(player.x,player.z)+12:height(tx,tz)+Math.max(23,cameraDist*.34);
  const ty=heroInspection?desiredY:MOTION.cameraClearance({playerX:player.x,playerZ:player.z,lookHeight:height(player.x,player.z)+6+heroHeightOffset,cameraX:tx,cameraZ:tz,desiredY,groundAt:height,maxLift:75});
- camera.position.lerp(new G.Vector3(tx,ty,tz),Math.min(1,dt*4.5));
+ camera.position.lerp(cameraGoal.set(tx,ty,tz),Math.min(1,dt*4.5));
  camera.lookAt(player.x,height(player.x,player.z)+(heroInspection?10.5:6),player.z);
  renderer.render(scene,camera);
 }
@@ -850,7 +897,7 @@ function closeHeroStudio(){
  }
 }
 function screenshot(){if(!started)return;
- try{if(renderer&&view==='3d')renderer.render(scene,camera);else update2d();const a=document.createElement('a');a.download=`River-Valley-Family-${Date.now()}.png`;a.href=(view==='2d'||!renderer?atlas:canvas).toDataURL('image/png');document.body.appendChild(a);a.click();a.remove();toast('📷 Photo saved to your device (if supported by your browser).');}
+ try{if(renderer&&view==='3d'){if(heroInspection&&heroPreviewStage)heroPreviewStage.render(renderer);else renderer.render(scene,camera);}else update2d();const a=document.createElement('a');a.download=`River-Valley-Family-${Date.now()}.png`;a.href=(view==='2d'||!renderer?atlas:canvas).toDataURL('image/png');document.body.appendChild(a);a.click();a.remove();toast('📷 Photo saved to your device (if supported by your browser).');}
  catch(err){toast('Photo unavailable in this browser. Try your device screenshot controls.');}
 }
 function startTour(){if(!started)return;if(touring){stopTour();return;}closeWorldActivity();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;touring=true;tourAt=0;tourTimer=0;tourFrom={...player};
@@ -944,7 +991,19 @@ function loop(stamp){
  if(started){update(dt,stamp);if(renderer&&view==='3d')updateVisuals(dt,stamp);else update2d();}
  else if(renderer&&view!=='2d'){updateVisuals(dt,stamp);}
  if(started&&view==='3d'){
-  frameProbe.observe(rawFrameMs,{stamp,drawCalls:renderer?.info?.render?.calls||0,triangles:renderer?.info?.render?.triangles||0});
+  if(stamp-lastProbeSceneAt>=650){
+   lastProbeSceneAt=stamp;
+   if(save.countyRegion!=='mount-vernon')probeScene=save.countyRegion;
+   else{
+    const nearest=C.STOPS.reduce((best,p)=>Math.hypot(p.x-player.x,p.z-player.z)<best.dist?
+     {id:p.id,dist:Math.hypot(p.x-player.x,p.z-player.z)}:best,{id:'courthouse',dist:Infinity});
+    probeScene=nearest.id==='farm'?'farmland':nearest.id==='riverfront'||nearest.id==='dock'?'riverbank':
+     nearest.id==='oak'||nearest.id==='trail'?'woods':'downtown';
+   }
+  }
+  frameProbe.observe(rawFrameMs,{stamp,drawCalls:renderer?.info?.render?.calls||0,
+   triangles:renderer?.info?.render?.triangles||0,x:player.x,z:player.z,scene:probeScene,mode:save.mode,
+   quality:visualEffects,terrainTiles:terrainStats.tiles,terrainQueued:terrainTransition?.status().queued||0});
   if(renderer&&stamp-lastGpuTune>4000&&frameProbe.summary().samples>90){
    const perf=frameProbe.summary(),target=perf.meanFPS<24?Math.min(1,devicePixelRatio||1):perf.meanFPS>38?Math.min(1.25,devicePixelRatio||1):activePixelRatio;
    if(Math.abs(target-activePixelRatio)>.05){activePixelRatio=target;renderer.setPixelRatio(activePixelRatio);renderer.setSize(innerWidth,innerHeight,false);}
@@ -955,7 +1014,7 @@ function loop(stamp){
  renderMinigameScene(stamp);updateCinema(stamp);if(backdropOpen&&STORY&&stamp-backdropLast>66){if(shotPlaying&&stamp-shotStart>=SHOT_DURATION){applyShot(shotIndex+1);shotStart=stamp;}STORY.render($('stageCanvas'),backdropLocation,cinemaPrefs.look,stamp,cinemaPrefs.quality);backdropLast=stamp;}requestAnimationFrame(loop);
 }
 function bindUI(){
- $('heroStudioOpen').addEventListener('click',openHeroStudio);$('heroStudioClose').addEventListener('click',closeHeroStudio);$('heroStudioDone').addEventListener('click',closeHeroStudio);$('heroPhoto').addEventListener('click',screenshot);$('heroPose').addEventListener('change',e=>{if(HERO.STATES.includes(e.target.value))heroPreviewPose=e.target.value;});
+ $('heroStudioOpen').addEventListener('click',openHeroStudio);$('heroStudioClose').addEventListener('click',closeHeroStudio);$('heroStudioDone').addEventListener('click',closeHeroStudio);$('heroPhoto').addEventListener('click',screenshot);$('heroPose').addEventListener('change',e=>{if(HERO.STATES.includes(e.target.value))heroPreviewPose=e.target.value;});$('heroFocus').addEventListener('change',e=>heroPreviewStage?.setFocus(e.target.value));
  $('playBtn').addEventListener('click',()=>play(false));$('resumeBtn').addEventListener('click',()=>play(true));
  $('walkBtn').addEventListener('click',()=>setMode('walk'));$('driveBtn').addEventListener('click',()=>setMode('drive'));
  $('countyBtn').addEventListener('click',openCounty);$('countyClose').addEventListener('click',closeCounty);
@@ -1047,7 +1106,7 @@ function init(){
  if(!tryRenderer()){view='2d';$('quality').value='2d';}else view='3d';
  resize();updateHUD();mapDraw(mapCtx,mapCanvas.width,mapCanvas.height,false);
  requestAnimationFrame(loop);
- window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,heroPreviewReady:!!heroPreviewStage,heroInspection,heroPreviewPose,heroState,heroModel:!!heroController,heroProfile:HERO?.PROFILE?.id||null,heroSkinned:!!heroController?.skinned,scout:scout?.snapshot()||null,scoutBond:save.scoutBond,countyRegion:save.countyRegion,countyVisited:[...save.countyVisited],countyBoundaryVertices:COUNTY_DATA?.boundary?.length||0,countyVignettes:countyVignettes?.counts||null,collision:collisionWorld.snapshot(),vehicleSuspension:suspension.snapshot(),worldPaint:terrainDecor?.counts||null,lastCollision,audio:soundscape.snapshot(),performance:frameProbe.summary(),pixelRatio:activePixelRatio,heroHeightOffset,groundShadowReady:!!groundShadow,motionState:motion.snapshot(),heroTexturedMeshes:heroController?.meshes?.filter(m=>!!m.material?.map).length||0,heroFootContacts:heroController?.footContacts||null,heroBoneCount:heroController?.skinned?Object.keys(heroController.joints).length:0,heroClipCount:heroController?.clips?.length||0,heroParts:heroController?Object.keys(heroController.joints).length:0,terrainTransition:terrainTransition?.status()||null,vegetation:biomeStreamer?.snapshot()||null,facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,imageryYear:REF?.metadata?.downtownTileYear||null},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
+ window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,heroPreviewReady:!!heroPreviewStage,heroInspection,heroPreviewPose,heroPreviewFocus:heroPreviewStage?.focus||null,heroState,heroModel:!!heroController,heroProfile:HERO?.PROFILE?.id||null,heroSkinned:!!heroController?.skinned,scout:scout?.snapshot()||null,scoutBond:save.scoutBond,countyRegion:save.countyRegion,countyVisited:[...save.countyVisited],countyBoundaryVertices:COUNTY_DATA?.boundary?.length||0,countyVignettes:countyVignettes?.counts||null,collision:collisionWorld.snapshot(),vehicleSuspension:suspension.snapshot(),worldPaint:terrainDecor?.counts||null,lastCollision,audio:soundscape.snapshot(),performance:frameProbe.summary(),performanceScenes:frameProbe.cohorts(),terrainTransition:terrainTransition?.status()||null,roadRefreshQueued,pixelRatio:activePixelRatio,heroHeightOffset,groundShadowReady:!!groundShadow,motionState:motion.snapshot(),heroTexturedMeshes:heroController?.meshes?.filter(m=>!!m.material?.map).length||0,heroFootContacts:heroController?.footContacts||null,heroBoneCount:heroController?.skinned?Object.keys(heroController.joints).length:0,heroClipCount:heroController?.clips?.length||0,heroParts:heroController?Object.keys(heroController.joints).length:0,terrainTransition:terrainTransition?.status()||null,vegetation:biomeStreamer?.snapshot()||null,facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,imageryYear:REF?.metadata?.downtownTileYear||null},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),resetPerformance:()=>frameProbe.reset(),capturePerformance:()=>frameProbe.report({renderer:'WebGL',viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio||1},mode:save.mode,quality:visualEffects,userAgent:navigator.userAgent}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
 }
 init();
 })();

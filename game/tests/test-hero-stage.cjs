@@ -52,3 +52,25 @@ test('game wires stage renderer to inspector and caches its offline module',()=>
  assert.match(game,/heroPreviewStage=STAGE\.create\(G,HERO\)/);
  assert.match(game,/heroPreviewStage\.render\(renderer\)/);
 });
+
+test('current GLB inspection camera frames hand and boots without moving the gameplay camera',()=>{
+ const stage=Stage.create(THREE,Hero);
+ assert.equal(stage.focus,'full');
+ const fullZ=stage.camera.position.z;
+ stage.setFocus('right-hand');assert.equal(stage.focus,'right-hand');
+ assert.ok(stage.camera.position.z>fullZ,'hand focus should zoom inward');
+ stage.resize(375,812);assert.ok(stage.camera.position.z>fullZ);
+ stage.setFocus('boots');assert.equal(stage.focus,'boots');
+ assert.ok(stage.camera.position.y<8,'boot focus should look near ground');
+ assert.throws(()=>stage.setFocus('invalid'),RangeError);
+ stage.setFocus('full');assert.equal(stage.focus,'full');
+ assert.ok(stage.camera.position.z< -20);
+ stage.dispose();
+});
+test('Hero Studio photo path draws hero stage directly before reading an unpreserved WebGL buffer',()=>{
+ const s=fs.readFileSync(__dirname+'/../src/game.js','utf8');
+ const fragment=s.slice(s.indexOf('function screenshot(){'),s.indexOf('function startTour(){'));
+ assert.match(fragment,/if\(heroInspection&&heroPreviewStage\)heroPreviewStage\.render\(renderer\)/);
+ assert.match(fragment,/toDataURL\('image\/png'\)/);
+ assert.match(s,/preserveDrawingBuffer:false/);
+});

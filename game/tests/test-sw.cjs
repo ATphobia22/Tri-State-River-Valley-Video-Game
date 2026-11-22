@@ -12,8 +12,8 @@ test('service worker caches both host URL variants and replays game offline',asy
  const self={location:{origin:'https://game.test',href:'https://game.test/game-sw.js'},clients:{claim:async()=>{}},skipWaiting:async()=>{},addEventListener(type,cb){handlers[type]=cb}};
  vm.runInNewContext(source,{self,caches,fetch,URL,Response,console});
  let work=[];handlers.install({waitUntil(p){work.push(p)}});await Promise.all(work);
- assert.ok(await (await caches.open('rva-game-1.10.0')).match('/game.html'));
- assert.ok(await (await caches.open('rva-game-1.10.0')).match('/game'));
+ assert.ok(await (await caches.open('rva-game-1.10.1')).match('/game.html'));
+ assert.ok(await (await caches.open('rva-game-1.10.1')).match('/game'));
  work=[];handlers.activate({waitUntil(p){work.push(p)}});await Promise.all(work);
  offline=true;let result;
  handlers.fetch({request:{url:'https://game.test/game',method:'GET'},respondWith(p){result=p}});

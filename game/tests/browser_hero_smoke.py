@@ -72,6 +72,27 @@ def inspect(page, *, mobile: bool):
             arg=pose,
             timeout=15_000,
         )
+        if pose in ("fish", "cook", "hunt"):
+            page.locator("#heroFocus").select_option("right-hand")
+            page.wait_for_function(
+                "() => window.RiverValleyDebug.getState().heroPreviewFocus === 'right-hand'",
+                timeout=10_000,
+            )
+            page.screenshot(path=str(OUT / f"{prefix}-rig-{pose}-right-hand.png"))
+            # Suppress only the DOM pose controls while preserving the active
+            # 3D inspector render; capture the actual skinned fingers unobscured.
+            page.evaluate("document.getElementById('heroStudio').style.opacity='0'")
+            page.wait_for_timeout(160)
+            page.screenshot(path=str(OUT / f"{prefix}-rig-{pose}-grip-clean.png"))
+            page.evaluate("document.getElementById('heroStudio').style.opacity=''")
+        elif pose == "sprint":
+            page.locator("#heroFocus").select_option("boots")
+            page.screenshot(path=str(OUT / f"{prefix}-rig-sprint-boots.png"))
+            page.evaluate("document.getElementById('heroStudio').style.opacity='0'")
+            page.wait_for_timeout(160)
+            page.screenshot(path=str(OUT / f"{prefix}-rig-sprint-boots-clean.png"))
+            page.evaluate("document.getElementById('heroStudio').style.opacity=''")
+    page.locator("#heroFocus").select_option("full")
     page.locator("#heroPose").select_option("idle")
     page.wait_for_timeout(350)
     page.screenshot(path=str(OUT / f"{prefix}-studio-reset.png"))
