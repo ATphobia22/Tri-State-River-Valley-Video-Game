@@ -128,6 +128,15 @@ function create(THREE,{seated=false,samplePose}={}){
   };
   const palms=grips[pose.state]||{left:[0,0,0],right:[0,0,0]};
   targets.LeftHand=palms.left;targets.RightHand=palms.right;
+  // Ten authored skinned fingers curl around grips while other hands stay relaxed.
+  const gripAmount={fish:.68,hunt:.58,cook:.55,drive:.48,interact:.4,farm:.44}[pose.state]??.11;
+  for(const side of ['Left','Right']){
+   for(const [index,digit] of ['Thumb','Index','Middle','Ring','Pinky'].entries()){
+    const finger=joints[side+digit];if(!finger)continue;
+    const amount=gripAmount*(index===0?.65:index===1?.85:1);
+    finger.rotation.x+=((side==='Left'?-1:1)*amount-finger.rotation.x)*gain;
+   }
+  }
   for(const [key,val] of Object.entries(targets)){
    const b=joints[key];if(!b)continue;
    b.rotation.x+=(val[0]-b.rotation.x)*gain;
