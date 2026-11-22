@@ -1,7 +1,8 @@
 from pathlib import Path
 from bs4 import BeautifulSoup
-import hashlib,json,zipfile
+import hashlib,json,zipfile,subprocess,sys
 ROOT=Path(__file__).resolve().parent
+subprocess.run([sys.executable,str(ROOT/'tools'/'build_rigged_hero.py')],check=True)
 soup=BeautifulSoup((ROOT/'index.html').read_text(encoding='utf-8'),'html.parser')
 for tag in soup.find_all('script',src=True):
     path=ROOT/tag['src']
