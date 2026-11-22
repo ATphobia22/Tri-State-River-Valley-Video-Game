@@ -5,6 +5,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+# Superseded PR heads should not compete for SwiftShader CPU and create
+# artificial multi-minute rendering stalls in the scenario benchmark.
+concurrency:
+  group: river-valley-game-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
