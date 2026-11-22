@@ -52,7 +52,7 @@
    // 27-joint hand grips and boots auditable in headed browser captures.
    if(focus==='right-hand'){
     camera.position.set(10.8,13.4,phone?-12:-14);
-    camera.lookAt(7.7,11.8,-.4);
+    camera.lookAt(phone?8.3:9.6,11.8,-.4);
    }else if(focus==='boots'){
     camera.position.set(phone?2.6:3.5,phone?3.6:4.0,phone?-15:-13);
     camera.lookAt(0,1.1,-.6);
