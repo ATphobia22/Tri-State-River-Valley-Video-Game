@@ -42,6 +42,15 @@ test('mobile frame diagnostics preserve v1 schema and capture bounded scene coho
  assert.ok(r.diagnostics.scenes.reduce((n,s)=>n+s.samples,0)===30);
  p.reset();assert.equal(p.report().diagnostics.events.length,0);
 });
+test('frame probe keeps real 650ms hitches instead of biasing P99 downward',()=>{
+ const probe=Probe.create({capacity:30});
+ for(let i=0;i<20;i++)probe.observe(16,{stamp:i*20+100,x:10,z:20,scene:'riverbank',mode:'drive'});
+ probe.observe(650,{stamp:510,x:110,z:330,scene:'riverbank',mode:'drive'});
+ const report=probe.report();
+ assert.equal(report.summary.worstFrameMs,650);
+ assert.equal(report.diagnostics.slowFrameCount,1);
+ assert.equal(report.diagnostics.slowFrames[0].x,110);
+});
 test('render optimization batches all near windows and all quadtree skirts',()=>{
  const game=get('src/game.js'),source=get('tools/build_rigged_hero.py');
  assert.match(game,/const winPositions=\[\],winIndices=\[\]/);
@@ -51,5 +60,9 @@ test('render optimization batches all near windows and all quadtree skirts',()=>
  assert.match(game,/tile\.samples=QT\.tileSamples\(sourceHeight,tile,index\)/);
  assert.doesNotMatch(game,/for\(const leaf of leaves\)leaf\.samples=/);
  assert.match(game,/preserveDrawingBuffer:false/);
+ assert.match(game,/index\.terrainMaterial\|\|\(index\.terrainMaterial=/);
+ assert.match(game,/road-redrape-after-lod/);
+ assert.match(game,/fastDriving\?0/);
+ assert.doesNotMatch(game,/crownMat\.clone\(\)/);
  assert.match(source,/skipped_degenerate_triangles/);
 });
