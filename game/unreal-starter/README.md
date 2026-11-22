@@ -90,3 +90,44 @@ Modules, Plugins, Python Editor scripting, Skeletal Meshes and Interchange
 Import (https://dev.epicgames.com/documentation/en-us/unreal-engine/setting-up-editor-modules-for-customizing-the-editor-in-unreal-engine,
 https://dev.epicgames.com/documentation/en-us/unreal-engine/scripting-the-unreal-editor-using-python,
 https://dev.epicgames.com/documentation/unreal-engine/interchange-import-reference-in-unreal-engine).
+
+## Additional A–Z developer module inventory (2026-11-22)
+
+The following are **selection guidance**, not a claim that a binary module,
+plugin, SDK, or editor has been installed. Verify each module's actual
+availability and supported public API against the pinned UE 5.8 source
+checkout before adding any Build.cs dependency. Modules from Engine/Developer,
+Engine/Editor, Programs, and Plugins have different host restrictions.
+
+| Task | Relevant modules from the additional list | Safe integration path |
+| --- | --- | --- |
+| Character mesh import and repair | AssetTools, MeshDescriptionOperations, MeshBuilder, MeshUtilities, MeshReductionInterface, SkeletalMeshUtilitiesCommon, MeshBoneReduction | Editor asset-import/reduction tools; keep optimized GLB as a separately validated browser export |
+| Animation authoring | AnimationDataController, AnimationWidgets | Use supported animation editing APIs in Editor; review bone names, retarget poses and all 13 required browser actions |
+| Material and texture processing | MaterialBaking, MaterialUtilities, TextureBuild, TextureBuildUtilities, TextureCompressor | Editor material bake and texture compression; verify normals, alpha, roughness, color space and output budgets |
+| Large-world optimization | HierarchicalLODUtilities, NaniteBuilder, NaniteUtilities, GeometryProcessingInterfaces | Optional Unreal HLOD/Nanite authoring, not Three.js runtime features; test fallback and source geometry |
+| Automated quality gates | FunctionalTesting, AutomationController, AutomationDriver, AutomationWindow, CQTest, ScreenShotComparison, ScreenShotComparisonTools | Native editor/automation tests and GPU screenshot comparisons on a licensed UE runner; browser CI remains authoritative for the published game |
+| Profiling and logs | TraceAnalysis, TraceInsights, TraceInsightsCore, TraceInsightsFrontend, TraceServices, TraceTools, ProfileVisualizer, LogVisualizer, OutputLog, CollisionAnalyzer | Profile actual UE scenes on a suitable machine; record GPU, VRAM, FPS, CPU and hardware |
+| Cooking and packaging | DerivedDataCache, IoStoreUtilities, PakFileUtilities, CookMetadata, TargetPlatform, TurnkeyIO, LauncherServices, TextureFormat | Invoke UAT/BuildCookRun and installed target platforms; independently launch the packaged Windows binary |
+| Editor productivity | ToolMenus, ToolWidgets, CollectionManager, DirectoryWatcher, FileUtilities, SourceControl, UnsavedAssetsTracker | Optional Editor extensions only when there is a concrete recurring task |
+| Specialized/avoid by default | BlankModule, BSPUtils, CookedEditor, DatasmithExporterUI, Horde, UbaCoordinatorHorde, ShaderFormatOpenGL, SlackIntegrations, Zen | Do not enable blindly: examples, internal services, platform-specific or distributed-build infrastructure |
+
+**Important:** An Unreal Editor module name is not evidence that it is a
+standalone installable plugin. Some modules are private implementation details
+or unavailable in a particular installed engine build. The UE 5.8 project
+deliberately has no C++ Modules array, and none of the modules above should
+be injected into a Runtime target to make an editor QA script work.
+
+### Concrete follow-up acceptance criteria
+
+1. Import the *actual* River candidate skeletal source into /Game/River,
+   run the existing Editor Python QA receipt, and fix any missing animation
+   clips without weakening the exact-name gate.
+2. Produce front/side/rear/three-quarter screenshots and inspect rig deformation,
+   gaiter, glasses, hair, cloth and PBR materials under repeatable lighting.
+3. Build reduced-LOD game GLB exports; run the existing strict candidate
+   audit, browser visual matrix, offline save-slot replay and deterministic
+   generator tests before replacing the current browser asset.
+4. If UE runtime is pursued separately, run BuildCookRun with a pinned UE 5.8
+   installation, inspect the cook log, and launch the packaged Windows game
+   without Editor modules. The current optional art lab does not satisfy
+   that runtime requirement.
