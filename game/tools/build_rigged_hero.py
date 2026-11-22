@@ -253,7 +253,11 @@ def quat_x(v):return [math.sin(v*.5),0.,0.,math.cos(v*.5)]
 def quat_z(v):return [0.,0.,math.sin(v*.5),math.cos(v*.5)]
 def pose(state,phase):
  wave=math.sin(phase*math.pi*2);c={}
- if state in ('Walk','Run','Sprint'):
+ if state=='Idle':
+  # A real authored idle breathing clip: the previous all-identity Idle
+  # contained zero animation channels and couldn't receive mixer crossfades.
+  c={'Chest':quat_x(.018*wave),'Head':quat_z(.012*wave)}
+ elif state in ('Walk','Run','Sprint'):
   a={'Walk':.37,'Run':.67,'Sprint':.91}[state]
   c={'LeftUpperLeg':quat_x(a*wave),'RightUpperLeg':quat_x(-a*wave),
      'LeftUpperArm':quat_z(-.15-a*.55*wave),'RightUpperArm':quat_z(.15-a*.55*wave),
