@@ -77,6 +77,23 @@ def inspect(page, *, mobile: bool):
     page.screenshot(path=str(OUT / f"{prefix}-studio-reset.png"))
     page.locator("#heroStudioClose").click(timeout=10_000)
     assert state()["heroInspection"] is False
+    # County guide is a real source-backed map over the same playable engine.
+    assert state()["countyBoundaryVertices"] >= 150
+    page.locator("#countyBtn").click(timeout=12_000)
+    assert page.locator("#countyPanel").is_visible()
+    assert page.locator("#countyRegionList [data-region]").count() == 5
+    page.screenshot(path=str(OUT / f"{prefix}-posey-county-atlas.png"))
+    page.locator('#countyRegionList [data-region="new-harmony"]').click(timeout=10_000)
+    page.locator("#countyVisit").click(timeout=10_000)
+    assert state()["countyRegion"] == "new-harmony"
+    assert "new-harmony" in state()["countyVisited"]
+    assert state()["countyVignettes"]["regionVignettes"] == 4
+    page.screenshot(path=str(OUT / f"{prefix}-new-harmony-vignette.png"))
+    page.locator("#scoutBtn").click(timeout=12_000)
+    assert page.locator("#scoutPanel").is_visible()
+    page.locator('#scoutPanel [data-scout="pet"]').click(timeout=10_000)
+    assert state()["scoutBond"] >= 1
+    page.locator("#scoutClose").click(timeout=10_000)
     page.locator("#driveBtn").click(timeout=12_000)
     page.wait_for_function(
         "() => { const state = window.RiverValleyDebug.getState(); "
@@ -85,7 +102,7 @@ def inspect(page, *, mobile: bool):
     )
     assert not issues, f"Uncaught page errors: {issues}"
     return dict(mobile=mobile, webgl=True, heroModel=True, heroParts=state()["heroParts"], heroSkinned=state()["heroSkinned"], heroClips=state()["heroClipCount"],
-                studioOpened=True, posesTested=5, driveWorks=True,
+                studioOpened=True, posesTested=5, countyAtlasVerified=True, countyVignettes=4, scoutBondTested=True, driveWorks=True,
                 pageErrors=issues, screenshotFolder=str(OUT))
 
 

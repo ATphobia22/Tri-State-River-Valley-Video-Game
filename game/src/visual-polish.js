@@ -12,7 +12,7 @@
   if(!Number.isFinite(x)||!Number.isFinite(z))return 'clapboard';
   // Fictionalized downtown style zone, not a geographic classification.
   const downtown=Math.hypot(x-92,z-465)<670;
-  return downtown?(i%7===0?'limestone':'brick'):(i%6===0?'brick':i%8===0?'limestone':'clapboard');
+  return downtown?(i%7===0?'limestone':'brick'):(i%23===0?'metal':i%19===0?'batten':i%6===0?'brick':i%8===0?'limestone':'clapboard');
  }
  function hueVariation(a,b,seed){
   const v=(Math.imul((a+113)|0,73513)^Math.imul((b+499)|0,39823)^Math.imul(seed|0,101))>>>0;
@@ -55,6 +55,35 @@
      ctx.fillStyle='rgba(9,12,14,.11)';ctx.fillRect(x+2,y+14,28,2);
     }
    }
+  }else if(type==='batten'){
+   ctx.fillStyle='#bfc6b1';ctx.fillRect(0,0,256,256);
+   for(let x=0;x<256;x+=34){
+    ctx.fillStyle='rgba(34,41,35,.20)';ctx.fillRect(x,0,3,256);
+    ctx.fillStyle='rgba(249,247,224,.13)';ctx.fillRect(x+4,0,2,256);
+    for(let y=0;y<256;y+=46){ctx.fillStyle='rgba(35,43,37,.10)';ctx.fillRect(x+7,y,25,2);}
+   }
+  }else if(type==='metal'){
+   ctx.fillStyle='#8a9994';ctx.fillRect(0,0,256,256);
+   for(let x=0;x<256;x+=12){
+    ctx.fillStyle='rgba(245,249,245,.22)';ctx.fillRect(x,0,2,256);
+    ctx.fillStyle='rgba(21,38,42,.17)';ctx.fillRect(x+4,0,2,256);
+    ctx.fillStyle='rgba(78,91,87,.08)';ctx.fillRect(x+7,0,3,256);
+   }
+  }else if(type==='road'){
+   ctx.fillStyle='#adb5b3';ctx.fillRect(0,0,256,256);
+   for(let y=0;y<256;y+=8)for(let x=0;x<256;x+=8){
+    const v=Math.abs(hueVariation(x,y,seed))/8;
+    ctx.fillStyle='rgba(31,37,42,'+(.04+v*.13)+')';ctx.fillRect(x+(v*4),y,1+v*2,2+v);
+   }
+   ctx.strokeStyle='rgba(37,43,41,.18)';
+   for(let x=20;x<256;x+=76){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+8,58);ctx.lineTo(x-2,122);ctx.stroke();}
+  }else if(type==='terrain'){
+   ctx.fillStyle='#f1f4e9';ctx.fillRect(0,0,256,256);
+   for(let y=0;y<256;y+=9)for(let x=0;x<256;x+=11){
+    const v=hueVariation(x,y,seed);
+    ctx.strokeStyle=v>0?'rgba(58,105,59,.16)':'rgba(123,111,73,.13)';
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+2+v*.08,y-2-v*.17);ctx.stroke();
+   }
   }else if(type==='limestone'){
    ctx.fillStyle='#b5aaa0';ctx.fillRect(0,0,256,256);
    for(let row=0;row<8;row++){
@@ -77,7 +106,7 @@
  function make(THREE){
   const recipes=[
    ['brick','#b75f48',1],['brick','#bf7355',2],['limestone','#b7ada0',3],
-   ['clapboard','#c9c7b9',4],['clapboard','#9aaea1',5],['brick','#945144',6]
+   ['clapboard','#c9c7b9',4],['clapboard','#9aaea1',5],['brick','#945144',6],['batten','#c8d0bd',7],['metal','#96a5a3',8]
   ];
   const walls=recipes.map(([type,color,seed])=>{
    const texture=createTexture(THREE,type,color,seed);
@@ -87,19 +116,22 @@
   const roofs=['#615b59','#75544a','#626d69'].map((color,i)=>
    new THREE.MeshStandardMaterial({color:0xffffff,map:createTexture(THREE,'roof',color,i+14),
     roughness:.94,metalness:0,side:THREE.DoubleSide}));
+  const road=new THREE.MeshLambertMaterial({color:0x555b5b,map:createTexture(THREE,'road','#a9b4b3',9),side:THREE.DoubleSide,
+   polygonOffset:true,polygonOffsetFactor:-2});
+  const terrainMap=createTexture(THREE,'terrain','#f3f6e9',10);
   const glass=new THREE.MeshStandardMaterial({color:0x426679,roughness:.19,metalness:.17,
    emissive:0x0a1821,emissiveIntensity:.12,side:THREE.DoubleSide});
   const trim=new THREE.MeshStandardMaterial({color:0xd9c7a8,roughness:.79,side:THREE.DoubleSide});
   function pick(rec){
    const family=facadeFamily(rec.x,rec.z,rec.i);
    const wall=family==='brick'?walls[rec.i%2===0?0:1]:
-     family==='limestone'?walls[2]:walls[3+rec.i%2];
+     family==='limestone'?walls[2]:family==='metal'?walls[7]:family==='batten'?walls[6]:walls[3+rec.i%2];
    return {family,wall,roof:roofs[rec.i%roofs.length],glass,trim};
   }
   function dispose(){
-   [...walls,...roofs,glass,trim].forEach(m=>{if(m.map)m.map.dispose();m.dispose();});
+   [...walls,...roofs,road,glass,trim].forEach(m=>{if(m.map)m.map.dispose();m.dispose();});terrainMap?.dispose();
   }
-  return Object.freeze({pick,dispose,wallCount:walls.length,roofCount:roofs.length});
+  return Object.freeze({pick,dispose,road,terrainMap,wallCount:walls.length,roofCount:roofs.length});
  }
  return Object.freeze({facadeFamily,hueVariation,make});
 });

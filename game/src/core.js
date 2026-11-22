@@ -16,6 +16,8 @@ const STOPS=Object.freeze([
  {id:'trail',title:'Wildflower Trail',short:'Trail',x:1260,z:-900,emoji:'🦋',reward:190,task:'Find the meadow and collect your trail stamp.',fact:'A stylized nature trail inspired by regional wildlife habitat.'}
 ]);
 const VALID_IDS=new Set(STOPS.map(x=>x.id));
+const COUNTY_REGION_IDS=Object.freeze(['mount-vernon','new-harmony','griffin','poseyville','cynthiana']);
+const VALID_REGIONS=new Set(COUNTY_REGION_IDS);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const num=(v,fallback=0)=>typeof v==='number'&&Number.isFinite(v)?v:fallback;
 function clampPosition(pos,limit=LIMIT){
@@ -26,8 +28,8 @@ function safeName(v){
   return String(typeof v==='string'?v:'Family Explorer').replace(/[<>\x00-\x1f]/g,'').trim().slice(0,24)||'Family Explorer';
 }
 function freshSave(name){return {
- version:2,name:safeName(name),coins:0,xp:0,level:1,completed:[],inventory:{corn:0,fish:0,game:0,meals:0},
- position:{x:16,z:504},farmPlots:Array(9).fill(0),homestead:false,mode:'walk',time:15.5,weather:'clear',season:'summer',pet:true,muted:false
+ version:3,name:safeName(name),coins:0,xp:0,level:1,completed:[],inventory:{corn:0,fish:0,game:0,meals:0},
+ position:{x:16,z:504},farmPlots:Array(9).fill(0),homestead:false,mode:'walk',time:15.5,weather:'clear',season:'summer',pet:true,muted:false,scoutBond:0,scoutLastRewardAt:0,countyRegion:'mount-vernon',countyVisited:['mount-vernon'],lastMeal:null
 };}
 function validateSave(raw){
  let base=freshSave(raw&&raw.name);
@@ -44,6 +46,13 @@ function validateSave(raw){
  base.weather=['clear','rain','mist'].includes(raw.weather)?raw.weather:'clear';
  base.season=['spring','summer','autumn','winter'].includes(raw.season)?raw.season:'summer';
  base.pet=raw.pet!==false;base.muted=raw.muted===true;base.homestead=raw.homestead===true;
+ base.scoutBond=clamp(Math.floor(num(raw.scoutBond)),0,100);
+ base.scoutLastRewardAt=clamp(Math.floor(num(raw.scoutLastRewardAt)),0,4102444800000);
+ base.countyRegion=VALID_REGIONS.has(raw.countyRegion)?raw.countyRegion:'mount-vernon';
+ base.countyVisited=Array.isArray(raw.countyVisited)?
+  [...new Set(raw.countyVisited.filter(id=>VALID_REGIONS.has(id)))]:['mount-vernon'];
+ if(!base.countyVisited.includes('mount-vernon'))base.countyVisited.unshift('mount-vernon');
+ base.lastMeal=Object.prototype.hasOwnProperty.call(RECIPES,raw.lastMeal)?raw.lastMeal:null;
  return base;
 }
 function gainReward(raw,coins=0,xp=0){
@@ -102,22 +111,33 @@ function fishReel(raw,biteAt,now,kind){
  if(!['bluegill','channelCatfish','bass'].includes(kind))return {save:s,result:'invalid'};
  if(!Number.isFinite(now)||!Number.isFinite(biteAt))return {save:s,result:'invalid'};
  if(now<biteAt)return {save:s,result:'early'};
- if(now>biteAt+700)return {save:s,result:'late'};
+ if(now>biteAt+1100)return {save:s,result:'late'};
  s=gainReward(s,30,55);s.inventory.fish=clamp(s.inventory.fish+1,0,9999);
  return {save:s,result:'caught'};
 }
 const RECIPES=Object.freeze({
  fishFry:{title:'Riverside Fish Fry',ingredients:{fish:1,corn:1},coins:75,xp:90},
  campStew:{title:'Campfire Game Stew',ingredients:{game:1,corn:1},coins:85,xp:100},
- cornSkillet:{title:'Country Corn Skillet',ingredients:{corn:2},coins:35,xp:55}
+ cornSkillet:{title:'Country Corn Skillet',ingredients:{corn:2},coins:35,xp:55},
+ riverChowder:{title:'Ohio River Chowder',ingredients:{fish:2,corn:1},coins:120,xp:135},
+ harvestSoup:{title:'Harvest Garden Soup',ingredients:{corn:3},coins:50,xp:80},
+ trailSupper:{title:'Explorer Trail Supper',ingredients:{game:1,fish:1},coins:115,xp:120}
 });
 function cookRecipe(raw,id){
  let s=validateSave(raw);const recipe=RECIPES[id];
  if(!recipe)return {save:s,result:'invalid'};
  if(Object.entries(recipe.ingredients).some(([k,n])=>s.inventory[k]<n))return {save:s,result:'ingredients'};
  for(const [k,n] of Object.entries(recipe.ingredients))s.inventory[k]-=n;
- s=gainReward(s,recipe.coins,recipe.xp);s.inventory.meals=clamp(s.inventory.meals+1,0,9999);
+ s=gainReward(s,recipe.coins,recipe.xp);s.inventory.meals=clamp(s.inventory.meals+1,0,9999);s.lastMeal=id;
  return {save:s,result:'cooked'};
+}
+function visitCountyRegion(raw,id){
+ let s=validateSave(raw);
+ if(!VALID_REGIONS.has(id))return {save:s,result:'invalid'};
+ const isNew=!s.countyVisited.includes(id);
+ s.countyRegion=id;
+ if(isNew){s.countyVisited.push(id);s=gainReward(s,35,45);}
+ return {save:s,result:isNew?'discovered':'revisited'};
 }
 function sampleGrid(g,values,u,v){
  if(!g||!values||g.cols<2||g.rows<2||values.length<g.cols*g.rows)return NaN;
@@ -128,5 +148,5 @@ function sampleGrid(g,values,u,v){
  return (h(x,y)*(1-a)+h(x1,y)*a)*(1-b)+(h(x,y1)*(1-a)+h(x1,y1)*a)*b;
 }
 function formatTime(h){const hh=Math.floor(((h%24)+24)%24), m=Math.floor((h-Math.floor(h))*60);return `${(hh%12)||12}:${String(m).padStart(2,'0')} ${hh>=12?'PM':'AM'}`;}
-return {LIMIT,STOPS,clamp,clampPosition,safeName,freshSave,validateSave,gainReward,completeStop,buildHomestead,farmAction,waterFarm,huntShot,fishReel,cookRecipe,RECIPES,sampleGrid,formatTime};
+return {LIMIT,STOPS,COUNTY_REGION_IDS,visitCountyRegion,clamp,clampPosition,safeName,freshSave,validateSave,gainReward,completeStop,buildHomestead,farmAction,waterFarm,huntShot,fishReel,cookRecipe,RECIPES,sampleGrid,formatTime};
 });
