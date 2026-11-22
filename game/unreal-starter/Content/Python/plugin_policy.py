@@ -17,6 +17,10 @@ PROFILES = {
     "rendering": ["MovieRenderPipeline", "MovieRenderPipelineRenderPasses", "ProceduralMeshComponent", "LiDARPointCloud", "OpenColorIO", "VirtualHeightfieldMesh", "ComputeFramework", "HDRIBackdrop"],
     "profiling": ["WorldMetrics", "RenderTrace"],
     "scripting": ["PythonScriptPlugin", "EditorScriptingUtilities", "SequencerScripting"],
+    "virtual_production_capture": ["TakeRecorder", "LiveLink", "LiveLinkCamera", "CameraCalibration", "CineCameraRigs", "VirtualCamera", "LevelSnapshots"],
+    "virtual_production_authoring": ["MotionDesign", "ClonerEffector", "PropertyAnimator", "ActorModifierCore", "MaterialDesigner", "GeometryMask"],
+    "virtual_production_stage": ["DisplayCluster", "Switchboard", "ICVFX", "RivermaxCore", "DMXEngine", "TextureShare"],
+    "misc": ["ChaosNiagara", "InstallBundleManager", "LevelStreamingPersistence", "MakeCookedEditorAsDLC"],
     "editor": ["PythonScriptPlugin", "EditorScriptingUtilities"],
 }
 # Suggested identifiers require validation against the locally installed engine.
