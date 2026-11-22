@@ -32,6 +32,40 @@ function weaveTexture(THREE,name){
  texture.anisotropy=2;texture.needsUpdate=true;
  return texture;
 }
+function skullGaiterPrint(THREE){
+ // Original self-generated cloth graphic, not a sampled reference-sheet raster.
+ if(typeof document==='undefined')return null;
+ const canvas=document.createElement('canvas');canvas.width=256;canvas.height=160;
+ const ctx=canvas.getContext('2d');if(!ctx)return null;
+ ctx.fillStyle='rgba(222,221,210,.87)';
+ for(const side of [-1,1]){
+  ctx.save();ctx.translate(128,0);ctx.scale(side,1);
+  ctx.beginPath();ctx.moveTo(12,40);ctx.bezierCurveTo(36,27,74,40,98,57);
+  ctx.lineTo(89,70);ctx.lineTo(56,75);ctx.lineTo(21,61);ctx.closePath();ctx.fill();ctx.restore();
+ }
+ ctx.beginPath();ctx.moveTo(128,37);ctx.lineTo(112,59);ctx.lineTo(125,67);
+ ctx.lineTo(128,59);ctx.lineTo(131,67);ctx.lineTo(144,59);ctx.closePath();ctx.fill();
+ ctx.fillStyle='rgba(224,221,205,.85)';
+ ctx.beginPath();ctx.moveTo(51,90);ctx.quadraticCurveTo(128,78,205,90);
+ ctx.lineTo(199,121);ctx.quadraticCurveTo(128,134,57,121);ctx.closePath();ctx.fill();
+ ctx.strokeStyle='rgba(14,21,23,.83)';ctx.lineWidth=4;
+ ctx.beginPath();ctx.moveTo(52,96);ctx.quadraticCurveTo(128,86,204,96);ctx.stroke();
+ for(let i=0;i<10;i++){const x=66+i*13.4;ctx.beginPath();ctx.moveTo(x,95);ctx.lineTo(x+1,122);ctx.stroke();}
+ ctx.strokeStyle='rgba(212,210,193,.27)';ctx.lineWidth=2;
+ ctx.beginPath();ctx.moveTo(37,35);ctx.quadraticCurveTo(18,88,48,133);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(219,35);ctx.quadraticCurveTo(238,88,208,133);ctx.stroke();
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ texture.wrapS=texture.wrapT=THREE.ClampToEdgeWrapping;
+ texture.anisotropy=2;texture.generateMipmaps=true;texture.minFilter=THREE.LinearMipmapLinearFilter;
+ const geo=new THREE.PlaneGeometry(2.14,1.20,12,1),pos=geo.attributes.position;
+ for(let i=0;i<pos.count;i++)pos.setZ(i,.23*Math.pow(Math.abs(pos.getX(i))/1.07,2));
+ geo.computeVertexNormals();
+ const material=new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,
+  alphaTest:.055,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});
+ const mesh=new THREE.Mesh(geo,material);mesh.name='River/skull-gaiter-fabric-print';
+ mesh.position.set(0,-.29,-1.57);mesh.renderOrder=3;
+ return mesh;
+}
 function create(THREE,{seated=false,samplePose}={}){
  if(!THREE?.SkinnedMesh||!THREE?.Bone||!THREE?.Skeleton||typeof samplePose!=='function')throw Error('Skinned Three.js and pose sampler required');
  const global=typeof globalThis!=='undefined'?globalThis:{};
@@ -74,6 +108,8 @@ function create(THREE,{seated=false,samplePose}={}){
   const mesh=new THREE.SkinnedMesh(geo,materials[prim.material]);mesh.name='River/PBR/'+doc.materials[prim.material].name;
   mesh.bind(skeleton);mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;scene.add(mesh);meshes.push(mesh);
  }
+ const gaiterPrint=skullGaiterPrint(THREE);
+ if(gaiterPrint)joints.Head.add(gaiterPrint);
  // Play the GLB's original authored QuaternionKeyframeTracks before
  // procedural IK and hands; fade transitions instead of abruptly swapping poses.
  const clipActions=new Map(),mixer=typeof THREE.AnimationMixer==='function'?new THREE.AnimationMixer(scene):null;
@@ -189,8 +225,8 @@ function create(THREE,{seated=false,samplePose}={}){
   currentState=pose.state;lastPose=pose;return {state:currentState,pose};
  }
  if(seated)update({state:'drive',stamp:100,dt:.5});
- function dispose(){if(mixer)mixer.stopAllAction();footContacts.reset();for(const m of meshes){m.geometry.dispose();m.parent?.remove(m)}for(const g of propsGeo)g.dispose();for(const m of materials){m.map?.dispose();m.dispose();}for(const p of Object.values(props))p.parent?.remove(p);scene.clear();}
- return {root:scene,joints,props,meshes,skinned:true,get activeClip(){return activeClipName},get clipMixerReady(){return !!mixer&&clipActions.size>=9},get footContacts(){return footContacts.snapshot()},clips:(doc.animations||[]).map(a=>a.name),update,dispose,features:['curly-hair','glasses','skull-gaiter','black-shirt','gold-chain','cargo-pants','adventure-boots','backpack'],get state(){return currentState},get pose(){return lastPose}};
+ function dispose(){if(mixer)mixer.stopAllAction();footContacts.reset();if(gaiterPrint){gaiterPrint.geometry.dispose();gaiterPrint.material.map?.dispose();gaiterPrint.material.dispose();gaiterPrint.parent?.remove(gaiterPrint);}for(const m of meshes){m.geometry.dispose();m.parent?.remove(m)}for(const g of propsGeo)g.dispose();for(const m of materials){m.map?.dispose();m.dispose();}for(const p of Object.values(props))p.parent?.remove(p);scene.clear();}
+ return {root:scene,joints,props,meshes,skinned:true,gaiterDecalReady:!!gaiterPrint,get activeClip(){return activeClipName},get clipMixerReady(){return !!mixer&&clipActions.size>=9},get footContacts(){return footContacts.snapshot()},clips:(doc.animations||[]).map(a=>a.name),update,dispose,features:['curly-hair','glasses','skull-gaiter','black-shirt','gold-chain','cargo-pants','adventure-boots','backpack'],get state(){return currentState},get pose(){return lastPose}};
 }
 return Object.freeze({create});
 });
