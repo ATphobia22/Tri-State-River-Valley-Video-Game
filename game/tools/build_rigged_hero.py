@@ -250,9 +250,17 @@ def pose(state,phase):
  elif state=='Track':c={'Chest':quat_x(.17),'RightUpperArm':quat_z(-1.0),'LeftUpperArm':quat_z(.85),'RightForearm':quat_z(.85),'LeftForearm':quat_z(-.85)}
  elif state=='Drive':c={'LeftUpperLeg':quat_x(1),'RightUpperLeg':quat_x(1),'LeftLowerLeg':quat_x(-1.1),'RightLowerLeg':quat_x(-1.1),'LeftUpperArm':quat_z(-.95),'RightUpperArm':quat_z(.95)}
  elif state=='Interact':c={'Chest':quat_x(.4),'RightUpperArm':quat_z(-.8),'RightForearm':quat_z(.6)}
+ elif state=='Jump':c={'LeftUpperLeg':quat_x(-.45-.16*math.sin(phase*math.pi)),'RightUpperLeg':quat_x(-.45-.16*math.sin(phase*math.pi)),
+   'LeftLowerLeg':quat_x(.85),'RightLowerLeg':quat_x(.85),'LeftUpperArm':quat_z(-.55),'RightUpperArm':quat_z(.55)}
+ elif state=='Land':c={'Chest':quat_x(.38*(1-phase)),'LeftUpperLeg':quat_x(-.38*(1-phase)),'RightUpperLeg':quat_x(-.38*(1-phase)),
+   'LeftLowerLeg':quat_x(.55*(1-phase)),'RightLowerLeg':quat_x(.55*(1-phase))}
+ elif state=='Farm':c={'Chest':quat_x(.55),'LeftUpperArm':quat_z(-.6),'RightUpperArm':quat_z(.64),
+   'LeftUpperLeg':quat_x(.3),'RightLowerLeg':quat_x(.48)}
+ elif state=='Wave':c={'RightUpperArm':quat_z(1.20),'RightForearm':quat_z(.65+math.sin(phase*4*math.pi)*.32)}
+
  return c
 animations=[]
-for state in ['Idle','Walk','Run','Sprint','FishingCast','Cook','Track','Drive','Interact']:
+for state in ['Idle','Walk','Run','Sprint','FishingCast','Cook','Track','Drive','Interact','Jump','Land','Farm','Wave']:
  times=[0,.25,.5,.75,1.0];timeref=acc(pack_f(times),5126,'SCALAR',len(times),mn=[0],mx=[1]);channels=[];samplers=[]
  for i,(name,_,_) in enumerate(BONES):
   vals=[]
