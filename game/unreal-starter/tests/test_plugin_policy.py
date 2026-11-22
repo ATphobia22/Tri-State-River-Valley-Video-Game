@@ -48,6 +48,24 @@ class TestPluginPolicy(unittest.TestCase):
             result = policy.scan_descriptors([folder])
             self.assertEqual(result["MyPlugin"][0]["modules"][0]["type"], "Runtime")
 
+    def test_ml_profile_lists_all_four_nne_plugins_without_enabling(self):
+        expected = ["NNERuntimeCoreML", "NNERuntimeIREE", "NNERuntimeORT", "NNERuntimeRDG"]
+        self.assertEqual(policy.PROFILES["ml"], expected)
+        result = policy.audit({"Plugins": []}, {}, requested=policy.PROFILES["ml"])
+        self.assertEqual(result["enabled"], [])
+        self.assertEqual([x["name"] for x in result["candidates"]], expected)
+        self.assertTrue(all(not x["installedDescriptor"] for x in result["candidates"]))
+        self.assertFalse(result["nativeBuildVerified"])
+
+    def test_ml_editor_only_backend_rejected_in_shipping(self):
+        result = policy.audit(
+            {"Plugins": [{"Name": "NNERuntimeCoreML", "Enabled": True}]},
+            {"NNERuntimeCoreML": [{"path": "NNERuntimeCoreML.uplugin",
+                                   "modules": [{"name": "NNERuntimeCoreMLEditor", "type": "Editor"}]}]},
+            target="shipping")
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertTrue(any("Non-runtime module" in b for b in result["blockers"]))
+
     def test_scan_skips_malformed_descriptor(self):
         with tempfile.TemporaryDirectory() as folder:
             (Path(folder) / "Bad.uplugin").write_text("{oops")
