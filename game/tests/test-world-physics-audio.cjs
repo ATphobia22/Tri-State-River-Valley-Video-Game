@@ -5,7 +5,7 @@ test('collision world rejects entry, permits leaving inside old saves and slides
  const hit=world.move({x:0,z:0},{x:35,z:0});
  assert.equal(hit.blocked,true);assert.ok(hit.x<15);
  const slide=world.move({x:0,z:-15},{x:30,z:-2});
- assert.ok(slide.blocked);assert.ok(slide.z< -11,'does not enter a wall while moving diagonally');
+ assert.ok(slide.blocked);assert.ok(slide.x<14,'does not enter a wall while moving diagonally');
  const escape=world.move({x:20,z:0},{x:0,z:0});
  assert.ok(escape.x<20,'legacy save inside mesh can escape');
  assert.equal(world.snapshot().obstacles,1);
