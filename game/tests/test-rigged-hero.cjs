@@ -71,6 +71,8 @@ test('runtime decodes SkinnedMeshes and drives actual shoulder, knee and hand at
    hero.update({state,stamp:1500,dt:.045});
    assert.ok(hero.props[prop].visible,state);
    assert.equal(hero.props[prop].parent,hero.joints.RightHand);
+   assert.ok(Number.isFinite(hero.joints.RightHand.rotation.x));
+   assert.ok(Number.isFinite(hero.joints.LeftHand.rotation.x));
   }
   hero.dispose();
  }finally{delete globalThis.ValleyRiggedHeroData;delete globalThis.ValleyModelLoader;}

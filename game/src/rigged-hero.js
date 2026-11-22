@@ -42,7 +42,7 @@ function create(THREE,{seated=false,samplePose}={}){
  const scene=new THREE.Group();scene.name='River Explorer / rigged GLB';scene.userData.heroId='river-explorer';scene.userData.asset='river_explorer_rigged.glb';
  const plantLibrary=global.ValleyFootPlant||(typeof module==='object'&&module.exports?require('./foot-plant.js'):null);
  if(!plantLibrary?.create)throw Error('Offline foot-contact solver must load before rigged hero');
- const footContacts=plantLibrary.create();
+ const footContacts=plantLibrary.create({reach:5.5});
  const skin=doc.skins[0],jointNodes=skin.joints;
  const bones=jointNodes.map(i=>{const data=doc.nodes[i],b=new THREE.Bone();b.name=data.name;b.position.fromArray(data.translation||[0,0,0]);return b;});
  const byNode=new Map(jointNodes.map((n,i)=>[n,bones[i]]));
@@ -87,7 +87,7 @@ function create(THREE,{seated=false,samplePose}={}){
  function footIK(side,{t,groundAt,heading,root,dt,moving,amplitude}){
   const left=side==='left',name=left?'Left':'Right',sign=left?-1:1;
   const hip=joints[name+'UpperLeg'],knee=joints[name+'LowerLeg'],foot=joints[name+'Foot'];
-  const theta=2*Math.PI*t*(amplitude>.7?2.6:amplitude>.4?2.0:1.5)+(left?0:Math.PI);
+  const theta=2*Math.PI*t*(amplitude>.7?3.4:amplitude>.4?2.6:2.0)+(left?0:Math.PI);
   const wave=Math.sin(theta);
   const step=amplitude*(amplitude>.7?1.35:1.07);
   const yaw=Number.isFinite(heading)?heading:root.rotation.y;
@@ -98,7 +98,9 @@ function create(THREE,{seated=false,samplePose}={}){
   const reach=Math.acos(clamp((upper*upper+length*length-lower*lower)/(2*upper*length),-1,1));
   const kneeBend=Math.PI-Math.acos(clamp((upper*upper+lower*lower-length*length)/(2*upper*lower),-1,1));
   const hipTilt=Math.atan2(-dz,dy)-reach,gain=1-Math.exp(-Math.min(.1,Math.max(0,dt))*15);
-  hip.rotation.x+=(hipTilt-hip.rotation.x)*gain;knee.rotation.x+=(kneeBend-knee.rotation.x)*gain;
+  hip.rotation.x+=(hipTilt-hip.rotation.x)*gain;
+  const hipYaw=clamp((contact.localX-sign*1.35)*.13,-.32,.32);
+  hip.rotation.y+=(hipYaw-hip.rotation.y)*gain;knee.rotation.x+=(kneeBend-knee.rotation.x)*gain;
   foot.rotation.x+=(-hip.rotation.x-knee.rotation.x+contact.pitch-foot.rotation.x)*gain;
  }
  function update({state='idle',stamp=0,dt=.016,groundAt=null,heading=null}={}){
@@ -114,6 +116,18 @@ function create(THREE,{seated=false,samplePose}={}){
    targets.RightUpperArm=[pose.rightArm*.40,-.32-(pose.rightArm||0)*.58,0];
    targets.LeftUpperArm=[pose.leftArm*.4,.32+(pose.leftArm||0)*.58,0];
   }
+  // Wrist alignment lets the existing hand-attached gear follow palms rather
+  // than float independently through fishing, cooking and seated interactions.
+  const grips={
+   fish:{left:[-.26,-.12,.10],right:[-.52,.02,-.13]},
+   hunt:{left:[-.32,.15,.06],right:[-.34,-.08,-.04]},
+   cook:{left:[-.25,.06,.03],right:[-.68,0,-.08]},
+   drive:{left:[-.36,.13,.10],right:[-.36,-.13,-.10]},
+   interact:{left:[-.20,.02,0],right:[-.28,-.02,0]},
+   farm:{left:[-.34,.02,0],right:[-.42,-.02,0]}
+  };
+  const palms=grips[pose.state]||{left:[0,0,0],right:[0,0,0]};
+  targets.LeftHand=palms.left;targets.RightHand=palms.right;
   for(const [key,val] of Object.entries(targets)){
    const b=joints[key];if(!b)continue;
    b.rotation.x+=(val[0]-b.rotation.x)*gain;

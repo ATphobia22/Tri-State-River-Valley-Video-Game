@@ -40,6 +40,10 @@ def inspect(page, *, mobile: bool):
     assert state()["heroClipCount"] >= 9
     assert state()["heroTexturedMeshes"] >= 6, "Procedural cloth maps missing from WebGL character"
     assert state()["heroFootContacts"] is not None, "Terrain contact solver missing"
+    assert state()["groundShadowReady"] is True, "Player contact shadow mesh missing"
+    assert state()["motionState"] is not None, "Kinematic locomotion controller missing"
+    assert state()["heroHeightOffset"] == 0, "Explorer starts floating above the ground"
+    assert page.locator("#touchJump").count() == 1, "Touch jump control unavailable"
 
     page.locator("#playBtn").click(timeout=15_000)
     page.wait_for_function(
