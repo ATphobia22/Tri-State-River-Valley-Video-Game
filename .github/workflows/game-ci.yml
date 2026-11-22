@@ -25,6 +25,30 @@ jobs:
         run: python -m compileall -q game
       - name: Validate gameplay, terrain, models and offline cache
         run: npm --prefix game test
+      - name: Verify official Indiana GIS provenance, counts and coordinate tests
+        run: |
+          set -euo pipefail
+          (cd game && python -m unittest discover -s tests -p test_reference_python.py -v)
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          from PIL import Image
+          root=Path('game/reference/mount-vernon')
+          meta=json.loads((root/'registration.json').read_text())
+          roads=json.loads((root/'roads.geojson').read_text())['features']
+          buildings=json.loads((root/'buildings.geojson').read_text())['features']
+          assert meta['projection']=='EPSG:4326'
+          assert meta['identifiedDowntownTileYear']=='2023'
+          assert meta['roadLineCount']==len(roads)==709
+          assert meta['buildingFootprintCount']==len(buildings)==4819
+          assert meta['verticalDatumVerified'] is False
+          assert meta['allStopCoordinatesSurveyVerified'] is False
+          assert Image.open(root/'overhead.jpg').size==tuple(meta['imageDimensions'])
+          for name,digest in json.loads((root/'SHA256SUMS.json').read_text()).items():
+              assert hashlib.sha256((root/name).read_bytes()).hexdigest()==digest, f'Corrupt reference asset: {name}'
+          assert Path('game/data/reference-bundle.js').stat().st_size>800_000
+          print('PASS: 2023 downtown reference, 709 roads, 4,819 footprints, imagery provenance, checksums')
+          PY
       - name: Rebuild independent offline and hosted game
         run: npm --prefix game run build
       - name: Verify bundled game is self-contained and complete
@@ -37,7 +61,8 @@ jobs:
           soup=BeautifulSoup(html.read_text(),'html.parser')
           scripts=soup.find_all('script',src=True)
           assert not scripts, f'External script dependencies found: {scripts}'
-          assert html.stat().st_size>1_000_000
+          assert html.stat().st_size>2_000_000
+          assert 'window.ValleyReference=' in html.read_text()
           assert len(list((root/'assets/models').glob('*.glb')))==5
           assert (root/'src/open-world.js').exists()
           assert (root/'docs/OPEN_WORLD_V1_7_RELEASE.md').exists()
@@ -49,5 +74,7 @@ jobs:
           path: |
             game/River_Valley_Family_Adventure_OFFLINE.html
             game/docs/OPEN_WORLD_V1_7_RELEASE.md
+            game/docs/MOUNT_VERNON_GEOREFERENCE_V1_8.md
+            game/reference/mount-vernon/digitized-overview.png
             game/docs/v17-inworld-browser-verified.png
           if-no-files-found: error
