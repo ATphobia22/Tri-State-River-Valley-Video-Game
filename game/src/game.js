@@ -543,6 +543,10 @@ function update2d(){
 function syncView(){const is2d=view==='2d'||!renderer;atlas.style.display=is2d?'block':'none';canvas.style.display=is2d?'none':'block';}
 function resize(){syncView();if(renderer){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/Math.max(1,innerHeight);camera.updateProjectionMatrix();}if(view==='2d'||!renderer)update2d();}
 function updateHUD(){
+ if(GEOREF && window.OpenLocationCode){
+  const [lon,lat]=GEOREF.worldToLonLat(player.x,player.z);
+  $('locationCode').textContent='Approximate game location · '+OpenLocationCode.encode(lat,lon);
+ }
  $('pantrySummary').textContent=`🌽 ${save.inventory.corn} · 🐟 ${save.inventory.fish} · 🦌 ${save.inventory.game} · 🍲 ${save.inventory.meals}`;
  $('level').textContent=save.level;$('coins').textContent=save.coins.toLocaleString();$('stamps').textContent=save.completed.length+'/'+C.STOPS.length;
  $('clock').textContent=C.formatTime(time);$('weatherBadge').textContent=weather==='clear'?'☀️ Clear':weather==='rain'?'🌧️ Rain':'🌫️ Mist';

@@ -35,7 +35,7 @@
    p.leftKnee=Math.max(0,-wave)*amp*.6;p.rightKnee=Math.max(0,wave)*amp*.6;
    p.torso=state==='sprint'?.21:state==='run'?.12:.035;
    p.bodyY=Math.abs(wave)*(state==='sprint'?.18:.11);
-   p.pack=Math.sin(t*step*9)*.036;
+   p.pack=-wave*amp*.065;
   }else if(state==='idle'){
    p.torso=Math.sin(t*1.4)*.017;p.headTurn=Math.sin(t*.45)*.09;
    p.bodyY=Math.sin(t*1.5)*.045;p.pack=Math.sin(t*1.25)*.01;
@@ -81,7 +81,7 @@
   const cloth=mat(PROFILE.palette.fabric),pants=mat(0x313234),
    cargo=mat(0x3d3b37),skin=mat(PROFILE.palette.skin),hair=mat(PROFILE.palette.hair),
    boot=mat(PROFILE.palette.boots),trim=mat(PROFILE.palette.trim),
-   gold=mat(PROFILE.palette.gold,.32,.69),glass=mat(0x344953,.24,.12,{transparent:true,opacity:.83}),
+   gold=mat(PROFILE.palette.gold,.32,.69),glass=mat(0x344953,.24,.12,{transparent:true,opacity:.14}),
    dark=mat(0x151618),white=mat(0xd9d9d1,.87),pack=mat(PROFILE.palette.pack,.94);
   const shared=[cloth,pants,cargo,skin,hair,boot,trim,gold,glass,dark,white,pack];
   const geometry=[];
@@ -102,7 +102,7 @@
   }
   // Body, shirt seams and cargo belt. Animation pivots at the waist.
   joints.torso=group(root,'torso',0,7.5,0);
-  box(joints.torso,[5.2,5.5,2.65],cloth,'technical-shirt',[0,2.6,0],'black-shirt');
+  sphere(joints.torso,1,cloth,'technical-shirt',[0,2.6,0],'black-shirt').scale.set(2.85,3.28,1.57);
   box(joints.torso,[5.55,.43,2.84],dark,'belt',[0,-.34,0]);
   box(joints.torso,[1.1,.46,.7],trim,'belt-buckle',[0,-.36,-1.49]);
   for(const side of [-1,1]){
@@ -130,21 +130,29 @@
   sphere(joints.head,.26,white,'skull-nose',[0,-.40,-1.79]);
   for(let i=0;i<6;i++)box(joints.head,[.28,.48,.10],white,'gaiter-tooth',[(i-2.5)*.37,-1.12,-1.77]);
   for(const sign of [-1,1]){
-   box(joints.head,[1.34,.82,.16],dark,'eyeglass-frame',[sign*.78,.40,-1.73],'glasses');
+   const eye=sphere(joints.head,.4,white,'eye',[sign*.74,.42,-1.60]);
+   eye.scale.set(1,.57,.47);
+   sphere(joints.head,.18,hair,'iris',[sign*.74,.42,-1.78]);
+   for(const edge of [-1,1]){
+    box(joints.head,[1.35,.105,.14],dark,'eyeglass-frame',[sign*.78,.4+edge*.38,-1.88],'glasses');
+    box(joints.head,[.10,.76,.14],dark,'eyeglass-rim',[sign*.78+edge*.64,.4,-1.88]);
+   }
+   box(joints.head,[.95,.17,.17],hair,'brow',[sign*.75,.92,-1.49]).rotation.z=sign*.12;
    box(joints.head,[1.07,.61,.14],glass,'eyeglass-lens',[sign*.78,.40,-1.84]);
    box(joints.head,[.37,.16,1.05],dark,'eyeglass-arm',[sign*1.62,.43,-1.21]);
   }
   box(joints.head,[.39,.16,.2],dark,'eyeglass-bridge',[0,.43,-1.84]);
   // Instanced curls: one draw batch. The shape belongs to this *original* game model.
   const curlGeo=new THREE.IcosahedronGeometry(.48,1);geometry.push(curlGeo);
-  const curls=new THREE.InstancedMesh(curlGeo,hair,21);
+  sphere(joints.head,1.76,hair,'cropped-fade',[0,.68,.12]).scale.set(1,.66,1);
+  const curls=new THREE.InstancedMesh(curlGeo,hair,35);
   const dummy=new THREE.Object3D();
   let count=0;
-  for(let row=0;row<3;row++)for(let col=0;col<7;col++){
-   if(count>=21)break;
+  for(let row=0;row<5;row++)for(let col=0;col<7;col++){
+   
    const x=(col-3)*.54+Math.sin(row*2+col)*.11;
-   const y=1.54+Math.cos(col*.7+row)*.22+row*.10;
-   const z=-1.22+row*.71;
+   const y=1.54+Math.cos(col*.7+row)*.22+Math.sin(row*Math.PI/4)*.32;
+   const z=-1.22+row*.58;
    dummy.position.set(x,y,z);
    const sc=.72+.24*((col+row)%3)/2;
    dummy.scale.setScalar(sc);dummy.updateMatrix();curls.setMatrixAt(count++,dummy.matrix);

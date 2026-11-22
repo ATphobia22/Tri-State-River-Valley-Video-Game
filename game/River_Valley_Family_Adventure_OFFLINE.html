@@ -32,7 +32,7 @@
 <div class="hud glass" id="context"><b id="nearName"></b><small id="nearDetail"></small><button id="interactBtn">Collect this memory ✨</button></div>
 <div class="hud glass" id="footer"><button class="selected" id="walkBtn">🚶 Walk</button><button id="driveBtn">🚗 Drive</button><button id="mapBtn">🗺 Map</button><button id="tourBtn">🎬 Tour</button><button id="photoBtn">📷 Photo</button><button id="huntBtn">🦌 Hunt</button><button id="fishBtn">🎣 Fish</button><button id="farmWorldBtn">🌽 Farm</button><button id="cookBtn">🍳 Cook</button><button id="settingsBtn">⚙️ Options</button></div>
 <section aria-label="Cinematic director" aria-modal="false" class="hud glass" id="cinemaPanel" role="dialog"><div class="cinemaHeading"><div><small class="eyebrow">VFX SUPERVISOR DESK</small><h2>Cinematic Director</h2></div><button aria-label="Close cinematic director" class="closeX" id="closeCinema">×</button></div><p>Choose a lighting look, layer atmospheric effects, and balance the device's performance.</p><div class="field"><label for="cineLook">Virtual environment / lighting look</label><select id="cineLook"><option value="natural">Natural Countryside</option><option value="golden">Golden Hour Riverfront</option><option value="blue">Blue Hour Reflections</option><option value="storm">Stormfront Over the Ohio</option><option value="lantern">Lanterns &amp; Fireflies</option></select></div><div class="field"><label for="cineQuality">Cinematic effect budget</label><select id="cineQuality"><option value="lite">Battery Saver · 16 effects</option><option value="balanced">Balanced · 55 effects</option><option value="cinematic">Showcase · 110 effects</option></select></div><div class="field"><label for="cineStrength">Atmosphere intensity <b id="cineStrengthLabel">72%</b></label><input id="cineStrength" max="100" min="0" step="1" type="range" value="72"/></div><div class="cinemaChecks"><label><input id="cineGrain" type="checkbox"/> Fine film grain (showcase)</label><label><input id="cineStats" type="checkbox"/> Live FPS and draw calls</label></div><div class="cinemaButtons"><button id="cineGolden">🌅 Sunset shot</button><button id="cineNight">✨ Night shot</button><button id="cineReset">↻ Reset grade</button><button id="openStage">🌄 Open scenic backdrop studio</button></div><p class="cinemaNote">Effects run in 2D even when 3D GPU graphics are unavailable. No cloud rendering or personal data is uploaded.</p></section>
-<section aria-label="Game settings" class="hud glass" id="panel"><div style="display:flex;align-items:center;justify-content:space-between"><h2>Adventure settings</h2><button class="closeX" id="closePanel">×</button></div><div class="field"><label for="weather">Weather</label><select id="weather"><option value="clear">☀️ Clear skies</option><option value="rain">🌧️ Summer rain</option><option value="mist">🌫️ River mist</option></select></div><div class="field"><label for="season">Season</label><select id="season"><option value="spring">🌷 Spring</option><option value="summer">🌾 Summer</option><option value="autumn">🍂 Autumn</option><option value="winter">❄️ Winter</option></select></div><div class="field"><label for="time">Time of day <span id="timeLabel">5:30 PM</span></label><input id="time" max="24" min="0" step="0.25" type="range" value="17.5"/></div><div class="field"><label for="quality">World view</label><select id="quality"><option value="3d">3D countryside</option><option value="2d">2D illustrated atlas</option></select></div><div class="field"><label for="referenceOverlay">Real Mount Vernon overhead reference</label><label style="display:flex;align-items:center;gap:10px"><input id="referenceOverlay" style="width:auto" type="checkbox"/> IGIO aerial + digitized roads (reference only)</label><small id="referenceStatus" style="display:block;color:var(--muted);margin-top:5px">Reference imagery loads when available; heights remain unverified.</small></div><div class="field"><label for="terrainDetail">Terrain detail / LOD</label><select id="terrainDetail"><option value="auto">Adaptive · quadtree screen error</option><option value="high">High · detailed quadtree</option><option value="medium">Medium · balanced quadtree</option><option value="low">Low · performance quadtree</option></select></div><div class="field"><label for="visualEffects">Visual effects</label><select id="visualEffects"><option value="full">Cinematic · sun + fog</option><option value="lite">Performance · reduced effects</option></select></div><div class="field"><label for="slot">Family save slot</label><select id="slot"><option value="0">Adventure 1</option><option value="1">Adventure 2</option><option value="2">Adventure 3</option></select></div><div class="row"><button id="petBtn">🐕 Scout: ON</button><button id="soundBtn">🔊 Sound</button></div><div class="row" style="margin-top:9px"><button class="pill" id="installOfflineBtn">📲 Install / Offline help</button><small id="offlineStatus">Your game runs on this device · saves are local</small><button id="saveBtn">💾 Save</button><button id="newBtn">↻ New game</button></div><div class="row" style="margin-top:9px"><button id="heroStudioOpen">👤 Inspect the Explorer</button><button id="openCinema">🎥 Open Cinematic Director</button></div><div class="row" style="margin-top:9px"><button id="returnBtn">🏠 Title screen</button></div><p style="font-size:10px;margin:12px 0 0">Saves live only in this browser on this device. The countryside is inspired by real places; this preview is a game, not a surveyed or navigational map.</p></section>
+<section aria-label="Game settings" class="hud glass" id="panel"><div style="display:flex;align-items:center;justify-content:space-between"><h2>Adventure settings</h2><button class="closeX" id="closePanel">×</button></div><div class="field"><label for="weather">Weather</label><select id="weather"><option value="clear">☀️ Clear skies</option><option value="rain">🌧️ Summer rain</option><option value="mist">🌫️ River mist</option></select></div><div class="field"><label for="season">Season</label><select id="season"><option value="spring">🌷 Spring</option><option value="summer">🌾 Summer</option><option value="autumn">🍂 Autumn</option><option value="winter">❄️ Winter</option></select></div><div class="field"><label for="time">Time of day <span id="timeLabel">5:30 PM</span></label><input id="time" max="24" min="0" step="0.25" type="range" value="17.5"/></div><div class="field"><label for="quality">World view</label><select id="quality"><option value="3d">3D countryside</option><option value="2d">2D illustrated atlas</option></select></div><div class="field"><label for="referenceOverlay">Real Mount Vernon overhead reference</label><label style="display:flex;align-items:center;gap:10px"><input id="referenceOverlay" style="width:auto" type="checkbox"/> IGIO aerial + digitized roads (reference only)</label><small id="referenceStatus" style="display:block;color:var(--muted);margin-top:5px">Reference imagery loads when available; heights remain unverified.</small><p id="locationCode"></p></div><div class="field"><label for="terrainDetail">Terrain detail / LOD</label><select id="terrainDetail"><option value="auto">Adaptive · quadtree screen error</option><option value="high">High · detailed quadtree</option><option value="medium">Medium · balanced quadtree</option><option value="low">Low · performance quadtree</option></select></div><div class="field"><label for="visualEffects">Visual effects</label><select id="visualEffects"><option value="full">Cinematic · sun + fog</option><option value="lite">Performance · reduced effects</option></select></div><div class="field"><label for="slot">Family save slot</label><select id="slot"><option value="0">Adventure 1</option><option value="1">Adventure 2</option><option value="2">Adventure 3</option></select></div><div class="row"><button id="petBtn">🐕 Scout: ON</button><button id="soundBtn">🔊 Sound</button></div><div class="row" style="margin-top:9px"><button class="pill" id="installOfflineBtn">📲 Install / Offline help</button><small id="offlineStatus">Your game runs on this device · saves are local</small><button id="saveBtn">💾 Save</button><button id="newBtn">↻ New game</button></div><div class="row" style="margin-top:9px"><button id="heroStudioOpen">👤 Inspect the Explorer</button><button id="openCinema">🎥 Open Cinematic Director</button></div><div class="row" style="margin-top:9px"><button id="returnBtn">🏠 Title screen</button></div><p style="font-size:10px;margin:12px 0 0">Saves live only in this browser on this device. The countryside is inspired by real places; this preview is a game, not a surveyed or navigational map.</p></section>
 <div id="touchControls"><div class="dpad"><span class="blank"></span><button data-key="up">↑</button><span class="blank"></span><button data-key="left">←</button><button data-key="down">↓</button><button data-key="right">→</button></div><button class="touchAction" id="touchInteract">ACTION ✨</button></div>
 <section aria-label="Cinematic backdrops studio" aria-modal="true" id="stagePanel" role="dialog"><div id="stageToolbar"><strong>🌄 Virtual Backdrops · Original River Valley Scenes</strong><label for="stageScene">Location</label><select id="stageScene"><option value="riverfront">Ohio Riverfront</option><option value="farm">Family Farm</option><option value="woods">Oak Grove Woods</option></select><button aria-label="Previous cinematic shot" id="stagePrev">◀ Previous</button><button id="stageTour">▶ Play scenic tour</button><button aria-label="Next cinematic shot" id="stageNext">Next ▶</button><button id="stageCapture">📷 Save postcard</button><button id="stageBoard">🎞 Export shot board</button><button id="closeStage">✕ Return to game</button></div><div aria-live="polite" id="stageShotInfo"><b id="stageShotLabel">01 · Ohio River · Arrival</b> <span id="stageShotCount">1 / 5</span></div><canvas aria-label="Original animated 2D virtual scene; selectable riverfront, farm and woods" height="720" id="stageCanvas" width="1280"></canvas><p>Animated 2D virtual background · included offline · not a surveyed or 3D-engine render.</p></section><div aria-live="polite" id="toast" role="status"></div>
 <section aria-label="Live three-dimensional activity" aria-live="polite" class="hud glass" hidden="" id="worldActivityHud" role="region"><div class="worldTitleRow"><div><small class="eyebrow">REAL-TIME WORLD ACTIVITY · 3D</small><h2 id="worldActivityTitle">River Valley Adventure</h2></div><button aria-label="Return to exploration" id="worldClose">✕</button></div><p id="worldActivityText"></p><div id="worldActivityMeter" role="status"></div><label for="worldAim" hidden="" id="worldAimLabel">Track your target <input aria-label="Move in-world target marker" id="worldAim" max="100" min="0" step="1" type="range" value="50"/></label><div id="worldActionButtons"></div><small class="worldHint">Explore freely while playing. Use the buttons or press E to act. No separate minigame scene.</small></section>
@@ -41,7 +41,7 @@
 <div id="start"><div class="hero"><div class="tag">✦ YOUR FAMILY. YOUR RIVER VALLEY. ✦</div><h1>Take the scenic route.<em>Make some memories.</em></h1><p class="lead">A cozy open-world adventure inspired by Mount Vernon, Indiana and the Ohio–Wabash River Valley. Walk historic streets, drive through scenic countryside, interact with wildlife on the trail, fish from a 3D river pier, cook at the campfire and cultivate visible farm plots, and complete six family discoveries.</p><div><span class="marker">🌅 DAY &amp; NIGHT</span><span class="marker">🚙 FREE ROAM</span><span class="marker">🐕 A LOYAL COMPANION</span><span class="marker">📸 PHOTO MODE</span></div><div class="buttons"><select aria-label="Choose family save slot" id="startSlot"><option value="0">Save 1</option><option value="1">Save 2</option><option value="2">Save 3</option></select><input aria-label="Family explorer name" id="playerName" maxlength="24" placeholder="Family explorer name" value="Family Explorer"/><button class="primary" id="playBtn">▶ Start exploring</button><button id="resumeBtn">↻ Continue saved game</button></div><p class="smallprint">V1.9.2 · Free-camera 3D exploration with four interactive world sites, a wildlife model, fishing pier, persistent crop plots and a campfire kitchen. Adaptive LOD, cinematic lighting, local saves and 2D fallback. Offline • Single-player family adventure • No account or uploads • Desktop keyboard and mobile touch controls. Uses the supplied Mount Vernon geography as a stylized preview—not a precise replica.</p></div></div>
 <div id="loading">🌿 Preparing your river valley...</div>
 <section aria-label="Character studio and animation preview" class="hud glass" hidden="" id="heroStudio" role="dialog">
-<div class="heroStudioHeading"><div><small class="eyebrow">ORIGINAL GAME CHARACTER</small><h2>River Explorer Studio</h2></div><button aria-label="Close character studio" class="closeX" id="heroStudioClose">✕</button></div>
+<div class="heroStudioHeading"><img alt="River concept portrait" height="56" src="data:image/jpeg;base64,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" style="border-radius:6px;object-fit:cover" width="48"/><div><small class="eyebrow">ORIGINAL GAME CHARACTER</small><h2>River Explorer Studio</h2></div><button aria-label="Close character studio" class="closeX" id="heroStudioClose">✕</button></div>
 <p>View River close up, change animated poses, and take a character photo.</p>
 <div class="field"><label for="heroPose">Preview animation</label>
 <select id="heroPose">
@@ -734,6 +734,726 @@ function sceneWorld(T,scene,ground){
 }
 return {SITES,closestSite,approachSite,farmPick,sceneWorld};
 });
+</script><script>// Copyright 2014 Google Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the 'License');
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an 'AS IS' BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/**
+ * Convert locations to and from short codes.
+ *
+ * Plus Codes are short, 10-11 character codes that can be used instead
+ * of street addresses. The codes can be generated and decoded offline, and use
+ * a reduced character set that minimises the chance of codes including words.
+ *
+ * Codes are able to be shortened relative to a nearby location. This means that
+ * in many cases, only four to seven characters of the code are needed.
+ * To recover the original code, the same location is not required, as long as
+ * a nearby location is provided.
+ *
+ * Codes represent rectangular areas rather than points, and the longer the
+ * code, the smaller the area. A 10 character code represents a 13.5x13.5
+ * meter area (at the equator. An 11 character code represents approximately
+ * a 2.8x3.5 meter area.
+ *
+ * Two encoding algorithms are used. The first 10 characters are pairs of
+ * characters, one for latitude and one for longitude, using base 20. Each pair
+ * reduces the area of the code by a factor of 400. Only even code lengths are
+ * sensible, since an odd-numbered length would have sides in a ratio of 20:1.
+ *
+ * At position 11, the algorithm changes so that each character selects one
+ * position from a 4x5 grid. This allows single-character refinements.
+ *
+ * Examples:
+ *
+ *   Encode a location, default accuracy:
+ *   var code = OpenLocationCode.encode(47.365590, 8.524997);
+ *
+ *   Encode a location using one stage of additional refinement:
+ *   var code = OpenLocationCode.encode(47.365590, 8.524997, 11);
+ *
+ *   Decode a full code:
+ *   var coord = OpenLocationCode.decode(code);
+ *   var msg = 'Center is ' + coord.latitudeCenter + ',' + coord.longitudeCenter;
+ *
+ *   Attempt to trim the first characters from a code:
+ *   var shortCode = OpenLocationCode.shorten('8FVC9G8F+6X', 47.5, 8.5);
+ *
+ *   Recover the full code from a short code:
+ *   var code = OpenLocationCode.recoverNearest('9G8F+6X', 47.4, 8.6);
+ *   var code = OpenLocationCode.recoverNearest('8F+6X', 47.4, 8.6);
+ */
+(function(root, factory) {
+  /* global define, module */
+  if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define(function() {
+      return (root.returnExportsGlobal = factory());
+    });
+  } else if (typeof module === 'object' && module.exports) {
+    // Node. Does not work with strict CommonJS, but
+    // only CommonJS-like environments that support module.exports,
+    // like Node.
+    module.exports = factory();
+  } else {
+    // Browser globals
+    root.OpenLocationCode = factory();
+  }
+}(this, function() {
+  var OpenLocationCode = {};
+
+  /**
+   * Provides a normal precision code, approximately 14x14 meters.
+   * @const {number}
+   */
+  OpenLocationCode.CODE_PRECISION_NORMAL = 10;
+
+  /**
+   * Provides an extra precision code, approximately 2x3 meters.
+   * @const {number}
+   */
+  OpenLocationCode.CODE_PRECISION_EXTRA = 11;
+
+  // A separator used to break the code into two parts to aid memorability.
+  var SEPARATOR_ = '+';
+
+  // The number of characters to place before the separator.
+  var SEPARATOR_POSITION_ = 8;
+
+  // The character used to pad codes.
+  var PADDING_CHARACTER_ = '0';
+
+  // The character set used to encode the values.
+  var CODE_ALPHABET_ = '23456789CFGHJMPQRVWX';
+
+  // The base to use to convert numbers to/from.
+  var ENCODING_BASE_ = CODE_ALPHABET_.length;
+
+  // The maximum value for latitude in degrees.
+  var LATITUDE_MAX_ = 90;
+
+  // The maximum value for longitude in degrees.
+  var LONGITUDE_MAX_ = 180;
+
+  // The min number of digits in a Plus Code.
+  var MIN_DIGIT_COUNT_ = 2;
+
+  // The max number of digits to process in a Plus Code.
+  var MAX_DIGIT_COUNT_ = 15;
+
+  // Maximum code length using lat/lng pair encoding. The area of such a
+  // code is approximately 13x13 meters (at the equator), and should be suitable
+  // for identifying buildings. This excludes prefix and separator characters.
+  var PAIR_CODE_LENGTH_ = 10;
+
+  // First place value of the pairs (if the last pair value is 1).
+  var PAIR_FIRST_PLACE_VALUE_ = Math.pow(
+      ENCODING_BASE_, (PAIR_CODE_LENGTH_ / 2 - 1));
+
+  // Inverse of the precision of the pair section of the code.
+  var PAIR_PRECISION_ = Math.pow(ENCODING_BASE_, 3);
+
+  // The resolution values in degrees for each position in the lat/lng pair
+  // encoding. These give the place value of each position, and therefore the
+  // dimensions of the resulting area.
+  var PAIR_RESOLUTIONS_ = [20.0, 1.0, .05, .0025, .000125];
+
+  // Number of digits in the grid precision part of the code.
+  var GRID_CODE_LENGTH_ = MAX_DIGIT_COUNT_ - PAIR_CODE_LENGTH_;
+
+  // Number of columns in the grid refinement method.
+  var GRID_COLUMNS_ = 4;
+
+  // Number of rows in the grid refinement method.
+  var GRID_ROWS_ = 5;
+
+  // First place value of the latitude grid (if the last place is 1).
+  var GRID_LAT_FIRST_PLACE_VALUE_ = Math.pow(
+      GRID_ROWS_, (GRID_CODE_LENGTH_ - 1));
+
+  // First place value of the longitude grid (if the last place is 1).
+  var GRID_LNG_FIRST_PLACE_VALUE_ = Math.pow(
+      GRID_COLUMNS_, (GRID_CODE_LENGTH_ - 1));
+
+  // Multiply latitude by this much to make it a multiple of the finest
+  // precision.
+  var FINAL_LAT_PRECISION_ = PAIR_PRECISION_ *
+      Math.pow(GRID_ROWS_, (MAX_DIGIT_COUNT_ - PAIR_CODE_LENGTH_));
+
+  // Multiply longitude by this much to make it a multiple of the finest
+  // precision.
+  var FINAL_LNG_PRECISION_ = PAIR_PRECISION_ *
+      Math.pow(GRID_COLUMNS_, (MAX_DIGIT_COUNT_ - PAIR_CODE_LENGTH_));
+
+  // Minimum length of a code that can be shortened.
+  var MIN_TRIMMABLE_CODE_LEN_ = 6;
+
+  /**
+    @return {string} Returns the OLC alphabet.
+   */
+  OpenLocationCode.getAlphabet = function() {
+    return CODE_ALPHABET_;
+  };
+
+  /**
+   * Determines if a code is valid.
+   *
+   * To be valid, all characters must be from the Open Location Code character
+   * set with at most one separator. The separator can be in any even-numbered
+   * position up to the eighth digit.
+   *
+   * @param {string} code The string to check.
+   * @return {boolean} True if the string is a valid code.
+   */
+  var isValid = OpenLocationCode.isValid = function(code) {
+    if (!code || typeof code !== 'string') {
+      return false;
+    }
+    // The separator is required.
+    if (code.indexOf(SEPARATOR_) == -1) {
+      return false;
+    }
+    if (code.indexOf(SEPARATOR_) != code.lastIndexOf(SEPARATOR_)) {
+      return false;
+    }
+    // Is it the only character?
+    if (code.length == 1) {
+      return false;
+    }
+    // Is it in an illegal position?
+    if (code.indexOf(SEPARATOR_) > SEPARATOR_POSITION_ ||
+        code.indexOf(SEPARATOR_) % 2 == 1) {
+      return false;
+    }
+    // We can have an even number of padding characters before the separator,
+    // but then it must be the final character.
+    if (code.indexOf(PADDING_CHARACTER_) > -1) {
+      // Short codes cannot have padding
+      if (code.indexOf(SEPARATOR_) < SEPARATOR_POSITION_) {
+        return false;
+      }
+      // Not allowed to start with them!
+      if (code.indexOf(PADDING_CHARACTER_) == 0) {
+        return false;
+      }
+      // There can only be one group and it must have even length.
+      var padMatch = code.match(new RegExp('(' + PADDING_CHARACTER_ + '+)', 'g'));
+      if (padMatch.length > 1 || padMatch[0].length % 2 == 1 ||
+          padMatch[0].length > SEPARATOR_POSITION_ - 2) {
+        return false;
+      }
+      // If the code is long enough to end with a separator, make sure it does.
+      if (code.charAt(code.length - 1) != SEPARATOR_) {
+        return false;
+      }
+    }
+    // If there are characters after the separator, make sure there isn't just
+    // one of them (not legal).
+    if (code.length - code.indexOf(SEPARATOR_) - 1 == 1) {
+      return false;
+    }
+
+    // Strip the separator and any padding characters.
+    code = code.replace(new RegExp('\\' + SEPARATOR_ + '+'), '')
+        .replace(new RegExp(PADDING_CHARACTER_ + '+'), '');
+    // Check the code contains only valid characters.
+    for (var i = 0, len = code.length; i < len; i++) {
+      var character = code.charAt(i).toUpperCase();
+      if (character != SEPARATOR_ && CODE_ALPHABET_.indexOf(character) == -1) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  /**
+   * Determines if a code is a valid short code.
+   *
+   * @param {string} code The string to check.
+   * @return {boolean} True if the string can be produced by removing four or
+   *     more characters from the start of a valid code.
+   */
+  var isShort = OpenLocationCode.isShort = function(code) {
+    // Check it's valid.
+    if (!isValid(code)) {
+      return false;
+    }
+    // If there are less characters than expected before the SEPARATOR.
+    if (code.indexOf(SEPARATOR_) >= 0 &&
+        code.indexOf(SEPARATOR_) < SEPARATOR_POSITION_) {
+      return true;
+    }
+    return false;
+  };
+
+  /**
+   * Determines if a code is a valid full Open Location Code.
+   *
+   * @param {string} code The string to check.
+   * @return {boolean} True if the code represents a valid latitude and
+   *     longitude combination.
+   */
+  var isFull = OpenLocationCode.isFull = function(code) {
+    if (!isValid(code)) {
+      return false;
+    }
+    // If it's short, it's not full.
+    if (isShort(code)) {
+      return false;
+    }
+
+    // Work out what the first latitude character indicates for latitude.
+    var firstLatValue = CODE_ALPHABET_.indexOf(
+        code.charAt(0).toUpperCase()) * ENCODING_BASE_;
+    if (firstLatValue >= LATITUDE_MAX_ * 2) {
+      // The code would decode to a latitude of >= 90 degrees.
+      return false;
+    }
+    if (code.length > 1) {
+      // Work out what the first longitude character indicates for longitude.
+      var firstLngValue = CODE_ALPHABET_.indexOf(
+          code.charAt(1).toUpperCase()) * ENCODING_BASE_;
+      if (firstLngValue >= LONGITUDE_MAX_ * 2) {
+        // The code would decode to a longitude of >= 180 degrees.
+        return false;
+      }
+    }
+    return true;
+  };
+
+  /**
+   * Encode a location into an Open Location Code.
+   *
+   * @param {number} latitude The latitude in signed decimal degrees. It will
+   *     be clipped to the range -90 to 90.
+   * @param {number} longitude The longitude in signed decimal degrees. Will be
+   *     normalised to the range -180 to 180.
+   * @param {?number} codeLength The length of the code to generate. If
+   *     omitted, the value OpenLocationCode.CODE_PRECISION_NORMAL will be used.
+   *     For a more precise result, OpenLocationCode.CODE_PRECISION_EXTRA is
+   *     recommended.
+   * @return {string} The code.
+   * @throws {Exception} if any of the input values are not numbers.
+   */
+  var encode = OpenLocationCode.encode = function(latitude,
+      longitude, codeLength) {
+    latitude = Number(latitude);
+    longitude = Number(longitude);
+
+    const locationIntegers = locationToIntegers(latitude, longitude);
+
+    return encodeIntegers(locationIntegers[0], locationIntegers[1], codeLength);
+  };
+
+  /**
+   * Convert a latitude, longitude location into integer values.
+   *
+   * This function is only exposed for testing.
+   *
+   * Latitude is converted into a positive integer clipped into the range
+   * 0 <= X < 180*2.5e7. (Latitude 90 needs to be adjusted to be slightly lower,
+   * so that the returned code can also be decoded.
+   * Longitude is converted into a positive integer and normalised into the range
+   * 0 <= X < 360*8.192e6.
+
+   * @param {number} latitude
+   * @param {number} longitude
+   * @return {Array<number>} A tuple of the latitude integer and longitude integer.
+   */
+  var locationToIntegers = OpenLocationCode.locationToIntegers = function(latitude, longitude) {
+    var latVal = Math.floor(latitude * FINAL_LAT_PRECISION_);
+    latVal += LATITUDE_MAX_ * FINAL_LAT_PRECISION_;
+    if (latVal < 0) {
+      latVal = 0;
+    } else if (latVal >= 2 * LATITUDE_MAX_ * FINAL_LAT_PRECISION_) {
+      latVal = 2 * LATITUDE_MAX_ * FINAL_LAT_PRECISION_ - 1;
+    }
+    var lngVal = Math.floor(longitude * FINAL_LNG_PRECISION_);
+    lngVal += LONGITUDE_MAX_ * FINAL_LNG_PRECISION_;
+    if (lngVal < 0) {
+      lngVal =
+        (lngVal % (2 * LONGITUDE_MAX_ * FINAL_LNG_PRECISION_)) +
+        2 * LONGITUDE_MAX_ * FINAL_LNG_PRECISION_;
+    } else if (lngVal >= 2 * LONGITUDE_MAX_ * FINAL_LNG_PRECISION_) {
+      lngVal = lngVal % (2 * LONGITUDE_MAX_ * FINAL_LNG_PRECISION_);
+    }
+    return [latVal, lngVal];
+  };
+
+  /**
+   * Encode a location that uses integer values into an Open Location Code.
+   *
+   * This is a testing function, and should not be called directly.
+   *
+   * @param {number} latInt An integer latitude.
+   * @param {number} lngInt An integer longitude.
+   * @param {number=} codeLength The number of significant digits in the output
+   *     code, not including any separator characters.
+   * @return {string} A code of the specified length or the default length if not
+   *     specified.
+   * @throws {Exception} if any of the input values are not numbers.
+   */
+  var encodeIntegers = OpenLocationCode.encodeIntegers = function(latInt, lngInt, codeLength) {
+    if (typeof codeLength == 'undefined') {
+      codeLength = OpenLocationCode.CODE_PRECISION_NORMAL;
+    } else {
+      codeLength = Math.min(MAX_DIGIT_COUNT_, Number(codeLength));
+    }
+    if (isNaN(latInt) || isNaN(lngInt) || isNaN(codeLength)) {
+      throw new Error('ValueError: Parameters are not numbers');
+    }
+    if (codeLength < MIN_DIGIT_COUNT_ ||
+        (codeLength < PAIR_CODE_LENGTH_ && codeLength % 2 == 1)) {
+      throw new Error('IllegalArgumentException: Invalid Open Location Code length');
+    }
+    // Javascript strings are immutable and it doesn't have a native
+    // StringBuilder, so we'll use an array.
+    const code = new Array(MAX_DIGIT_COUNT_ + 1);
+    code[SEPARATOR_POSITION_] = SEPARATOR_;
+
+    // Compute the grid part of the code if necessary.
+    if (codeLength > PAIR_CODE_LENGTH_) {
+      for (var i = MAX_DIGIT_COUNT_ - PAIR_CODE_LENGTH_; i >= 1; i--) {
+        var latDigit = latInt % GRID_ROWS_;
+        var lngDigit = lngInt % GRID_COLUMNS_;
+        var ndx = latDigit * GRID_COLUMNS_ + lngDigit;
+        code[SEPARATOR_POSITION_ + 2 + i] = CODE_ALPHABET_.charAt(ndx);
+        // Note! Integer division.
+        latInt = Math.floor(latInt / GRID_ROWS_);
+        lngInt = Math.floor(lngInt / GRID_COLUMNS_);
+      }
+    } else {
+      latInt = Math.floor(latInt / Math.pow(GRID_ROWS_, GRID_CODE_LENGTH_));
+      lngInt = Math.floor(lngInt / Math.pow(GRID_COLUMNS_, GRID_CODE_LENGTH_));
+    }
+
+    // Add the pair after the separator.
+    code[SEPARATOR_POSITION_ + 1] = CODE_ALPHABET_.charAt(latInt % ENCODING_BASE_);
+    code[SEPARATOR_POSITION_ + 2] = CODE_ALPHABET_.charAt(lngInt % ENCODING_BASE_);
+    latInt = Math.floor(latInt / ENCODING_BASE_);
+    lngInt = Math.floor(lngInt / ENCODING_BASE_);
+
+    // Compute the pair section of the code.
+    for (var i = PAIR_CODE_LENGTH_ / 2 + 1; i >= 0; i -= 2) {
+      code[i] = CODE_ALPHABET_.charAt(latInt % ENCODING_BASE_);
+      code[i + 1] = CODE_ALPHABET_.charAt(lngInt % ENCODING_BASE_);
+      latInt = Math.floor(latInt / ENCODING_BASE_);
+      lngInt = Math.floor(lngInt / ENCODING_BASE_);
+    }
+
+    // If we don't need to pad the code, return the requested section.
+    if (codeLength >= SEPARATOR_POSITION_) {
+      return code.slice(0, codeLength + 1).join('');
+    }
+    // Pad and return the code.
+    return code.slice(0, codeLength).join('') +
+        Array(SEPARATOR_POSITION_ - codeLength + 1).join(PADDING_CHARACTER_) + SEPARATOR_;
+  };
+
+  /**
+   * Decodes an Open Location Code into its location coordinates.
+   *
+   * Returns a CodeArea object that includes the coordinates of the bounding
+   * box - the lower left, center and upper right.
+   *
+   * @param {string} code The code to decode.
+   * @return {OpenLocationCode.CodeArea} An object with the coordinates of the
+   *     area of the code.
+   * @throws {Exception} If the code is not valid.
+   */
+  var decode = OpenLocationCode.decode = function(code) {
+    // This calculates the values for the pair and grid section separately, using
+    // integer arithmetic. Only at the final step are they converted to floating
+    // point and combined.
+    if (!isFull(code)) {
+      throw new Error('IllegalArgumentException: ' +
+          'Passed Plus Code is not a valid full code: ' + code);
+    }
+    // Strip the '+' and '0' characters from the code and convert to upper case.
+    code = code.replace('+', '').replace(/0/g, '').toLocaleUpperCase('en-US');
+
+    // Initialise the values for each section. We work them out as integers and
+    // convert them to floats at the end.
+    var normalLat = -LATITUDE_MAX_ * PAIR_PRECISION_;
+    var normalLng = -LONGITUDE_MAX_ * PAIR_PRECISION_;
+    var gridLat = 0;
+    var gridLng = 0;
+    // How many digits do we have to process?
+    var digits = Math.min(code.length, PAIR_CODE_LENGTH_);
+    // Define the place value for the most significant pair.
+    var pv = PAIR_FIRST_PLACE_VALUE_;
+    // Decode the paired digits.
+    for (var i = 0; i < digits; i += 2) {
+      normalLat += CODE_ALPHABET_.indexOf(code.charAt(i)) * pv;
+      normalLng += CODE_ALPHABET_.indexOf(code.charAt(i + 1)) * pv;
+      if (i < digits - 2) {
+        pv /= ENCODING_BASE_;
+      }
+    }
+    // Convert the place value to a float in degrees.
+    var latPrecision = pv / PAIR_PRECISION_;
+    var lngPrecision = pv / PAIR_PRECISION_;
+    // Process any extra precision digits.
+    if (code.length > PAIR_CODE_LENGTH_) {
+      // Initialise the place values for the grid.
+      var rowpv = GRID_LAT_FIRST_PLACE_VALUE_;
+      var colpv = GRID_LNG_FIRST_PLACE_VALUE_;
+      // How many digits do we have to process?
+      digits = Math.min(code.length, MAX_DIGIT_COUNT_);
+      for (var i = PAIR_CODE_LENGTH_; i < digits; i++) {
+        var digitVal = CODE_ALPHABET_.indexOf(code.charAt(i));
+        var row = Math.floor(digitVal / GRID_COLUMNS_);
+        var col = digitVal % GRID_COLUMNS_;
+        gridLat += row * rowpv;
+        gridLng += col * colpv;
+        if (i < digits - 1) {
+          rowpv /= GRID_ROWS_;
+          colpv /= GRID_COLUMNS_;
+        }
+      }
+      // Adjust the precisions from the integer values to degrees.
+      latPrecision = rowpv / FINAL_LAT_PRECISION_;
+      lngPrecision = colpv / FINAL_LNG_PRECISION_;
+    }
+    // Merge the values from the normal and extra precision parts of the code.
+    var lat = normalLat / PAIR_PRECISION_ + gridLat / FINAL_LAT_PRECISION_;
+    var lng = normalLng / PAIR_PRECISION_ + gridLng / FINAL_LNG_PRECISION_;
+    return new CodeArea(
+        lat,
+        lng,
+        lat + latPrecision,
+        lng + lngPrecision,
+        Math.min(code.length, MAX_DIGIT_COUNT_));
+  };
+
+  /**
+   * Recover the nearest matching code to a specified location.
+   *
+   * Given a valid short Open Location Code this recovers the nearest matching
+   * full code to the specified location.
+   *
+   * @param {string} shortCode A valid short code.
+   * @param {number} referenceLatitude The latitude to use for the reference
+   *     location.
+   * @param {number} referenceLongitude The longitude to use for the reference
+   *     location.
+   * @return {string} The nearest matching full code to the reference location.
+   * @throws {Exception} if the short code is not valid, or the reference
+   *     position values are not numbers.
+   */
+  OpenLocationCode.recoverNearest = function(
+      shortCode, referenceLatitude, referenceLongitude) {
+    if (!isShort(shortCode)) {
+      if (isFull(shortCode)) {
+        return shortCode.toUpperCase();
+      } else {
+        throw new Error(
+            'ValueError: Passed short code is not valid: ' + shortCode);
+      }
+    }
+    referenceLatitude = Number(referenceLatitude);
+    referenceLongitude = Number(referenceLongitude);
+    if (isNaN(referenceLatitude) || isNaN(referenceLongitude)) {
+      throw new Error('ValueError: Reference position are not numbers');
+    }
+    // Ensure that latitude and longitude are valid.
+    referenceLatitude = clipLatitude(referenceLatitude);
+    referenceLongitude = normalizeLongitude(referenceLongitude);
+
+    // Clean up the passed code.
+    shortCode = shortCode.toUpperCase();
+    // Compute the number of digits we need to recover.
+    var paddingLength = SEPARATOR_POSITION_ - shortCode.indexOf(SEPARATOR_);
+    // The resolution (height and width) of the padded area in degrees.
+    var resolution = Math.pow(20, 2 - (paddingLength / 2));
+    // Distance from the center to an edge (in degrees).
+    var halfResolution = resolution / 2.0;
+
+    // Use the reference location to pad the supplied short code and decode it.
+    var codeArea = decode(
+        encode(referenceLatitude, referenceLongitude).substr(0, paddingLength)
+        + shortCode);
+    // How many degrees latitude is the code from the reference? If it is more
+    // than half the resolution, we need to move it north or south but keep it
+    // within -90 to 90 degrees.
+    if (referenceLatitude + halfResolution < codeArea.latitudeCenter &&
+        codeArea.latitudeCenter - resolution >= -LATITUDE_MAX_) {
+      // If the proposed code is more than half a cell north of the reference location,
+      // it's too far, and the best match will be one cell south.
+      codeArea.latitudeCenter -= resolution;
+    } else if (referenceLatitude - halfResolution > codeArea.latitudeCenter &&
+               codeArea.latitudeCenter + resolution <= LATITUDE_MAX_) {
+      // If the proposed code is more than half a cell south of the reference location,
+      // it's too far, and the best match will be one cell north.
+      codeArea.latitudeCenter += resolution;
+    }
+
+    // How many degrees longitude is the code from the reference?
+    if (referenceLongitude + halfResolution < codeArea.longitudeCenter) {
+      codeArea.longitudeCenter -= resolution;
+    } else if (referenceLongitude - halfResolution > codeArea.longitudeCenter) {
+      codeArea.longitudeCenter += resolution;
+    }
+
+    return encode(
+        codeArea.latitudeCenter, codeArea.longitudeCenter, codeArea.codeLength);
+  };
+
+  /**
+   * Remove characters from the start of an OLC code.
+   *
+   * This uses a reference location to determine how many initial characters
+   * can be removed from the OLC code. The number of characters that can be
+   * removed depends on the distance between the code center and the reference
+   * location.
+   *
+   * @param {string} code The full code to shorten.
+   * @param {number} latitude The latitude to use for the reference location.
+   * @param {number} longitude The longitude to use for the reference location.
+   * @return {string} The code, shortened as much as possible that it is still
+   *     the closest matching code to the reference location.
+   * @throws {Exception} if the passed code is not a valid full code or the
+   *     reference location values are not numbers.
+   */
+  OpenLocationCode.shorten = function(
+      code, latitude, longitude) {
+    if (!isFull(code)) {
+      throw new Error('ValueError: Passed code is not valid and full: ' + code);
+    }
+    if (code.indexOf(PADDING_CHARACTER_) != -1) {
+      throw new Error('ValueError: Cannot shorten padded codes: ' + code);
+    }
+    code = code.toUpperCase();
+    var codeArea = decode(code);
+    if (codeArea.codeLength < MIN_TRIMMABLE_CODE_LEN_) {
+      throw new Error(
+          'ValueError: Code length must be at least ' +
+          MIN_TRIMMABLE_CODE_LEN_);
+    }
+    // Ensure that latitude and longitude are valid.
+    latitude = Number(latitude);
+    longitude = Number(longitude);
+    if (isNaN(latitude) || isNaN(longitude)) {
+      throw new Error('ValueError: Reference position are not numbers');
+    }
+    latitude = clipLatitude(latitude);
+    longitude = normalizeLongitude(longitude);
+    // How close are the latitude and longitude to the code center.
+    var range = Math.max(
+        Math.abs(codeArea.latitudeCenter - latitude),
+        Math.abs(codeArea.longitudeCenter - longitude));
+    for (var i = PAIR_RESOLUTIONS_.length - 2; i >= 1; i--) {
+      // Check if we're close enough to shorten. The range must be less than 1/2
+      // the resolution to shorten at all, and we want to allow some safety, so
+      // use 0.3 instead of 0.5 as a multiplier.
+      if (range < (PAIR_RESOLUTIONS_[i] * 0.3)) {
+        // Trim it.
+        return code.substring((i + 1) * 2);
+      }
+    }
+    return code;
+  };
+
+  /**
+   * Clip a latitude into the range -90 to 90.
+   *
+   * @param {number} latitude
+   * @return {number} The latitude value clipped to be in the range.
+   */
+  var clipLatitude = function(latitude) {
+    return Math.min(90, Math.max(-90, latitude));
+  };
+
+  /**
+   * Normalize a longitude into the range -180 to 180, not including 180.
+   *
+   * @param {number} longitude
+   * @return {number} Normalized into the range -180 to 180.
+   */
+  var normalizeLongitude = function(longitude) {
+    while (longitude < -180) {
+      longitude = longitude + 360;
+    }
+    while (longitude >= 180) {
+      longitude = longitude - 360;
+    }
+    return longitude;
+  };
+
+  /**
+   * Coordinates of a decoded Open Location Code.
+   *
+   * The coordinates include the latitude and longitude of the lower left and
+   * upper right corners and the center of the bounding box for the area the
+   * code represents.
+   * @param {number} latitudeLo
+   * @param {number} longitudeLo
+   * @param {number} latitudeHi
+   * @param {number} longitudeHi
+   * @param {number} codeLength
+   *
+   * @constructor
+   */
+  var CodeArea = OpenLocationCode.CodeArea = function(
+      latitudeLo, longitudeLo, latitudeHi, longitudeHi, codeLength) {
+    return new OpenLocationCode.CodeArea.fn.Init(
+        latitudeLo, longitudeLo, latitudeHi, longitudeHi, codeLength);
+  };
+  CodeArea.fn = CodeArea.prototype = {
+    Init: function(
+        latitudeLo, longitudeLo, latitudeHi, longitudeHi, codeLength) {
+      /**
+       * The latitude of the SW corner.
+       * @type {number}
+       */
+      this.latitudeLo = latitudeLo;
+      /**
+       * The longitude of the SW corner in degrees.
+       * @type {number}
+       */
+      this.longitudeLo = longitudeLo;
+      /**
+       * The latitude of the NE corner in degrees.
+       * @type {number}
+       */
+      this.latitudeHi = latitudeHi;
+      /**
+       * The longitude of the NE corner in degrees.
+       * @type {number}
+       */
+      this.longitudeHi = longitudeHi;
+      /**
+       * The number of digits in the code.
+       * @type {number}
+       */
+      this.codeLength = codeLength;
+      /**
+       * The latitude of the center in degrees.
+       * @type {number}
+       */
+      this.latitudeCenter = Math.min(
+          latitudeLo + (latitudeHi - latitudeLo) / 2, LATITUDE_MAX_);
+      /**
+       * The longitude of the center in degrees.
+       * @type {number}
+       */
+      this.longitudeCenter = Math.min(
+          longitudeLo + (longitudeHi - longitudeLo) / 2, LONGITUDE_MAX_);
+    },
+  };
+  CodeArea.fn.Init.prototype = CodeArea.fn;
+
+  return OpenLocationCode;
+}));
 </script><script>/* River Valley geographic reference adapter. WGS84 horizontal positions only.
    Existing terrain elevations/roof heights have NOT been vertically surveyed. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.ValleyGeoReference=api;})(typeof globalThis==='object'?globalThis:this,function(){
@@ -1024,7 +1744,7 @@ window.ValleyReference={"version":"1.8.0","imageDataUrl":"data:image/jpeg;base64
    p.leftKnee=Math.max(0,-wave)*amp*.6;p.rightKnee=Math.max(0,wave)*amp*.6;
    p.torso=state==='sprint'?.21:state==='run'?.12:.035;
    p.bodyY=Math.abs(wave)*(state==='sprint'?.18:.11);
-   p.pack=Math.sin(t*step*9)*.036;
+   p.pack=-wave*amp*.065;
   }else if(state==='idle'){
    p.torso=Math.sin(t*1.4)*.017;p.headTurn=Math.sin(t*.45)*.09;
    p.bodyY=Math.sin(t*1.5)*.045;p.pack=Math.sin(t*1.25)*.01;
@@ -1070,7 +1790,7 @@ window.ValleyReference={"version":"1.8.0","imageDataUrl":"data:image/jpeg;base64
   const cloth=mat(PROFILE.palette.fabric),pants=mat(0x313234),
    cargo=mat(0x3d3b37),skin=mat(PROFILE.palette.skin),hair=mat(PROFILE.palette.hair),
    boot=mat(PROFILE.palette.boots),trim=mat(PROFILE.palette.trim),
-   gold=mat(PROFILE.palette.gold,.32,.69),glass=mat(0x344953,.24,.12,{transparent:true,opacity:.83}),
+   gold=mat(PROFILE.palette.gold,.32,.69),glass=mat(0x344953,.24,.12,{transparent:true,opacity:.14}),
    dark=mat(0x151618),white=mat(0xd9d9d1,.87),pack=mat(PROFILE.palette.pack,.94);
   const shared=[cloth,pants,cargo,skin,hair,boot,trim,gold,glass,dark,white,pack];
   const geometry=[];
@@ -1091,7 +1811,7 @@ window.ValleyReference={"version":"1.8.0","imageDataUrl":"data:image/jpeg;base64
   }
   // Body, shirt seams and cargo belt. Animation pivots at the waist.
   joints.torso=group(root,'torso',0,7.5,0);
-  box(joints.torso,[5.2,5.5,2.65],cloth,'technical-shirt',[0,2.6,0],'black-shirt');
+  sphere(joints.torso,1,cloth,'technical-shirt',[0,2.6,0],'black-shirt').scale.set(2.85,3.28,1.57);
   box(joints.torso,[5.55,.43,2.84],dark,'belt',[0,-.34,0]);
   box(joints.torso,[1.1,.46,.7],trim,'belt-buckle',[0,-.36,-1.49]);
   for(const side of [-1,1]){
@@ -1119,21 +1839,29 @@ window.ValleyReference={"version":"1.8.0","imageDataUrl":"data:image/jpeg;base64
   sphere(joints.head,.26,white,'skull-nose',[0,-.40,-1.79]);
   for(let i=0;i<6;i++)box(joints.head,[.28,.48,.10],white,'gaiter-tooth',[(i-2.5)*.37,-1.12,-1.77]);
   for(const sign of [-1,1]){
-   box(joints.head,[1.34,.82,.16],dark,'eyeglass-frame',[sign*.78,.40,-1.73],'glasses');
+   const eye=sphere(joints.head,.4,white,'eye',[sign*.74,.42,-1.60]);
+   eye.scale.set(1,.57,.47);
+   sphere(joints.head,.18,hair,'iris',[sign*.74,.42,-1.78]);
+   for(const edge of [-1,1]){
+    box(joints.head,[1.35,.105,.14],dark,'eyeglass-frame',[sign*.78,.4+edge*.38,-1.88],'glasses');
+    box(joints.head,[.10,.76,.14],dark,'eyeglass-rim',[sign*.78+edge*.64,.4,-1.88]);
+   }
+   box(joints.head,[.95,.17,.17],hair,'brow',[sign*.75,.92,-1.49]).rotation.z=sign*.12;
    box(joints.head,[1.07,.61,.14],glass,'eyeglass-lens',[sign*.78,.40,-1.84]);
    box(joints.head,[.37,.16,1.05],dark,'eyeglass-arm',[sign*1.62,.43,-1.21]);
   }
   box(joints.head,[.39,.16,.2],dark,'eyeglass-bridge',[0,.43,-1.84]);
   // Instanced curls: one draw batch. The shape belongs to this *original* game model.
   const curlGeo=new THREE.IcosahedronGeometry(.48,1);geometry.push(curlGeo);
-  const curls=new THREE.InstancedMesh(curlGeo,hair,21);
+  sphere(joints.head,1.76,hair,'cropped-fade',[0,.68,.12]).scale.set(1,.66,1);
+  const curls=new THREE.InstancedMesh(curlGeo,hair,35);
   const dummy=new THREE.Object3D();
   let count=0;
-  for(let row=0;row<3;row++)for(let col=0;col<7;col++){
-   if(count>=21)break;
+  for(let row=0;row<5;row++)for(let col=0;col<7;col++){
+   
    const x=(col-3)*.54+Math.sin(row*2+col)*.11;
-   const y=1.54+Math.cos(col*.7+row)*.22+row*.10;
-   const z=-1.22+row*.71;
+   const y=1.54+Math.cos(col*.7+row)*.22+Math.sin(row*Math.PI/4)*.32;
+   const z=-1.22+row*.58;
    dummy.position.set(x,y,z);
    const sc=.72+.24*((col+row)%3)/2;
    dummy.scale.setScalar(sc);dummy.updateMatrix();curls.setMatrixAt(count++,dummy.matrix);
@@ -1892,6 +2620,10 @@ function update2d(){
 function syncView(){const is2d=view==='2d'||!renderer;atlas.style.display=is2d?'block':'none';canvas.style.display=is2d?'none':'block';}
 function resize(){syncView();if(renderer){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/Math.max(1,innerHeight);camera.updateProjectionMatrix();}if(view==='2d'||!renderer)update2d();}
 function updateHUD(){
+ if(GEOREF && window.OpenLocationCode){
+  const [lon,lat]=GEOREF.worldToLonLat(player.x,player.z);
+  $('locationCode').textContent='Approximate game location · '+OpenLocationCode.encode(lat,lon);
+ }
  $('pantrySummary').textContent=`🌽 ${save.inventory.corn} · 🐟 ${save.inventory.fish} · 🦌 ${save.inventory.game} · 🍲 ${save.inventory.meals}`;
  $('level').textContent=save.level;$('coins').textContent=save.coins.toLocaleString();$('stamps').textContent=save.completed.length+'/'+C.STOPS.length;
  $('clock').textContent=C.formatTime(time);$('weatherBadge').textContent=weather==='clear'?'☀️ Clear':weather==='rain'?'🌧️ Rain':'🌫️ Mist';
