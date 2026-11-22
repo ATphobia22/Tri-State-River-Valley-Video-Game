@@ -92,7 +92,7 @@ test('LOD planner can build all initial ground before gameplay sources register'
 });
 
 test('the intro visibly carries the shipped graphics version',()=>{
- assert.match(get('index.html'),/V1\.11\.0 · Free-camera/);
+ assert.match(get('index.html'),/V1\.12\.0 · Free-camera/);
 });
 
 test('user quality modes and offline caches preserve full standalone delivery',()=>{
@@ -112,6 +112,6 @@ test('user quality modes and offline caches preserve full standalone delivery',(
 
 
 test('public game launcher footer identifies the current release',()=>{
- assert.match(get('index.html'),/V1\.11\.0 ·/);
+ assert.match(get('index.html'),/V1\.12\.0 ·/);
  assert.doesNotMatch(get('index.html'),/V1\.7 ·/);
 });
