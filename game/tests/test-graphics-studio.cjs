@@ -109,3 +109,9 @@ test('user quality modes and offline caches preserve full standalone delivery',(
  assert.match(game,/BIOME\.create/);
  assert.match(game,/applyTerrainLOD\(true,true\)/);
 });
+
+
+test('public game launcher footer identifies the current release',()=>{
+ assert.match(get('index.html'),/V1\.8\.2 ·/);
+ assert.doesNotMatch(get('index.html'),/V1\.7 ·/);
+});
