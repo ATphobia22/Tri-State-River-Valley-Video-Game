@@ -3,6 +3,35 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.ValleyRiggedHero=api;})(typeof globalThis==='object'?globalThis:this,function(){
 'use strict';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+// The micro-weave is synthesized once per material with no external images,
+// preserving the fully standalone HTML / PWA distribution.
+function weaveTexture(THREE,name){
+ if(typeof document==='undefined'||!/\b(shirt|cargo|pocket|pack|strap|boots|gaiter)\b/.test(name))return null;
+ const canvas=document.createElement('canvas');canvas.width=canvas.height=96;
+ const ctx=canvas.getContext('2d');if(!ctx)return null;
+ ctx.fillStyle='#f1f0ec';ctx.fillRect(0,0,96,96);
+ const heavy=/cargo|pack|pocket|strap|boots/.test(name);
+ for(let y=0;y<96;y+=3){
+  for(let x=0;x<96;x+=3){
+   const n=(Math.imul(x+29,374761393)^Math.imul(y+17,668265263)^(heavy?7817:31337))>>>0;
+   ctx.fillStyle=(n&1)?'rgba(21,25,27,.062)':'rgba(255,255,255,.058)';
+   ctx.fillRect(x+(y%2),y,heavy?2:1,1);
+  }
+ }
+ // Readable reinforcements, not photo textures: subtle crossing ripstop yarns.
+ ctx.strokeStyle=heavy?'rgba(36,34,28,.15)':'rgba(32,36,38,.065)';
+ ctx.lineWidth=1;
+ const pitch=heavy?24:16;
+ for(let i=0;i<=96;i+=pitch){
+  ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,96);ctx.moveTo(0,i);ctx.lineTo(96,i);ctx.stroke();
+ }
+ const texture=new THREE.CanvasTexture(canvas);
+ texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
+ texture.colorSpace=THREE.SRGBColorSpace;
+ texture.generateMipmaps=true;texture.minFilter=THREE.LinearMipmapLinearFilter;
+ texture.anisotropy=2;texture.needsUpdate=true;
+ return texture;
+}
 function create(THREE,{seated=false,samplePose}={}){
  if(!THREE?.SkinnedMesh||!THREE?.Bone||!THREE?.Skeleton||typeof samplePose!=='function')throw Error('Skinned Three.js and pose sampler required');
  const global=typeof globalThis!=='undefined'?globalThis:{};
@@ -11,6 +40,9 @@ function create(THREE,{seated=false,samplePose}={}){
  const parsed=source.parseGLB(source.decodeBase64(base64)),doc=parsed.json;
  if(!doc.skins?.length||doc.skins[0].joints.length<15)throw Error('Expected an actual skinned humanoid GLB');
  const scene=new THREE.Group();scene.name='River Explorer / rigged GLB';scene.userData.heroId='river-explorer';scene.userData.asset='river_explorer_rigged.glb';
+ const plantLibrary=global.ValleyFootPlant||(typeof module==='object'&&module.exports?require('./foot-plant.js'):null);
+ if(!plantLibrary?.create)throw Error('Offline foot-contact solver must load before rigged hero');
+ const footContacts=plantLibrary.create();
  const skin=doc.skins[0],jointNodes=skin.joints;
  const bones=jointNodes.map(i=>{const data=doc.nodes[i],b=new THREE.Bone();b.name=data.name;b.position.fromArray(data.translation||[0,0,0]);return b;});
  const byNode=new Map(jointNodes.map((n,i)=>[n,bones[i]]));
@@ -23,7 +55,8 @@ function create(THREE,{seated=false,samplePose}={}){
  const meshDoc=doc.meshes[meshNode.mesh],meshes=[],materials=[];
  for(const spec of doc.materials||[]){
   const pbr=spec.pbrMetallicRoughness||{},c=pbr.baseColorFactor||[.5,.5,.5,1];
-  materials.push(new THREE.MeshStandardMaterial({name:spec.name,color:new THREE.Color().setRGB(c[0],c[1],c[2],THREE.LinearSRGBColorSpace),metalness:pbr.metallicFactor??0,roughness:pbr.roughnessFactor??.9,
+  const map=weaveTexture(THREE,spec.name);
+  materials.push(new THREE.MeshStandardMaterial({name:spec.name,color:new THREE.Color().setRGB(c[0],c[1],c[2],THREE.LinearSRGBColorSpace),metalness:pbr.metallicFactor??0,roughness:pbr.roughnessFactor??.9,map,
    transparent:spec.alphaMode==='BLEND',opacity:c[3],side:spec.doubleSided?THREE.DoubleSide:THREE.FrontSide,depthWrite:spec.alphaMode!=='BLEND'}));
  }
  for(const prim of meshDoc.primitives){
@@ -32,6 +65,11 @@ function create(THREE,{seated=false,samplePose}={}){
   const geo=new THREE.BufferGeometry();
   geo.setAttribute('position',new THREE.Float32BufferAttribute(pos.values,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(norm.values,3));
   geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(skinIDs.values,4));geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(weight.values,4));
+  if(Number.isInteger(prim.attributes.TEXCOORD_0)){
+   const uv=source.dataAccessor(parsed,prim.attributes.TEXCOORD_0);
+   if(uv.channels!==2||uv.count!==pos.count)throw Error('Invalid cloth UV0 accessor');
+   geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv.values,2));
+  }
   geo.setIndex(idx.values);geo.computeBoundingSphere();
   const mesh=new THREE.SkinnedMesh(geo,materials[prim.material]);mesh.name='River/PBR/'+doc.materials[prim.material].name;
   mesh.bind(skeleton);mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;scene.add(mesh);meshes.push(mesh);
@@ -50,21 +88,18 @@ function create(THREE,{seated=false,samplePose}={}){
   const left=side==='left',name=left?'Left':'Right',sign=left?-1:1;
   const hip=joints[name+'UpperLeg'],knee=joints[name+'LowerLeg'],foot=joints[name+'Foot'];
   const theta=2*Math.PI*t*(amplitude>.7?2.6:amplitude>.4?2.0:1.5)+(left?0:Math.PI);
-  const wave=Math.sin(theta),lift=Math.max(0,Math.cos(theta))*.66;
-  const step=amplitude*(amplitude>.7?1.35:1.07),stride=wave*step;
-  const localX=sign*1.35,localZ=-stride;
+  const wave=Math.sin(theta);
+  const step=amplitude*(amplitude>.7?1.35:1.07);
   const yaw=Number.isFinite(heading)?heading:root.rotation.y;
-  const worldX=root.position.x+Math.cos(yaw)*localX+Math.sin(yaw)*localZ;
-  const worldZ=root.position.z-Math.sin(yaw)*localX+Math.cos(yaw)*localZ;
-  const rawGround=typeof groundAt==='function'?groundAt(worldX,worldZ):root.position.y;
-  const floor=Number.isFinite(rawGround)?rawGround-root.position.y:0;
-  const targetY=clamp(floor,-.85,.85)+.24+(moving?lift:0);
-  const dy=6.27-targetY,dz=localZ,upper=3.25,lower=2.74,length=clamp(Math.hypot(dy,dz),.12,upper+lower-.035);
+  const contact=footContacts.step({side,phase:theta,root:root.position,heading:yaw,
+   localX:sign*1.35,localZ:-wave*step,moving,groundAt});
+  const targetY=clamp(contact.groundOffset,-.85,.85)+.24+contact.lift;
+  const dy=6.27-targetY,dz=contact.localZ,upper=3.25,lower=2.74,length=clamp(Math.hypot(dy,dz),.12,upper+lower-.035);
   const reach=Math.acos(clamp((upper*upper+length*length-lower*lower)/(2*upper*length),-1,1));
   const kneeBend=Math.PI-Math.acos(clamp((upper*upper+lower*lower-length*length)/(2*upper*lower),-1,1));
   const hipTilt=Math.atan2(-dz,dy)-reach,gain=1-Math.exp(-Math.min(.1,Math.max(0,dt))*15);
   hip.rotation.x+=(hipTilt-hip.rotation.x)*gain;knee.rotation.x+=(kneeBend-knee.rotation.x)*gain;
-  foot.rotation.x+=(-hip.rotation.x-knee.rotation.x-foot.rotation.x)*gain;
+  foot.rotation.x+=(-hip.rotation.x-knee.rotation.x+contact.pitch-foot.rotation.x)*gain;
  }
  function update({state='idle',stamp=0,dt=.016,groundAt=null,heading=null}={}){
   const t=Number.isFinite(stamp)?stamp/1000:0,pose=samplePose(state,t),gain=1-Math.exp(-clamp(dt,0,.15)*11);
@@ -87,6 +122,7 @@ function create(THREE,{seated=false,samplePose}={}){
   }
   if(moving||pose.state==='idle')for(const side of ['left','right'])footIK(side,{t,groundAt,heading,root:scene,dt,moving,amplitude:amp});
   else{
+   footContacts.reset();
    const legAngles=pose.state==='drive'?[1.08,1.08]:[pose.leftLeg||0,pose.rightLeg||0];
    for(const [i,side] of ['Left','Right'].entries()){
     const a=joints[side+'UpperLeg'],b=joints[side+'LowerLeg'],f=joints[side+'Foot'];
@@ -100,8 +136,8 @@ function create(THREE,{seated=false,samplePose}={}){
   currentState=pose.state;lastPose=pose;return {state:currentState,pose};
  }
  if(seated)update({state:'drive',stamp:100,dt:.5});
- function dispose(){for(const m of meshes){m.geometry.dispose();m.parent?.remove(m)}for(const g of propsGeo)g.dispose();for(const m of materials)m.dispose();for(const p of Object.values(props))p.parent?.remove(p);scene.clear();}
- return {root:scene,joints,props,meshes,skinned:true,clips:(doc.animations||[]).map(a=>a.name),update,dispose,features:['curly-hair','glasses','skull-gaiter','black-shirt','gold-chain','cargo-pants','adventure-boots','backpack'],get state(){return currentState},get pose(){return lastPose}};
+ function dispose(){footContacts.reset();for(const m of meshes){m.geometry.dispose();m.parent?.remove(m)}for(const g of propsGeo)g.dispose();for(const m of materials){m.map?.dispose();m.dispose();}for(const p of Object.values(props))p.parent?.remove(p);scene.clear();}
+ return {root:scene,joints,props,meshes,skinned:true,get footContacts(){return footContacts.snapshot()},clips:(doc.animations||[]).map(a=>a.name),update,dispose,features:['curly-hair','glasses','skull-gaiter','black-shirt','gold-chain','cargo-pants','adventure-boots','backpack'],get state(){return currentState},get pose(){return lastPose}};
 }
 return Object.freeze({create});
 });
