@@ -26,3 +26,14 @@ test('website and service worker integrate the offline Family + Friends referenc
  assert.ok(html.indexOf('src/family-cast.js')<html.indexOf('src/game.js'));
  assert.match(worker,/\.\/src\/family-cast\.js/);
 });
+
+test('all ten original user-supplied references are displayed from an embedded offline JPEG sprite',()=>{
+ const source=fs.readFileSync(path.join(root,'src/family-cast.js'),'utf8');
+ const match=source.match(/const DEFAULT_SPRITE='data:image\/jpeg;base64,([^']+)'/);
+ assert.ok(match,'Photo reference sprite is missing from offline runtime');
+ const jpeg=Buffer.from(match[1],'base64');
+ assert.ok(jpeg.length>10000&&jpeg.length<45000);
+ assert.equal(jpeg[0],0xff);assert.equal(jpeg[1],0xd8);
+ assert.equal(jpeg[jpeg.length-2],0xff);assert.equal(jpeg[jpeg.length-1],0xd9);
+ assert.ok(!source.includes('https://'),'Gallery must not fetch remote source photos');
+});
