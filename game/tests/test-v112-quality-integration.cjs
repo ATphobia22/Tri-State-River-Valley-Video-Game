@@ -12,11 +12,12 @@ test('v1.12 site loads the offline graphics modules before its game runtime',()=
  assert.match(html,/id="graphicsQualityStatus"/);
  assert.match(html,/V1\.13\.0/);
 });
-test('deployed v1.12 app keeps its offline worker and version synchronized',()=>{
+test('retired hosted worker does not intercept requests or re-register',()=>{
  const index=read('index.html'),worker=read('game-sw.js'),build=read('build_hosted.py');
  assert.match(index,/V1\.13\.0/);
- assert.match(worker,/rva-game-1\.13\.0/);
- assert.match(build,/rva-game-1\.13\.0/);
+ assert.match(worker,/registration\.unregister\(\)/);
+ assert.doesNotMatch(worker,/addEventListener\(['"]fetch['"]/);
+ assert.doesNotMatch(build,/serviceWorker\.register\(/);
 });
 test('game uses instanced meadow, terrain re-anchoring and its retained local rig',()=>{
  const source=read('src/game.js');
