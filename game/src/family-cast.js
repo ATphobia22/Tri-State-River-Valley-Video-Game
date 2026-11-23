@@ -47,7 +47,7 @@ function writePhoto(id,blob){if(!byId(id))return Promise.reject(Error('Unknown f
 function removePhoto(id){if(!byId(id))return Promise.reject(Error('Unknown figure'));return transaction('readwrite',st=>st.delete(id));}
 function install(){
  const doc=root.document;if(!doc)return null;
- const panel=doc.getElementById('familyCastPanel'),open=doc.getElementById('familyCastOpen'),close=doc.getElementById('familyCastClose'),grid=doc.getElementById('familyCastGrid'),status=doc.getElementById('familyCastStatus');
+ const panel=doc.getElementById('familyCastPanel'),open=doc.getElementById('familyCastOpen'),close=doc.getElementById('familyCastClose'),grid=doc.getElementById('familyCastGrid'),status=doc.getElementById('familyCastStatus'),original=doc.getElementById('familyCastOriginal');
  if(!panel||!open||!close||!grid||!status)return null;
  const urls=new Map();
  function release(){for(const url of urls.values())URL.revokeObjectURL(url);urls.clear();}
@@ -76,8 +76,9 @@ function install(){
     figure.replaceChildren(img);status.textContent='Saved '+ref.name+' reference photograph locally for offline viewing.';
    }catch(error){status.textContent='Photo not stored: '+String(error.message);}
   });
+  let play=null;
   if(ref.kind==='figure'){
-   const play=doc.createElement('button');play.type='button';play.className='castPrototypeSelect';play.textContent='Play stylized 3D prototype';play.setAttribute('aria-label','Play stylized three-dimensional prototype based on '+ref.name);
+   play=doc.createElement('button');play.type='button';play.className='castPrototypeSelect';play.textContent='Play stylized 3D prototype';play.setAttribute('aria-label','Play stylized three-dimensional prototype based on '+ref.name);
    play.addEventListener('click',()=>{
     const wardrobe=root.ValleyCastWardrobe;
     if(!wardrobe?.STYLE?.[ref.id]){status.textContent='Prototype wardrobe assets unavailable; original hero preserved.';return;}
@@ -85,9 +86,10 @@ function install(){
     root.ValleyCastBridge?.applySelection?.();
     status.textContent='Selected '+ref.name+' wardrobe prototype for gameplay. This is a generic 27-joint avatar with inspired clothing, not an exact 3D likeness.';
    });
-   card.append(play);
   }
-  card.append(figure,label,title,description,note,input,remove);
+  card.append(figure,label,title,description,note);
+  if(play)card.append(play);
+  card.append(input,remove);
   return {card,figure,placeholder};
  }
  async function show(){
@@ -106,6 +108,11 @@ function install(){
  }
  function hide(){panel.hidden=true;open.setAttribute('aria-expanded','false');release();open.focus();}
  open.addEventListener('click',show);close.addEventListener('click',hide);
+ original?.addEventListener('click',()=>{
+  root.ValleyCastWardrobe?.saveSelection?.(null);
+  root.ValleyCastBridge?.applySelection?.();
+  status.textContent='Original rigged River Explorer selected again; the family references remain available.';
+ });
  doc.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)hide();});
  return Object.freeze({show,hide,get open(){return !panel.hidden;}});
 }
