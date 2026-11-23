@@ -1171,7 +1171,7 @@ function showWorldActivity(){
   actions=[['plot',pick.action==='harvest'?'🌽 Harvest ready crop':pick.action==='plant'?'🌱 Plant next plot (15 coins)':'🌿 Check crops'],['water','💧 Water (20 coins)']];
  }
  if(id==='cook'){text='Cook beside the animated campfire in your world. Gather fish and corn first; meals are saved.';actions=Object.entries(C.RECIPES).map(([id,r])=>[id,r.title+' · '+r.coins+' coins',!Object.entries(r.ingredients).every(([k,n])=>save.inventory[k]>=n)]);}
- $('worldActivityText').textContent=text;$('worldAimLabel').hidden=!aim;
+ $('worldActivityText').textContent=text+' Controls: E/Space or gamepad X/A to act; Q/R, gamepad LB/RB or touch slider to aim. Farm: number keys 1–9 select plots.';$('worldAimLabel').hidden=!aim;
  $('worldAimTitle').textContent=id==='fish'?'Line tension — match the moving target':'Track wildlife — align the marker';
  const plots=id==='farm'?'<div class="worldFarmGrid" role="group" aria-label="Select any field">'+save.farmPlots.map((t,i)=>
   `<button class="farmPlotButton" data-worldaction="plot-${i}" aria-label="Field ${i+1}">${t===0?'🌱':t>Date.now()?'🌿':'🌽'} Plot ${i+1}</button>`).join('')+'</div>':'';
@@ -1560,6 +1560,8 @@ function bindUI(){
   }
   if(e.target.matches('input,select,textarea'))return;
   if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();keys.add(k);
+  // One gameplay action per real keypress; held keys still drive continuous movement.
+  if(e.repeat&&(k==='e'||k===' '))return;
   if(!started)return;
   if(k==='v'){heroInspection?closeHeroStudio():openHeroStudio();return;}
   if(heroInspection){if(k==='escape')closeHeroStudio();return;}
