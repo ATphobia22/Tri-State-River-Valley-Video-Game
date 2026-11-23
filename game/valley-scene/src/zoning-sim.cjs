@@ -156,7 +156,11 @@ function create({features,scenarioMode=false,environment={}}={}){
     !Number.isInteger(record.building_level)||record.building_level<0||record.building_level>5)continue;
    const p=state.get(id);
    p.zone=record.zone;p.built=record.built;p.building_level=p.built?Math.max(1,record.building_level):0;
-   p.abandoned=p.built&&record.abandoned;p.households=p.abandoned?0:Math.min(p.households,capacity(p));
+   p.abandoned=p.built&&record.abandoned;
+   // Gameplay growth occupancy can be reconstructed from the sparse built/level
+   // diff. Never infer households for pre-existing real-world footprints.
+   const isNewGameBuilding=p.built&&!source.get(id).built;
+   p.households=p.abandoned?0:isNewGameBuilding?capacity(p):Math.min(p.households,capacity(p));
    p.highWeeks=0;p.lowWeeks=0;
   }
   weekNow=Math.max(0,Math.min(1_000_000,Math.floor(finite(data.week))));
