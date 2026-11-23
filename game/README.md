@@ -1,3 +1,5 @@
+**Blender rig-to-offline PBR pipeline**: [baking, strict GLB validation, direct binary decoding and bone-mounted props](docs/BLENDER_OFFLINE_PBR_RIG_PIPELINE_20261123.md). Actual v2 Blender source meshes and deformed clip-frame tests are still required; the live 27-joint rig is deliberately preserved.
+
 # River Valley — Game Architecture and Release Guide
 
 [**Courthouse mesh and character source gate**](docs/POSEY_COURTHOUSE_AND_CHARACTER_SOURCE_GATE_20261123.md) · [**2025 Posey aerial source audit**](docs/MOUNT_VERNON_2025_LEAFON.md) · [**Play the game**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Repository overview](../README.md) · [Offline HTML download](River_Valley_Family_Adventure_OFFLINE.html) · [**Mount Vernon map links**](docs/MOUNT_VERNON_47620_MAP_LINKS.md) · [GitHub Actions](../.github/workflows/game-ci.yml)

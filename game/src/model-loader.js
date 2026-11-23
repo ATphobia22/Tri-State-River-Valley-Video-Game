@@ -26,7 +26,20 @@ function dataAccessor(p,i){
  for(let j=0;j<count;j++)for(let c=0;c<channels;c++)list[j*channels+c]=get(start+j*step+c*bits);
  return {values:list,channels,componentType:a.componentType,count};
 }
-function decodeBase64(b64){const raw=atob(b64),bytes=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);return bytes.buffer;}
+// Decode bounded 32KiB Base64 windows directly into an ArrayBuffer. Avoid
+// allocating a second full-length binary-string copy on iPhone Safari.
+function decodeBase64(b64){
+ if(typeof b64!=='string'||b64.length%4!==0)throw Error('Invalid base64 GLB payload');
+ const pad=b64.endsWith('==')?2:b64.endsWith('=')?1:0;
+ const bytes=new Uint8Array(b64.length/4*3-pad);
+ let offset=0;
+ for(let i=0;i<b64.length;i+=32768){
+  const chunk=atob(b64.slice(i,Math.min(b64.length,i+32768)));
+  for(let j=0;j<chunk.length;j++)bytes[offset++]=chunk.charCodeAt(j);
+ }
+ if(offset!==bytes.length)throw Error('Malformed base64 GLB payload');
+ return bytes.buffer;
+}
 function makeModel(three,b64){const file=parseGLB(decodeBase64(b64)),doc=file.json,meshes=doc.meshes.map(mesh=>{
   const group=new three.Group();
   for(const prim of mesh.primitives){if((prim.mode??4)!==4||!Number.isInteger(prim.attributes.POSITION))throw Error('Unsupported mesh primitive');
