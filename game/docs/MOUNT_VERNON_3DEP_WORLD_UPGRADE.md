@@ -18,7 +18,7 @@ Use the repository workflow at .github/workflows/mount-vernon-3dep.yml or, from 
     python -m unittest discover -s game/tests -p test_3dep_terrain_python.py -v
     npm --prefix game run build
 
-Only label the 3DEP terrain shipped when the generated JS contains schemaVersion 1 with a USGS source receipt, and when both source import and the exact game's Actions/Pages release pass. The current null placeholder does not constitute a downloaded USGS raster.
+**Acquisition verified:** GitHub Actions source run [45112496800](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/actions/runs/45112496800) downloaded the USGS F32 source, validated the actual raster extent, produced a 256 × 256 grid in `data/usgs-3dep-terrain.js`, wrote `reference/mount-vernon/usgs-3dep-receipt.json` with source TIFF SHA-256 `514f4658667aba4e85b644c6a0e64a644641bf6ef5d1ee13aeb53d86b05ecc2b`, rebuilt offline/hosted HTML and committed them to the feature branch. The old null placeholder was replaced. **Release qualification is separate:** only describe it as publicly deployed after main CI and the Pages deployment pass on the merged exact commit.
 
 ## Screenshots and imported character assets
 
