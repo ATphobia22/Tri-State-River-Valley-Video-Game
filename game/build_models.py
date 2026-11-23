@@ -7,7 +7,7 @@ V={
   'barn':{'red':(170,62,53),'roof':(64,63,62),'wood':(212,163,105),'glass':(174,218,221),'metal':(110,124,122),'gold':(224,174,84)},
   'riverboat':{'red':(173,57,48),'roof':(70,91,96),'wood':(168,121,79),'glass':(124,205,218),'metal':(230,228,204),'gold':(231,174,74)},
   'fishing_pier':{'red':(168,90,54),'roof':(86,76,62),'wood':(149,104,71),'glass':(118,200,221),'metal':(96,107,91),'gold':(231,190,101)},
-  'courthouse':{'red':(144,88,67),'roof':(68,76,88),'wood':(211,186,144),'glass':(137,189,206),'metal':(231,217,173),'gold':(228,186,92)},
+  'courthouse':{'red':(139,61,49),'roof':(62,71,76),'wood':(219,210,190),'glass':(65,111,127),'metal':(236,235,222),'gold':(192,150,86)},
   'oak_cottage':{'red':(162,88,65),'roof':(95,78,66),'wood':(177,126,86),'glass':(153,199,211),'metal':(108,101,85),'gold':(246,215,128)}
 }
 class Model:
@@ -47,10 +47,14 @@ def pier():
  for x in (-18,18):m.box((12,1.5,1.7),(x,3.3,25),'gold')
  return m.export()
 def courthouse():
- m=Model('courthouse');m.box((50,25,40),(0,13,0),'red');m.box((56,2,45),(0,26,0),'wood');m.box((45,15,32),(0,34,0),'metal');m.cone(22,12,(0,48,0),'roof',sections=4,rotate=(0,0,0))
- for x in (-18,-9,0,9,18):
-  m.box((4.5,9,.6),(x,12,-20.3),'glass');m.box((3,16,3),(x,8,-24),'wood')
- m.box((8,15,1),(0,8,-24.6),'roof');return m.export()
+ # Original geometry, author-reconstructed using National Register façade descriptions.
+ # All heights are artistic; the GIS polygon is authoritative only horizontally.
+ from tools.posey_courthouse_mesh import assemble
+ m=Model('courthouse')
+ source=assemble(m)
+ result=m.export()
+ result['architecturalProvenance']=source
+ return result
 def cottage():
  m=Model('oak_cottage');m.box((27,18,22),(0,9,0),'wood');m.box((32,3,28),(-5,22,0),'roof',rotate=(0,0,.48));m.box((32,3,28),(5,22,0),'roof',rotate=(0,0,-.48));m.box((6,11,.5),(0,5,-11.3),'red');m.box((7,6,.5),(-8,11,-11.3),'glass');m.box((7,6,.5),(8,11,-11.3),'glass');m.box((4,16,4),(8,24,1),'red');m.box((27,1,11),(0,1,-16),'wood');return m.export()
 models=[barn(),riverboat(),pier(),courthouse(),cottage()]
