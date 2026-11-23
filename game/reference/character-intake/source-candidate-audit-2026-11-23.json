@@ -1,5 +1,4 @@
 {
-  "auditedUTC": "2026-11-23T05:55:00Z",
   "inputOrigin": "user-provided ChatGPT file library exports / rig prototype pack",
   "scope": "actual glTF 2.0 GLB metadata and resource inspection, not visual geometry QA",
   "candidates": [
@@ -109,5 +108,6 @@
     "UV unwrap, normal/roughness/albedo atlas",
     "character LOD budget and actual pose stress tests",
     "rendered headed browser plus physical iPhone"
-  ]
+  ],
+  "auditDateUTC": "2026-11-23"
 }
