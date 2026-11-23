@@ -12,6 +12,7 @@ test('partially valid 2025 aerial never claims the entire geographic rectangle',
  assert.match(game,/leafonImage/);
  assert.match(game,/referenceImage/);
  assert.match(game,/clearAerialDrape/);
+ assert.match(game,/leafOn2025:\\{bundled:/);
  assert.match(game,/uncovered portions retain the older image/);
 });
 test('standalone source does not request a runtime imaging endpoint',()=>{
