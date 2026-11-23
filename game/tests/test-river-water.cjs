@@ -24,7 +24,7 @@ test('quality tiers reduce high-frequency river detail for mobile',()=>{
 });
 
 test('weather and sun uniforms are deterministic and bounded',()=>{
- assert.deepEqual(water.parameters('rain',6,'lite'),{storm:1,daylight:0,detail:0});
+ assert.deepEqual(water.parameters('rain',6,'lite'),{storm:1,daylight:0,detail:0,wind:0});
  assert.equal(water.parameters('mist',12,'medium').storm,.45);
  assert.ok(water.parameters('sun',12,'high').daylight<=1);
 });

@@ -59,7 +59,7 @@ test('game bundles original 3D dressing before it creates the playable world',()
  assert.ok(html.indexOf('src/cinematic-dressing.js')<html.indexOf('src/game.js'));
  assert.ok(game.includes('DRESS.create(G,scene,height'));
  assert.ok(game.includes('cinematicDressing.update(time,weather,cinemaPrefs.quality)'));
- assert.ok(game.includes('facadePalette.setWeather(weather)'));
+ assert.ok(game.includes('facadePalette.setWeather(weather,roadMesh?.material)'));
  assert.ok(read('src/visual-polish.js').includes('roughness=wet'));
  assert.ok(camera.includes('allowShadows'));
 });

@@ -35,10 +35,51 @@ function makeGrassGeometry(T){
  ],3));
  g.setIndex([0,1,2,1,3,2,4,5,6,5,7,6]);g.computeVertexNormals();return g;
 }
+function windStrength(quality,weather){
+ const base=normalize(quality)==='lite'?0:normalize(quality)==='cinematic'?.86:.49;
+ // Stormier weather flexes meadow blades, but mist should remain nearly still.
+ return base*(weather==='rain'?1.35:weather==='mist'?.5:1);
+}
+function attachWindSway(material){
+ if(!material)return material;
+ material.userData=material.userData||{};
+ if(material.userData.riverWindAttached)return material;
+ material.userData.riverWindAttached=true;
+ material.userData.uWindTime={value:0};
+ material.userData.uWindStrength={value:0};
+ const original=material.onBeforeCompile;
+ material.onBeforeCompile=function(shader,...args){
+  if(typeof original==='function')original.call(this,shader,...args);
+  shader.uniforms.uWindTime=material.userData.uWindTime;
+  shader.uniforms.uWindStrength=material.userData.uWindStrength;
+  shader.vertexShader=shader.vertexShader
+    .replace('#include <common>','#include <common>\nuniform float uWindTime;\nuniform float uWindStrength;')
+    .replace('#include <begin_vertex>',[
+      '#include <begin_vertex>',
+      'vec2 windOrigin = vec2(0.0);',
+      '#ifdef USE_INSTANCING',
+      'windOrigin = instanceMatrix[3].xz;',
+      '#endif',
+      'float windHeight = max(0.0, transformed.y);',
+      'float windPhase = uWindTime*1.63 + windOrigin.x*0.009 + windOrigin.y*0.013;',
+      'transformed.x += sin(windPhase)*uWindStrength*windHeight*0.13;',
+      'transformed.z += cos(windPhase*0.83)*uWindStrength*windHeight*0.08;'
+    ].join('\n'));
+ };
+ material.needsUpdate=true;
+ return material;
+}
+function animateWind(material,stamp,quality,weather){
+ if(!material?.userData?.riverWindAttached)return false;
+ material.userData.uWindTime.value=Math.max(0,Number.isFinite(stamp)?stamp:0)/1000;
+ material.userData.uWindStrength.value=windStrength(quality,weather);
+ return true;
+}
 function create(T,scene,ground,{limit=2400,stops=[],inRiver=()=>false,mobile=false}={}){
  if(!T||!scene||typeof ground!=='function')throw Error('Three.js scene and terrain sampler required');
  const capacity=budget('cinematic',mobile).grass,geom=makeGrassGeometry(T);
  const material=new T.MeshLambertMaterial({color:0xffffff,side:T.DoubleSide,roughness:1});
+ attachWindSway(material);
  const mesh=new T.InstancedMesh(geom,material,capacity);mesh.count=0;mesh.name='River/budgeted-instanced-meadow';scene.add(mesh);
  const dummy=new T.Object3D(),color=new T.Color();
  let state={x:Infinity,z:Infinity,quality:'',season:'',count:0},rebuilds=0;
@@ -56,9 +97,10 @@ function create(T,scene,ground,{limit=2400,stops=[],inRiver=()=>false,mobile=fal
   mesh.count=count;if(count){mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;mesh.computeBoundingSphere();}
   state={x,z,quality,season,count};rebuilds++;return count;
  }
- function snapshot(){return {instances:state.count,capacity,quality:state.quality,rebuilds};}
+ function tick(stamp,quality='full',weather='clear'){return animateWind(material,stamp,quality,weather);}
+ function snapshot(){return {instances:state.count,capacity,quality:state.quality,rebuilds,wind:material.userData.uWindStrength.value};}
  function dispose(){scene.remove(mesh);geom.dispose();material.dispose();}
- return Object.freeze({mesh,update,snapshot,dispose});
+ return Object.freeze({mesh,update,tick,snapshot,dispose});
 }
-return Object.freeze({PRESETS,normalize,budget,hash,grassDescriptors,makeGrassGeometry,create});
+return Object.freeze({PRESETS,normalize,budget,hash,grassDescriptors,makeGrassGeometry,windStrength,attachWindSway,animateWind,create});
 });
