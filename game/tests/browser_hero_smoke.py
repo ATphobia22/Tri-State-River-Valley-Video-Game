@@ -189,7 +189,10 @@ def inspect(page, *, mobile: bool):
     )
     assert state()["heroSkinned"] is True, "Family prototype destroyed the animation rig"
     assert state()["heroBoneCount"] == 27
-    page.screenshot(path=str(OUT / f"{prefix}-pete-yeida-prototype-selection.png"))
+    page.locator("#familyCastClose").click(timeout=12_000)
+    page.wait_for_timeout(200)
+    page.screenshot(path=str(OUT / f"{prefix}-pete-yeida-prototype-in-game.png"))
+    page.locator("#familyCastOpen").click(timeout=12_000)
     page.locator("#familyCastOriginal").click(timeout=12_000)
     page.wait_for_function(
         "() => window.RiverValleyDebug.getState().castPrototypeId === null",
