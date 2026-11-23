@@ -54,7 +54,7 @@ const ACCESS=window.ValleyLandmarkAccess;
 const CUSTOM_HERO=window.ValleyCustomHero,CAST_WARDROBE=window.ValleyCastWardrobe;
 const UX=window.ValleyPlayerExperience;
 let playerPreferences=null,paused=false,pauseReturnFocus=null,accumulatedPauseMs=0,pauseBeganAt=0;
-let gamepadInput={connected:false,x:0,z:0,sprint:false,jump:false,interact:false,map:false,pause:false,back:false};
+let gamepadInput={connected:false,x:0,z:0,lookX:0,lookY:0,aimLeft:false,aimRight:false,sprint:false,jump:false,interact:false,map:false,pause:false,back:false};
 const HERO=window.ValleyHero;let heroController=null,driverController=null,heroOneShot=null,heroOneShotUntil=0,heroState='idle';const STAGE=window.ValleyHeroStage;let heroPreviewStage=null;let heroInspection=false,heroPreviewPose='idle',previousHeroCamera=null;
 let facadePalette=null,grassLayer=null,groundPlacementDirty=false,lastVegetationTime=0,terrainTransition=null,retiringTerrain=null;
 
@@ -1048,6 +1048,7 @@ function pollGamepad(){
  if(paused){if(rising('back'))setPaused(false);return;}
  if(heroInspection||activity)return;
  if(rising('interact')&&!worldPrimaryAction())interact();
+ if(rising('jump')&&worldActive)worldPrimaryAction();
  if(rising('map')&&!backdropOpen)toggleMap();
 }
 function play(resume){paused=false;accumulatedPauseMs=0;pauseBeganAt=0;
@@ -1142,6 +1143,11 @@ function worldAction(action){
   if(C.RECIPES[action]){r=C.cookRecipe(save,action);save=r.save;worldStatus=r.result==='cooked'?`🍲 ${C.RECIPES[action].title} is ready! Added to your saved pantry.`:'You need more ingredients. Fish and farm in the world first.';if(r.result==='cooked')audioChime();}
  }
  showWorldActivity();updateHUD();persist();
+}
+function adjustWorldAim(delta){
+ if(!worldActive||!Number.isFinite(delta))return;
+ worldAim=C.clamp(worldAim+delta,0,1);
+ $('worldAim').value=String(Math.round(worldAim*100));
 }
 function worldPrimaryAction(){if(!worldActive)return false;
  if(worldActive==='hunt')worldAction(worldHuntRound?'shoot':'track');
@@ -1284,6 +1290,14 @@ function update(dt,stamp){
  if(heroInspection||activity){motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;currentTravelSpeed=0;return;}
  currentTravelSpeed=0;
  if(touring){motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;stepTour(dt);}else{
+  // Standard gamepad right stick is camera look; shoulder buttons control
+  // the shared targeting/tension slider during real 3D activities.
+  if(gamepadInput.connected){
+   cameraYaw-=gamepadInput.lookX*dt*2.1;
+   if(!worldActive)cameraDist=C.clamp(cameraDist+gamepadInput.lookY*dt*50,42,310);
+   if(worldActive&&gamepadInput.aimLeft!==gamepadInput.aimRight)
+    adjustWorldAim((gamepadInput.aimRight?1:-1)*dt*.63);
+  }
   let x=0,z=0;
   if(keys.has('w')||keys.has('arrowup')||keys.has('up'))z-=1;
   if(keys.has('s')||keys.has('arrowdown')||keys.has('down'))z+=1;
@@ -1550,6 +1564,8 @@ function bindUI(){
   if(k==='v'){heroInspection?closeHeroStudio():openHeroStudio();return;}
   if(heroInspection){if(k==='escape')closeHeroStudio();return;}
   if(k==='e'||k===' '){if(!activity&&!worldPrimaryAction())interact();}
+   if(worldActive&&(k==='q'||k==='r'))adjustWorldAim(k==='q'?-.055:.055);
+   if(worldActive==='farm'&&/^[1-9]$/.test(k))worldAction('plot-'+(Number(k)-1));
   // J / mobile JUMP is sampled in the kinematic step and never auto-repeats.
  if(k==='b')openScout();if(k==='n')openCounty();if(k==='h')openWorldActivity('hunt');if(k==='f')openWorldActivity('fish');if(k==='g')openWorldActivity('farm');if(k==='k')openWorldActivity('cook');if(k==='m'&&!activity&&!backdropOpen)toggleMap();if(k==='p')screenshot();if(k==='c'&&!activity){$('cinemaPanel').classList.contains('open')?closeCinema():openCinema();}if(k==='escape'){if(!$('countyPanel').hidden){closeCounty();return;}if(!$('scoutPanel').hidden){$('scoutPanel').hidden=true;return;}if(worldActive)closeWorldActivity();else if(backdropOpen)closeBackdrop();else if(activity)closeActivity();else if($('cinemaPanel').classList.contains('open'))closeCinema();else if($('panel').classList.contains('open'))$('panel').classList.remove('open');else setPaused(true);}
  });document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;});
