@@ -76,6 +76,17 @@ function install(){
     figure.replaceChildren(img);status.textContent='Saved '+ref.name+' reference photograph locally for offline viewing.';
    }catch(error){status.textContent='Photo not stored: '+String(error.message);}
   });
+  if(ref.kind==='figure'){
+   const play=doc.createElement('button');play.type='button';play.className='castPrototypeSelect';play.textContent='Play stylized 3D prototype';play.setAttribute('aria-label','Play stylized three-dimensional prototype based on '+ref.name);
+   play.addEventListener('click',()=>{
+    const wardrobe=root.ValleyCastWardrobe;
+    if(!wardrobe?.STYLE?.[ref.id]){status.textContent='Prototype wardrobe assets unavailable; original hero preserved.';return;}
+    wardrobe.saveSelection(ref.id);
+    root.ValleyCastBridge?.applySelection?.();
+    status.textContent='Selected '+ref.name+' wardrobe prototype for gameplay. This is a generic 27-joint avatar with inspired clothing, not an exact 3D likeness.';
+   });
+   card.append(play);
+  }
   card.append(figure,label,title,description,note,input,remove);
   return {card,figure,placeholder};
  }
