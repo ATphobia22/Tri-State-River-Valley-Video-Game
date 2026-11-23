@@ -91,6 +91,13 @@ body.ux-reduced-motion *,body.ux-reduced-motion *::before,body.ux-reduced-motion
 #touchControls .dpad button{min-width:52px;min-height:52px}
 #touchControls .touchAction{min-width:60px;min-height:56px}
 @media(max-width:780px){#pauseToggle{position:fixed;top:max(8px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));z-index:22;padding:7px 11px;min-height:44px}#pauseOverlay fieldset{grid-template-columns:minmax(0,1fr)}#pauseOverlay .pauseCard{max-height:calc(100dvh - 16px)}#controlsHelp{display:none}}
+
+/* Accessible native in-world plots and mobile-size actions. */
+#worldActionButtons .worldFarmGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:9px;width:100%}
+#worldActionButtons .worldFarmGrid button{font-size:12px;padding:10px 5px;min-width:0;touch-action:manipulation}
+#worldActivityHud #worldAim{width:100%;accent-color:#f2c476;min-height:34px;cursor:pointer}
+#worldActivityMeter{font-variant-numeric:tabular-nums}
+@media(max-width:760px){#worldActivityHud{max-height:62dvh;overflow-y:auto}#worldActionButtons .worldFarmGrid button{padding:12px 4px}}
 </style></head><body>
 <canvas aria-label="Interactive 3D family adventure game" id="world" tabindex="-1"></canvas><canvas aria-label="Interactive illustrated 2D family adventure map" id="atlas"></canvas><div id="vignette"></div><canvas aria-hidden="true" id="cinemaFX"></canvas><div id="rain"></div>
 <div class="hud" id="top"><div class="brand glass"><span class="sig">🏞️</span><div><small>FAMILY EDITION</small><b>River Valley Adventure</b></div></div><div class="glass" id="hudStats"><span>⭐ <b id="level">1</b></span><span class="gold">🪙 <b id="coins">0</b></span><span>🧭 <b id="stamps">0/6</b></span><span class="hideMobile" id="pantrySummary">🌽 0 · 🐟 0 · 🦌 0 · 🍲 0</span><span class="hideMobile">🕔 <b id="clock">5:30 PM</b></span><span class="hideMobile" id="weatherBadge">☀️ Clear</span></div><button aria-controls="pauseOverlay" aria-expanded="false" aria-label="Pause game" id="pauseToggle" type="button">Ⅱ Pause</button></div>
@@ -120,7 +127,7 @@ body.ux-reduced-motion *,body.ux-reduced-motion *::before,body.ux-reduced-motion
 <div class="countyActions"><button data-scout="pet">💛 Pet Scout</button><button data-scout="fetch">🦴 Fetch</button><button data-scout="sit">🐾 Sit</button><button data-scout="come">📣 Come</button></div>
 <small>Scout follows your adventures; petting and completing fetch earn a small bonding reward with cooldowns.</small>
 </section>
-<section aria-label="Cinematic director" aria-modal="false" class="hud glass" id="cinemaPanel" role="dialog"><div class="cinemaHeading"><div><small class="eyebrow">VFX SUPERVISOR DESK</small><h2>Cinematic Director</h2></div><button aria-label="Close cinematic director" class="closeX" id="closeCinema">×</button></div><p>Choose a lighting look, layer atmospheric effects, and balance the device's performance.</p><div class="field"><label for="cineLook">Virtual environment / lighting look</label><select id="cineLook"><option value="natural">Natural Countryside</option><option value="golden">Golden Hour Riverfront</option><option value="blue">Blue Hour Reflections</option><option value="storm">Stormfront Over the Ohio</option><option value="lantern">Lanterns &amp; Fireflies</option></select></div><div class="field"><label for="cineQuality">Cinematic effect budget</label><select id="cineQuality"><option value="lite">Battery Saver · 16 effects</option><option value="balanced">Balanced · 55 effects</option><option value="cinematic">Showcase · 110 effects</option></select></div><div class="field"><label for="cineStrength">Atmosphere intensity <b id="cineStrengthLabel">72%</b></label><input id="cineStrength" max="100" min="0" step="1" type="range" value="72"/></div><div class="cinemaChecks"><label><input id="cineGrain" type="checkbox"/> Fine film grain (showcase)</label><label><input id="cineStats" type="checkbox"/> Live FPS and draw calls</label></div><div class="cinemaButtons"><button id="cineGolden">🌅 Sunset shot</button><button id="cineNight">✨ Night shot</button><button id="cineReset">↻ Reset grade</button><button id="openStage">🌄 Open scenic backdrop studio</button></div><p class="cinemaNote">Effects run in 2D even when 3D GPU graphics are unavailable. No cloud rendering or personal data is uploaded.</p></section>
+<section aria-label="Cinematic director" aria-modal="false" class="hud glass" id="cinemaPanel" role="dialog"><div class="cinemaHeading"><div><small class="eyebrow">VFX SUPERVISOR DESK</small><h2>Cinematic Director</h2></div><button aria-label="Close cinematic director" class="closeX" id="closeCinema">×</button></div><p>Choose a lighting look, layer atmospheric effects, and balance the device's performance.</p><div class="field"><label for="cineLook">Virtual environment / lighting look</label><select id="cineLook"><option value="natural">Natural Countryside</option><option value="golden">Golden Hour Riverfront</option><option value="blue">Blue Hour Reflections</option><option value="storm">Stormfront Over the Ohio</option><option value="lantern">Lanterns &amp; Fireflies</option></select></div><div class="field"><label for="cineQuality">Cinematic effect budget</label><select id="cineQuality"><option value="lite">Battery Saver · 16 effects</option><option value="balanced">Balanced · 55 effects</option><option value="cinematic">Showcase · 110 effects</option></select></div><div class="field"><label for="cineStrength">Atmosphere intensity <b id="cineStrengthLabel">72%</b></label><input id="cineStrength" max="100" min="0" step="1" type="range" value="72"/></div><div class="cinemaChecks"><label><input id="cineGrain" type="checkbox"/> Fine film grain (showcase)</label><label><input id="cineStats" type="checkbox"/> Live FPS and draw calls</label></div><div class="cinemaButtons"><button id="cineGolden">🌅 Sunset shot</button><button id="cineNight">✨ Night shot</button><button id="cineReset">↻ Reset grade</button><button id="cineFly">🎥 Play 3D cinematic tour</button><button id="openStage">🌄 Open scenic backdrop studio</button></div><p class="cinemaNote">Effects run in 2D even when 3D GPU graphics are unavailable. No cloud rendering or personal data is uploaded.</p></section>
 <section aria-label="Game settings" class="hud glass" id="panel"><div style="display:flex;align-items:center;justify-content:space-between"><h2>Adventure settings</h2><button class="closeX" id="closePanel">×</button></div><div class="field"><label for="weather">Weather</label><select id="weather"><option value="clear">☀️ Clear skies</option><option value="rain">🌧️ Summer rain</option><option value="mist">🌫️ River mist</option></select></div><div class="field"><label for="season">Season</label><select id="season"><option value="spring">🌷 Spring</option><option value="summer">🌾 Summer</option><option value="autumn">🍂 Autumn</option><option value="winter">❄️ Winter</option></select></div><div class="field"><label for="time">Time of day <span id="timeLabel">5:30 PM</span></label><input id="time" max="24" min="0" step="0.25" type="range" value="17.5"/></div><div class="field"><label for="quality">World view</label><select id="quality"><option value="3d">3D countryside</option><option value="2d">2D illustrated atlas</option></select></div><div class="field"><label for="referenceOverlay">Real Mount Vernon overhead reference</label><label style="display:flex;align-items:center;gap:10px"><input id="referenceOverlay" style="width:auto" type="checkbox"/> IGIO aerial + digitized roads (reference only)</label><small id="referenceStatus" style="display:block;color:var(--muted);margin-top:5px">Reference imagery loads when available; heights remain unverified.</small><p id="locationCode"></p></div><div class="field"><label for="terrainDetail">Terrain detail / LOD</label><select id="terrainDetail"><option value="auto">Adaptive · quadtree screen error</option><option value="high">High · detailed quadtree</option><option value="medium">Medium · balanced quadtree</option><option value="low">Low · performance quadtree</option></select></div><div class="field"><label for="visualEffects">World graphics quality</label><select id="visualEffects"><option value="lite">Battery Saver · fewer trees, no meadow</option><option value="full">Balanced · instanced meadow</option><option value="cinematic">Showcase · denser scenery</option></select><small id="graphicsQualityStatus" role="status">Offline instanced foliage · no extra model downloads</small></div><div class="field"><label for="slot">Family save slot</label><select id="slot"><option value="0">Adventure 1</option><option value="1">Adventure 2</option><option value="2">Adventure 3</option></select></div><div class="row"><button id="petBtn">🐕 Scout: ON</button><button id="soundBtn">🔊 Sound</button><button id="exportPerf">📊 Export iPhone FPS</button></div><div class="row" style="margin-top:9px"><button class="pill" id="installOfflineBtn">📲 Offline download / help</button><small id="offlineStatus">Web play needs internet · downloads work offline · saves are local</small><button id="saveBtn">💾 Save</button><button id="newBtn">↻ New game</button></div><div class="row" style="margin-top:9px"><button id="heroStudioOpen">👤 Inspect the Explorer</button><button id="openCinema">🎥 Open Cinematic Director</button></div><small aria-live="polite" id="heroRuntimeStatus" role="status" style="display:block;margin-top:7px;color:var(--muted)">Checking 3D character availability…</small><div class="row" style="margin-top:9px"><button id="returnBtn">🏠 Title screen</button></div><p style="font-size:10px;margin:12px 0 0">Saves live only in this browser on this device. The countryside is inspired by real places; this preview is a game, not a surveyed or navigational map.</p></section>
 <section aria-label="Game paused and player settings" aria-modal="true" hidden="" id="pauseOverlay" role="dialog">
 <div class="pauseCard">
@@ -149,7 +156,7 @@ body.ux-reduced-motion *,body.ux-reduced-motion *::before,body.ux-reduced-motion
 </section>
 <div id="touchControls"><div class="dpad"><span class="blank"></span><button data-key="up">↑</button><span class="blank"></span><button data-key="left">←</button><button data-key="down">↓</button><button data-key="right">→</button></div><button aria-label="Jump" class="touchAction" data-key="j" id="touchJump">JUMP ↗</button><button class="touchAction" id="touchInteract">ACTION ✨</button></div>
 <section aria-label="Cinematic backdrops studio" aria-modal="true" id="stagePanel" role="dialog"><div id="stageToolbar"><strong>🌄 Virtual Backdrops · Original River Valley Scenes</strong><label for="stageScene">Location</label><select id="stageScene"><option value="riverfront">Ohio Riverfront</option><option value="farm">Family Farm</option><option value="woods">Oak Grove Woods</option></select><button aria-label="Previous cinematic shot" id="stagePrev">◀ Previous</button><button id="stageTour">▶ Play scenic tour</button><button aria-label="Next cinematic shot" id="stageNext">Next ▶</button><button id="stageCapture">📷 Save postcard</button><button id="stageBoard">🎞 Export shot board</button><button id="closeStage">✕ Return to game</button></div><div aria-live="polite" id="stageShotInfo"><b id="stageShotLabel">01 · Ohio River · Arrival</b> <span id="stageShotCount">1 / 5</span></div><canvas aria-label="Original animated 2D virtual scene; selectable riverfront, farm and woods" height="720" id="stageCanvas" width="1280"></canvas><p>Animated 2D virtual background · included offline · not a surveyed or 3D-engine render.</p></section><div aria-live="polite" id="toast" role="status"></div>
-<section aria-label="Live three-dimensional activity" aria-live="polite" class="hud glass" hidden="" id="worldActivityHud" role="region"><div class="worldTitleRow"><div><small class="eyebrow">REAL-TIME WORLD ACTIVITY · 3D</small><h2 id="worldActivityTitle">River Valley Adventure</h2></div><button aria-label="Return to exploration" id="worldClose">✕</button></div><p id="worldActivityText"></p><div id="worldActivityMeter" role="status"></div><label for="worldAim" hidden="" id="worldAimLabel">Track your target <input aria-label="Move in-world target marker" id="worldAim" max="100" min="0" step="1" type="range" value="50"/></label><div id="worldActionButtons"></div><small class="worldHint">Explore freely while playing. Use the buttons or press E to act. No separate minigame scene.</small></section>
+<section aria-label="Live three-dimensional activity" aria-live="polite" class="hud glass" hidden="" id="worldActivityHud" role="region"><div class="worldTitleRow"><div><small class="eyebrow">REAL-TIME WORLD ACTIVITY · 3D</small><h2 id="worldActivityTitle">River Valley Adventure</h2></div><button aria-label="Return to exploration" id="worldClose">✕</button></div><p id="worldActivityText"></p><div id="worldActivityMeter" role="status"></div><label for="worldAim" hidden="" id="worldAimLabel"><span id="worldAimTitle">Track wildlife — align marker</span> <input aria-label="Move in-world target marker" id="worldAim" max="100" min="0" step="1" type="range" value="50"/></label><div id="worldActionButtons"></div><small class="worldHint">Interact: E / gamepad X · Aim: Q/R, controller bumpers, or slider · Farm: keys 1–9. Mobile controls use the on-screen buttons. No separate minigame scene.</small></section>
 <section aria-label="Family activity" aria-modal="true" class="glass" id="activityPanel" role="dialog"><div class="activityHeader"><span class="eyebrow">RIVER VALLEY • FAMILY ACTIVITIES</span><button aria-label="Close minigame" class="closeX" id="closeActivity">×</button></div><h2 id="activityTitle">Family Activities</h2><div id="activityContent"></div></section>
 <section class="glass" id="farmPanel"><div style="display:flex;align-items:start;justify-content:space-between"><div><div class="eyebrow">🌱 A REPEATABLE FAMILY ACTIVITY</div><h2>Valley Farm</h2></div><button aria-label="Close farm" class="closeX" id="closeFarm">×</button></div><p>Plant corn for 15 coins, let it grow for eight seconds, then harvest for 45 coins and 45 XP. Your fields are saved locally.</p><div class="farmGrid" id="farmGrid"></div><div id="farmNotice" style="font-size:12px;color:var(--gold)">Tap a field to plant.</div><div class="farmActions" style="margin-top:14px"><button id="waterFarm">💧 Water growing crops · 20 🪙</button><button id="farmDone">Done</button></div></section>
 <div hidden="" id="heroRigWarning" role="alert" style="position:fixed;z-index:95;left:12px;right:12px;top:92px;max-width:580px;margin:auto;padding:12px 16px;border:2px solid #dbac55;border-radius:12px;background:#1e1612;color:#fff2df;font:600 13px system-ui;box-shadow:0 5px 30px #0009"></div><div id="start"><div class="hero"><div class="tag">✦ YOUR FAMILY. YOUR RIVER VALLEY. ✦</div><h1>Take the scenic route.<em>Make some memories.</em></h1><p class="lead">A cozy open-world adventure inspired by Mount Vernon, Indiana and the Ohio–Wabash River Valley. Walk historic streets, drive through scenic countryside, interact with wildlife on the trail, fish from a 3D river pier, cook at the campfire and cultivate visible farm plots, and complete six family discoveries.</p><div><span class="marker">🌅 DAY &amp; NIGHT</span><span class="marker">🚙 FREE ROAM</span><span class="marker">🐕 A LOYAL COMPANION</span><span class="marker">📸 PHOTO MODE</span></div><div class="buttons"><select aria-label="Choose family save slot" id="startSlot"><option value="0">Save 1</option><option value="1">Save 2</option><option value="2">Save 3</option></select><input aria-label="Family explorer name" id="playerName" maxlength="24" placeholder="Family explorer name" value="Family Explorer"/><button class="primary" id="playBtn">▶ Start exploring</button><button id="resumeBtn">↻ Continue saved game</button></div><div class="field" style="margin:8px 0 12px"><label for="localIntroFile">Your opening cinematic with Home Sweet Home</label><input accept=".mp4,video/mp4" id="localIntroFile" type="file"/><small id="localIntroStatus" role="status">Optional: import the 10-second combined MP4 once to play your personal intro offline before starting a new game.</small><button id="clearLocalIntro" type="button">Clear saved intro</button></div><p class="smallprint">V1.13.0 · Free-camera 3D exploration with four interactive world sites, a wildlife model, fishing pier, persistent crop plots and a campfire kitchen. Adaptive LOD, distance-budgeted instanced meadow, cinematic lighting, local saves and 2D fallback. Offline • Single-player family adventure • No account or uploads • Desktop keyboard and mobile touch controls. Uses the supplied Mount Vernon geography as a stylized preview—not a precise replica.</p></div></div>
@@ -5097,14 +5104,19 @@ function huntShot(raw,aim,target,now,expiresAt){
  s=gainReward(s,35,60);s.inventory.game=clamp(s.inventory.game+1,0,9999);
  return {save:s,result:'hit'};
 }
+function landFish(raw,kind){
+ let s=validateSave(raw);
+ if(!['bluegill','channelCatfish','bass'].includes(kind))return {save:s,result:'invalid'};
+ s=gainReward(s,30,55);s.inventory.fish=clamp(s.inventory.fish+1,0,9999);
+ return {save:s,result:'caught'};
+}
 function fishReel(raw,biteAt,now,kind){
  let s=validateSave(raw);
  if(!['bluegill','channelCatfish','bass'].includes(kind))return {save:s,result:'invalid'};
  if(!Number.isFinite(now)||!Number.isFinite(biteAt))return {save:s,result:'invalid'};
  if(now<biteAt)return {save:s,result:'early'};
  if(now>biteAt+1100)return {save:s,result:'late'};
- s=gainReward(s,30,55);s.inventory.fish=clamp(s.inventory.fish+1,0,9999);
- return {save:s,result:'caught'};
+ return landFish(s,kind);
 }
 const RECIPES=Object.freeze({
  fishFry:{title:'Riverside Fish Fry',ingredients:{fish:1,corn:1},coins:75,xp:90},
@@ -5139,7 +5151,7 @@ function sampleGrid(g,values,u,v){
  return (h(x,y)*(1-a)+h(x1,y)*a)*(1-b)+(h(x,y1)*(1-a)+h(x1,y1)*a)*b;
 }
 function formatTime(h){const hh=Math.floor(((h%24)+24)%24), m=Math.floor((h-Math.floor(h))*60);return `${(hh%12)||12}:${String(m).padStart(2,'0')} ${hh>=12?'PM':'AM'}`;}
-return {LIMIT,STOPS,COUNTY_REGION_IDS,visitCountyRegion,clamp,clampPosition,safeName,freshSave,validateSave,gainReward,completeStop,buildHomestead,farmAction,waterFarm,huntShot,fishReel,cookRecipe,RECIPES,sampleGrid,formatTime};
+return {LIMIT,STOPS,COUNTY_REGION_IDS,visitCountyRegion,clamp,clampPosition,safeName,freshSave,validateSave,gainReward,completeStop,buildHomestead,farmAction,waterFarm,huntShot,fishReel,landFish,cookRecipe,RECIPES,sampleGrid,formatTime};
 });
 </script><script>/* Shared deterministic geometry math: visual-only local-game coordinates, NOT a verified geodetic CRS. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.ValleyGeometry=api;})(typeof globalThis==='object'?globalThis:this,function(){
@@ -5468,7 +5480,9 @@ function create(THREE,scene,terrainHeight,limit,seed=74378){
    float sun=pow(max(dot(d,normalize(uSunDir)),0.),1900.);
    base+=uSunColor*sun*.78;
    float star=step(.9985,fract(sin(dot(floor(d*1200.),vec3(13.133,78.233,37.719)))*43758.5453))*smoothstep(.35,.8,d.y)*uNight;
-   base+=vec3(star*.48);gl_FragColor=vec4(base,1.);}`});
+   base+=vec3(star*.48);gl_FragColor=vec4(base,1.);
+   #include <tonemapping_fragment>
+   #include <colorspace_fragment>}`});
  const sky=new THREE.Mesh(new THREE.SphereGeometry(6000,32,20),skyMat);sky.frustumCulled=false;sky.renderOrder=-999;scene.add(sky);
  const flowerPositions=[];
  for(let k=0;k<1800;k++){
@@ -5500,13 +5514,20 @@ function create(THREE,scene,terrainHeight,limit,seed=74378){
  }
  const glintGeo=new THREE.BufferGeometry();glintGeo.setAttribute('position',new THREE.Float32BufferAttribute(riverGlints,3));
  const glints=new THREE.Points(glintGeo,new THREE.PointsMaterial({color:0xf9e0b1,size:2.5,transparent:true,opacity:.54,depthWrite:false}));scene.add(glints);
- function update(camera,time,weather,season,stamp){
+ function update(camera,time,weather,season,stamp,film){
   sky.position.copy(camera.position);
-  const day=Math.max(0,Math.sin((time-6)*Math.PI/12)),night=1-Math.min(1,day*2.4);
+  const day=Math.max(0,Math.sin((time-6)*Math.PI/12)),night=(film?.look==='golden'&&time>=17.5&&time<19.2)?0:1-Math.min(1,day*2.4);
   skyMat.uniforms.uNight.value=night;
-  skyMat.uniforms.uHorizon.value.set(weather==='rain'?'#677d91':day<.25?'#a77272':'#e8b892');
-  skyMat.uniforms.uZenith.value.set(day<.25?'#101d39':weather==='rain'?'#445867':'#4a82a1');
-  skyMat.uniforms.uSunDir.value.set(Math.cos((time-6)*Math.PI/12),Math.sin((time-6)*Math.PI/12),-.16).normalize();
+  // One shared art-directed sun/sky palette, not mismatched background and water lighting.
+  skyMat.uniforms.uHorizon.value.set(film?.horizon||(weather==='rain'?'#677d91':day<.25?'#a77272':'#e8b892'));
+  skyMat.uniforms.uZenith.value.set(film?.zenith||(day<.25?'#101d39':weather==='rain'?'#445867':'#4a82a1'));
+  if(film?.sunDirection){
+   const d=film.sunDirection;
+   skyMat.uniforms.uSunDir.value.set(d.x,d.y,d.z);
+   skyMat.uniforms.uSunColor.value.set(film.sun);
+  }else{
+   skyMat.uniforms.uSunDir.value.set(Math.cos((time-6)*Math.PI/12),Math.sin((time-6)*Math.PI/12),-.16).normalize();
+  }
   clouds.forEach((c,i)=>{const x=c.userData.x+((stamp*.001*c.userData.drift)%(limit*2));c.position.set((((x+limit)%(limit*2)+limit*2)%(limit*2))-limit,c.userData.altitude,c.userData.z);});
   cloudMaterial.opacity=weather==='rain'?.78:weather==='mist'?.75:.47;
   glints.material.opacity=weather==='rain'?.18:day*.55;
@@ -5671,11 +5692,113 @@ function render(canvas,sceneId,lookId,stamp,quality='balanced'){
 }
 return {SCENES,render};
 });
+</script><script>/* In-world wildlife + fishing skills. Original deterministic, no web calls.
+ * Coordinates are illustrative game-local meters, not a surveyed ecosystem.
+ */
+(function(root,factory){
+ const api=factory();
+ if(typeof module==='object'&&module.exports)module.exports=api;
+ else root.ValleyGameplaySkills=api;
+})(typeof globalThis==='object'?globalThis:this,function(){
+ 'use strict';
+ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+ const SPECIES=Object.freeze({
+  deer:Object.freeze({x:16,z:-5,radius:15,rate:.31,gait:1.6,fleeRadius:40,height:0}),
+  turkey:Object.freeze({x:-23,z:10,radius:12,rate:.51,gait:2.1,fleeRadius:29,height:0}),
+  rabbit:Object.freeze({x:32,z:-10,radius:8,rate:.82,gait:3.4,fleeRadius:24,height:.6})
+ });
+ const FISH=new Set(['bluegill','channelCatfish','bass']);
+ function sampleWildlife(stamp,player={x:0,z:0},site={x:0,z:0},active=null){
+  const tick=Number.isFinite(stamp)?stamp*.001:0;
+  const animals={};
+  const px=Number.isFinite(player?.x)?player.x:0;
+  const pz=Number.isFinite(player?.z)?player.z:0;
+  for(const [kind,s] of Object.entries(SPECIES)){
+   const phase=kind==='deer'?.7:kind==='turkey'?2.1:3.3;
+   const drift=Math.sin(tick*s.rate+phase),walk=Math.cos(tick*s.rate*.63+phase);
+   let x=s.x+drift*s.radius,z=s.z+walk*5;
+   const selected=active?.kind===kind;
+   if(selected&&Number.isFinite(active.target)){
+    x=clamp((active.target-.5)*67,-34,34);
+    z=-5;
+   }else if(!active){
+    const dx=site.x+x-px,dz=site.z+z-pz;
+    const dist=Math.hypot(dx,dz);
+    if(dist<s.fleeRadius){
+     const force=(s.fleeRadius-dist)/s.fleeRadius*19;
+     const inv=1/Math.max(.001,dist);
+     x+=dx*inv*force;z+=dz*inv*force;
+    }
+   }
+   // Ensure scene props never escape the animal-viewing clearing.
+   x=clamp(x,-47,47);z=clamp(z,-24,24);
+   const heading=Math.atan2(-s.radius*s.rate*Math.cos(tick*s.rate+phase),
+                            -2*Math.sin(tick*s.rate*.63+phase));
+   const distance=Math.hypot(site.x+x-px,site.z+z-pz);
+   const fleeing=!active&&distance<s.fleeRadius*.94;
+   const grazing=!fleeing&&!selected&&Math.sin(tick*.37+phase)>.35;
+   const moving=selected||fleeing||!grazing;
+   const stride=selected?1:fleeing?2.1:grazing?.16:.85;
+   const gait=Math.sin(tick*s.gait*5*stride+phase)*(moving?.31*stride:.05);
+   animals[kind]=Object.freeze({
+    x,z,height:s.height,rotationY:Number.isFinite(heading)?heading:0,
+    behavior:fleeing?'flee':selected?'tracked':grazing?'forage':'wander',
+    gait,headDip:grazing?.2+.18*Math.sin(tick*.75+phase):fleeing?-.14:0,
+    earFlick:Math.sin(tick*3.1+phase)*.13,
+    tailSwish:Math.sin(tick*4.6+phase)*.23,
+    bob:Math.abs(Math.sin(tick*s.gait*5*stride+phase))*(kind==='rabbit'?.7:stride*.11),
+    visible:active?selected:true,
+    fleeing
+   });
+  }
+  return Object.freeze(animals);
+ }
+ function fishCue(round,now){
+  if(!round)return Object.freeze({phase:'none',remainingMs:0,target:.5});
+  const clock=Number.isFinite(now)?now:0;
+  const time=clock-round.biteAt;
+  const waiting=round.phase==='waiting';
+  const phase=waiting?(time<0?'waiting':time<=1100?'bite':'escaped'):round.phase;
+  const target=clamp(.5+.23*Math.sin(time*.0031+(round.kind==='bass'?1.3:round.kind==='bluegill'?.3:2)),.22,.78);
+  return Object.freeze({phase,target,remainingMs:phase==='waiting'?Math.max(0,-time):phase==='bite'?Math.max(0,1100-time):0,
+                        progress:round.progress||0,tension:round.tension??.42});
+ }
+ function newFishingRound(biteAt,kind){
+  if(!FISH.has(kind)||!Number.isFinite(biteAt)||biteAt<0)throw new RangeError('Invalid catch round');
+  return Object.freeze({kind,biteAt,phase:'waiting',progress:0,tension:.38,lastReelAt:-Infinity});
+ }
+ // One action hooks the bite, then 3 successful bar matches land a fish.
+ // No XP, fish, or coins are awarded until the caller receives 'landed'.
+ function reel(round,now,aim){
+  if(!round||!FISH.has(round.kind)||!Number.isFinite(now)||!Number.isFinite(aim)||aim<0||aim>1)
+   return Object.freeze({result:'invalid',round});
+  const cue=fishCue(round,now);
+  if(round.phase==='waiting'){
+   if(cue.phase==='waiting')return Object.freeze({result:'early',round});
+   if(cue.phase!=='bite')return Object.freeze({result:'escaped',round:{...round,phase:'escaped'}});
+   return Object.freeze({result:'hooked',round:{...round,phase:'fight',lastReelAt:now}});
+  }
+  if(round.phase!=='fight')return Object.freeze({result:round.phase==='landed'?'landed':'escaped',round});
+  if(now-round.lastReelAt<240)return Object.freeze({result:'cooldown',round});
+  const within=Math.abs(aim-cue.target)<=.145;
+  const tension=clamp(round.tension+(within?-.055:.31),0,1);
+  const progress=round.progress+(within?1:0);
+  const phase=tension>=.95?'escaped':progress>=3?'landed':'fight';
+  const result=phase==='landed'?'landed':phase==='escaped'?'line-broke':within?'good-reel':'slack-or-strain';
+  return Object.freeze({result,round:{...round,phase,progress,tension,lastReelAt:now}});
+ }
+ function farmPlotIndex(value){
+  if(Number.isInteger(value)&&value>=0&&value<9)return value;
+  return null;
+ }
+ return Object.freeze({SPECIES,sampleWildlife,fishCue,newFishingRound,reel,farmPlotIndex});
+});
 </script><script>/* River Valley / in-world gameplay layer, original procedural geometry. Local and offline.
  * The geometry shares the terrain sample function supplied by the main render engine.
  * All hunting/fishing progression is handled by the existing unit-tested ValleyCore.
  */
-(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.ValleyOpenWorld=api;})(typeof globalThis==='object'?globalThis:this,function(){'use strict';
+(function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.ValleyOpenWorld=api;})(typeof globalThis==='object'?globalThis:this,function(root){'use strict';
+const SKILLS=root.ValleyGameplaySkills||(typeof require==='function'?require('./gameplay-skills.js'):null);
 const SITES=Object.freeze({
  hunt:{x:1260,z:-900,title:'Wildflower Wildlife Trail',label:'🦌 Woodland Hunt',kind:'trail'},
  fish:{x:130,z:1150,title:'Ohio River Fishing Pier',label:'🎣 River Fishing',kind:'river'},
@@ -5692,6 +5815,24 @@ function huntTargetAt(round,now){
 function closestSite(p,radius=130){let match=null,d=Infinity;for(const [id,s] of Object.entries(SITES)){const ds=Math.hypot(p.x-s.x,p.z-s.z);if(ds<radius&&ds<d){d=ds;match=id;}}return match;}
 function approachSite(id,yaw=0,distance=34){const site=SITES[id];if(!site)return null;const a=Number.isFinite(yaw)?yaw:0,d=Number.isFinite(distance)?Math.max(0,Math.min(distance,100)):34;return {x:site.x+Math.sin(a)*d,z:site.z+Math.cos(a)*d};}
 function farmPick(save,now){const a=save.farmPlots||[],ready=a.findIndex(t=>t>0&&t<=now);if(ready>=0)return {index:ready,action:'harvest'};const empty=a.findIndex(t=>t===0);if(empty>=0)return {index:empty,action:'plant'};return {index:0,action:'growing'};}
+function alignStaticSite(group,site,ground,excluded=new Set()){
+ // One-time offset from actual local terrain, preserving native site and child axes.
+ // Never modify the animation-driven wildlife, crops or river bobber.
+ const baseline=ground(site.x,site.z);
+ if(!Number.isFinite(baseline))throw new RangeError('Site terrain source unavailable');
+ let aligned=0,skipped=0;
+ for(const child of group.children){
+  if(excluded.has(child)){skipped++;continue;}
+  const xx=child.position?.x,zz=child.position?.z;
+  if(!Number.isFinite(xx)||!Number.isFinite(zz)){skipped++;continue;}
+  const elevation=ground(site.x+xx,site.z+zz);
+  const delta=elevation-baseline;
+  if(!Number.isFinite(delta)||Math.abs(delta)>40){skipped++;continue;}
+  child.position.y+=delta;
+  aligned++;
+ }
+ return Object.freeze({aligned,skipped,siteX:site.x,siteZ:site.z,source:'GAME_LOCAL_TERRAIN_NOT_SURVEYED'});
+}
 function sceneWorld(T,scene,ground){
  const root=new T.Group();root.name='River Valley in-world activities';scene.add(root);
  const texture=(base,kind)=>{
@@ -5710,7 +5851,7 @@ function sceneWorld(T,scene,ground){
   const map=new T.CanvasTexture(canvas);map.wrapS=map.wrapT=T.RepeatWrapping;
   map.colorSpace=T.SRGBColorSpace;map.generateMipmaps=true;map.minFilter=T.LinearMipmapLinearFilter;return map;
  };
- const mats={wood:new T.MeshStandardMaterial({color:0x8b5936,roughness:.94,map:texture('#c8a37a','timber')}),woodLight:new T.MeshLambertMaterial({color:0xb18b5f}),iron:new T.MeshLambertMaterial({color:0x374d52}),clay:new T.MeshLambertMaterial({color:0xa56648}),soil:new T.MeshStandardMaterial({color:0x594932,roughness:.98,map:texture('#cab391','soil')}),leaf:new T.MeshLambertMaterial({color:0x538440}),corn:new T.MeshLambertMaterial({color:0xf4cb4b}),water:new T.MeshPhongMaterial({color:0x5bb4c3,shininess:72,transparent:true,opacity:.94}),glow:new T.MeshBasicMaterial({color:0xffc767}),smoke:new T.MeshLambertMaterial({color:0xd2d1c4,transparent:true,opacity:.25,depthWrite:false}),animal:new T.MeshLambertMaterial({color:0xa8784b}),cream:new T.MeshLambertMaterial({color:0xebd5ad}),roof:new T.MeshLambertMaterial({color:0x655344}),barn:new T.MeshStandardMaterial({color:0x9c5040,roughness:.87}),tin:new T.MeshStandardMaterial({color:0x677c7e,roughness:.46,metalness:.25})};
+ const mats={wood:new T.MeshStandardMaterial({color:0x8b5936,roughness:.94,map:texture('#c8a37a','timber')}),woodLight:new T.MeshLambertMaterial({color:0xb18b5f}),iron:new T.MeshLambertMaterial({color:0x374d52}),clay:new T.MeshLambertMaterial({color:0xa56648}),soil:new T.MeshStandardMaterial({color:0x594932,roughness:.98,map:texture('#cab391','soil')}),leaf:new T.MeshLambertMaterial({color:0x538440}),corn:new T.MeshLambertMaterial({color:0xf4cb4b}),water:new T.MeshPhongMaterial({color:0x5bb4c3,shininess:72,transparent:true,opacity:.94}),glow:new T.MeshBasicMaterial({color:0xffc767}),smoke:new T.MeshLambertMaterial({color:0xd2d1c4,transparent:true,opacity:.25,depthWrite:false}),animal:new T.MeshStandardMaterial({color:0x93623d,roughness:.96,metalness:0}),cream:new T.MeshStandardMaterial({color:0xc9a276,roughness:.98,metalness:0}),hoof:new T.MeshStandardMaterial({color:0x302a25,roughness:.88}),eye:new T.MeshStandardMaterial({color:0x1a1712,roughness:.21,metalness:.02}),feathers:new T.MeshStandardMaterial({color:0x70452c,roughness:.91}),roof:new T.MeshLambertMaterial({color:0x655344}),barn:new T.MeshStandardMaterial({color:0x9c5040,roughness:.87}),tin:new T.MeshStandardMaterial({color:0x677c7e,roughness:.46,metalness:.25})};
  const make=(geo,mat,parent,pos,rotation)=>{let m=new T.Mesh(geo,mat);if(pos)m.position.set(...pos);if(rotation)m.rotation.set(...rotation);parent.add(m);return m;};
  const cube=(parent,mat,x,y,z,w,h,d)=>make(new T.BoxGeometry(w,h,d),mat,parent,[x,y,z]);
  const cyl=(parent,mat,x,y,z,r1,r2,h,n=10)=>make(new T.CylinderGeometry(r1,r2,h,n),mat,parent,[x,y,z]);
@@ -5722,23 +5863,66 @@ function sceneWorld(T,scene,ground){
  const track=cube(hunt,mats.soil,0,-.35,-5,95,.65,22);
  for(let i=-1;i<=1;i+=2){for(let n=0;n<6;n++){const z=-52+n*19;const post=cyl(hunt,mats.woodLight,i*55,4,z,1.5,1.6,8,6);cube(hunt,mats.woodLight,i*55,6,z+8,1,1.5,19);}}
  const deer=new T.Group();deer.name='Animated low-poly deer';hunt.add(deer);
- cube(deer,mats.animal,0,7,0,7,5,13);cube(deer,mats.cream,0,5,-5.5,4.3,1.4,4);cube(deer,mats.animal,0,10,-6.5,3,7,3);ball(deer,mats.animal,0,13,-7,2.9);
- for(const side of [-1,1]){for(const z of [-4.2,4.2])cube(deer,mats.animal,side*2.2,2,z,1.4,5,1.2);const antler=cyl(deer,mats.wood,side*2,17,-7,.45,.7,6,6);antler.rotation.z=side*.27;}
- const tail=make(new T.ConeGeometry(1.8,4,5),mats.cream,deer,[0,8,7],[Math.PI/2,0,0]);
+ // Rounded anatomical silhouettes replace block-shaped deer, with animated limbs and expressive head.
+ const deerTorso=ball(deer,mats.animal,0,7,0,1);deerTorso.scale.set(3.65,2.65,7.1);
+ const deerChest=ball(deer,mats.cream,0,5.2,-4.7,1);deerChest.scale.set(2.4,1.1,2.8);
+ const deerNeck=cyl(deer,mats.animal,0,10.1,-5.3,1.4,2.2,6,11);deerNeck.rotation.x=-.21;
+ const deerHead=new T.Group();deerHead.position.set(0,13,-7);deer.add(deerHead);
+ const deerSkull=ball(deerHead,mats.animal,0,0,0,2.7);
+ const muzzle=ball(deerHead,mats.cream,0,-.75,-2.65,1.55);
+ muzzle.scale.set(.95,.7,1.5);
+ ball(deerHead,mats.hoof,0,-.8,-4.28,.64);
+ for(const side of [-1,1]){
+  const ear=ball(deerHead,mats.cream,side*2.7,1.55,.25,1);ear.scale.set(1.65,.47,.8);ear.rotation.z=side*.4;
+  ball(deerHead,mats.eye,side*2.38,.15,-1.25,.37);
+  const antler=cyl(deerHead,mats.wood,side*1.38,4.75,.15,.24,.54,6.6,7);antler.rotation.z=side*.24;
+  for(let n=0;n<3;n++){const tine=cyl(deerHead,mats.wood,side*(1.7+n*.22),3.1+n*1.7,-.9,.11,.22,2.3,6);tine.rotation.x=-.8;tine.rotation.z=side*.25;}
+ }
+ let legIndex=0;
+ for(const side of [-1,1])for(const z of [-4.1,4.1]){
+  const leg=cyl(deer,mats.animal,side*2.25,2.2,z,.51,.79,4.8,8);
+  leg.userData.legIndex=legIndex++;
+  const hoof=cube(leg,mats.hoof,0,-2.1,-.4,1.25,.72,1.75);
+  hoof.rotation.x=.08;
+ }
+ const deerTail=ball(deer,mats.cream,0,7.8,7.3,1.15);deerTail.scale.set(.83,.65,1.5);
  const turkey=new T.Group();turkey.name='Animated turkey';hunt.add(turkey);
- ball(turkey,mats.animal,0,4,0,3.8);ball(turkey,mats.cream,0,6,-2.5,1.7);
+ const turkeyBody=ball(turkey,mats.feathers,0,4,0,1);turkeyBody.scale.set(3.8,3,4.7);
+ const turkeyHead=new T.Group();turkeyHead.position.set(0,6,-2.5);turkey.add(turkeyHead);
+ const neck=ball(turkeyHead,mats.cream,0,0,0,1.7);
+ const beak=make(new T.ConeGeometry(.8,2.3,7),mats.corn,turkeyHead,[0,-.05,-1.8],[Math.PI/2,0,0]);
+ for(const side of [-1,1])ball(turkeyHead,mats.eye,side*1.28,.38,-.85,.25);
  for(let n=0;n<7;n++){const t=(n-3)*.32;const feather=make(new T.ConeGeometry(1.1,7,5),mats.animal,turkey,[Math.sin(t)*5,5.8,3.8],[Math.PI/2,0,-t]);}
  for(const sx of [-1,1])cyl(turkey,mats.wood,sx*1.6,1,-.3,.22,.25,2.2,5);
  const rabbit=new T.Group();rabbit.name='Animated rabbit';hunt.add(rabbit);
- ball(rabbit,mats.animal,0,2.3,0,2.6);ball(rabbit,mats.animal,0,3,-3.2,1.7);
- for(const sx of [-1,1]){const ear=make(new T.ConeGeometry(.68,4,6),mats.cream,rabbit,[sx*.9,6,-3.4]);ear.rotation.z=sx*.14;}
+ const rabbitTorso=ball(rabbit,mats.animal,0,2.3,0,1);rabbitTorso.scale.set(2.65,1.6,3.75);
+ const rabbitHead=new T.Group();rabbitHead.position.set(0,3,-3.1);rabbit.add(rabbitHead);
+ ball(rabbitHead,mats.animal,0,0,0,1.8);
+ for(const sx of [-1,1]){
+  const ear=make(new T.ConeGeometry(.69,4.4,8),mats.cream,rabbitHead,[sx*.85,2.7,-.35]);ear.rotation.z=sx*.14;
+  ball(rabbitHead,mats.eye,sx*1.25,.25,-1.06,.26);
+  const hind=ball(rabbit,mats.cream,sx*1.8,.95,2,1.45);hind.scale.set(1,.55,1.35);
+ }
+ ball(rabbitHead,mats.cream,0,-.55,-1.52,.62);
+ ball(rabbit,mats.cream,0,2,3.8,.89);
  const wildlife={deer,turkey,rabbit};
+ // Reuse the same meshes and animation tracks at all frame rates.
+ for(const animal of Object.values(wildlife))
+  animal.traverse(obj=>{if(obj.isMesh){obj.castShadow=true;obj.receiveShadow=true;}});
+ const animalHeads={deer:deerHead,turkey:turkeyHead,rabbit:rabbitHead};
+ const animalTails={deer:deerTail};
  const aimRing=new T.Group();hunt.add(aimRing);make(new T.TorusGeometry(5,.7,6,20),mats.glow,aimRing,[0,10,-3]);cyl(aimRing,mats.glow,0,6,-3,.5,.5,5);
  // River fishing. A real pier and moving bobber in world space.
  const fish=groups.fish;for(const side of [-1,1])for(let z=-20;z<=52;z+=18)cyl(fish,mats.wood,side*14,-5,z,2,2,16,8);
  const deck=cube(fish,mats.woodLight,0,2,13,33,2,100);for(let z=-30;z<57;z+=8)cube(fish,mats.wood,0,3.2,z,31,.3,.5);
  const rod=cyl(fish,mats.iron,-10,10,-20,.45,.8,23,7);rod.rotation.z=.35;
- const line=new T.Group();fish.add(line);const float=ball(line,new T.MeshLambertMaterial({color:0xf4cb4b}),0,0,0,1.75);cyl(line,mats.water,0,-1.1,0,.7,.7,1.4);
+ const line=new T.Group();fish.add(line);
+ const fishingLineGeometry=new T.BufferGeometry().setFromPoints([
+  new T.Vector3(-2,21,-20),new T.Vector3(15,-3,40)
+ ]);
+ const fishingLineMaterial=new T.LineBasicMaterial({color:0xc7d9d1,transparent:true,opacity:.75});
+ const fishingLine=new T.Line(fishingLineGeometry,fishingLineMaterial);fish.add(fishingLine);
+ const float=ball(line,new T.MeshStandardMaterial({color:0xffb54a,roughness:.28,metalness:0}),0,0,0,1.75);cyl(line,mats.water,0,-1.1,0,.7,.7,1.4);
  const ripple=make(new T.TorusGeometry(4,.2,4,24),mats.water,line,[0,-.2,0],[Math.PI/2,0,0]);
  const fishModel=new T.Group();fishModel.name='Jumping fish when the bobber dips';line.add(fishModel);
  const fishBody=make(new T.SphereGeometry(2.1,12,8),mats.iron,fishModel,[0,0,0]);fishBody.scale.set(1.3,.6,.5);
@@ -5787,39 +5971,54 @@ function sceneWorld(T,scene,ground){
  cube(kitchen,mats.woodLight,-29,4.3,23,20,1,10);
  for(const x of [-38,-20])cyl(kitchen,mats.wood,x,1,23,1,1,6,7);
  const campLight=new T.PointLight(0xffb066,.64,160,2);campLight.position.set(0,16,0);kitchen.add(campLight);
- const world={root,groups,deer,wildlife,fishModel,aimRing,float,line,ripple,patches,crops,flames,smoke,food,campLight,counts:{activitySites:4,animalModels:3,fieldPlots:9,animatedSmokePuffs:8,barnModels:1,grainSilos:1},
-  update({stamp=0,save,activity,huntRound,fishRound,aim=.5,weather='clear'}){
+ const terrainAlignment={
+  hunt:alignStaticSite(groups.hunt,SITES.hunt,ground,new Set([deer,turkey,rabbit,aimRing])),
+  farm:alignStaticSite(groups.farm,SITES.farm,ground,new Set(patches)),
+  cook:alignStaticSite(groups.cook,SITES.cook,ground,new Set(smoke))
+ };
+ const world={root,groups,deer,wildlife,fishModel,aimRing,float,line,ripple,patches,crops,flames,smoke,food,campLight,counts:{activitySites:4,animalModels:3,fieldPlots:9,animatedSmokePuffs:8,barnModels:1,grainSilos:1,terrainAlignment},
+  update({stamp=0,save,activity,huntRound,fishRound,aim=.5,weather='clear',player=null,now=Date.now()}){
    const tick=stamp*.001;
    // Local animation is deterministic and tied to game clock, not browser FPS.
-   const targetX=huntRound?(huntRound.target-.5)*67:Math.sin(tick*.48)*31;
+   const moving=SKILLS?.sampleWildlife(stamp,player||{x:-10000,z:-10000},SITES.hunt,huntRound);
    for(const [kind,animal] of Object.entries(wildlife)){
-    animal.visible=kind===(huntRound?.kind||'deer');
-    animal.position.set(targetX,ground(SITES.hunt.x+targetX,SITES.hunt.z-5)-ground(SITES.hunt.x,SITES.hunt.z)+(kind==='rabbit'?.6:0),-5);
-    animal.rotation.y=Math.sin(tick*(kind==='rabbit'?1.7:.9))*.14;
+    const state=moving?.[kind];if(!state)continue;
+    animal.visible=state.visible;
+    animal.position.set(state.x,ground(SITES.hunt.x+state.x,SITES.hunt.z+state.z)-ground(SITES.hunt.x,SITES.hunt.z)+state.height+state.bob,state.z);
+    animal.rotation.y=state.rotationY;
+    animal.userData.state=state.behavior;
+    const head=animalHeads[kind];
+    if(head){head.rotation.x=state.headDip;head.rotation.z=state.earFlick*.28;}
    }
-   deer.children.forEach((c,i)=>{if(i>=3&&i<=6)c.rotation.x=Math.sin(tick*3+i*1.5)*.13;});
-   turkey.rotation.z=Math.sin(tick*4)*.04;rabbit.rotation.z=Math.sin(tick*4.5)*.055;
-   aimRing.position.set((aim-.5)*67,0,-5);aimRing.visible=activity==='hunt'&&!!huntRound;
+   deer.children.forEach(c=>{if(c.userData.legIndex!==undefined)c.rotation.x=(moving?.deer?.gait||0)*(c.userData.legIndex%2?1:-1);});
+   deerTail.rotation.y=moving?.deer?.tailSwish||0;
+   turkey.rotation.z=(moving?.turkey?.gait||0)*.12;
+   rabbit.rotation.z=(moving?.rabbit?.gait||0)*.10;
+   const ringX=(aim-.5)*67;
+   aimRing.position.set(ringX,ground(SITES.hunt.x+ringX,SITES.hunt.z-5)-ground(SITES.hunt.x,SITES.hunt.z),-5);
+   aimRing.visible=activity==='hunt'&&!!huntRound;
    line.position.set(15,-3,40);line.visible=activity==='fish';
-   const biting=fishRound&&Date.now()>=fishRound.biteAt&&Date.now()<=fishRound.biteAt+1100;
-   float.position.y=Math.sin(tick*5)*.45-(biting?2.5:0);
-   fishModel.visible=!!biting;fishModel.position.set(0,(biting?2.5:0)+Math.abs(Math.sin(tick*7))*1.3,0);
+   const fishPhase=fishRound&&SKILLS?.fishCue(fishRound,now).phase;
+   const biting=fishPhase==='bite',struggling=fishPhase==='fight';
+   float.position.y=Math.sin(tick*5)*.45-(biting?2.5:0)-(struggling?Math.sin(tick*7)*.85:0);
+   fishModel.visible=!!(biting||struggling);
+   fishModel.position.set(0,(biting?2.5:0)+Math.abs(Math.sin(tick*7))*(struggling?2.4:1.3),0);
    fishTail.rotation.y=Math.sin(tick*13)*.45;
    float.material.color.setHex(biting?0xff5c43:0xf4cb4b);
    ripple.scale.setScalar(biting?1.6:1+.15*Math.sin(tick*4));
-   for(let i=0;i<9;i++){const t=save.farmPlots[i],growing=t>Date.now(),ready=t>0&&!growing;
-    const c=crops[i];c.visible=t>0;c.scale.y=ready?1:growing?Math.max(.18,1-Math.min(8000,t-Date.now())/9700):.001;
+   for(let i=0;i<9;i++){const t=save.farmPlots[i],growing=t>now,ready=t>0&&!growing;
+    const c=crops[i];c.visible=t>0;c.scale.y=ready?1:growing?Math.max(.18,1-Math.min(8000,t-now)/9700):.001;
    }
    flames.scale.y=1+Math.sin(tick*10)*.13;
    smoke.forEach((m,i)=>{m.position.y=16+((i*5+tick*5)%43);m.position.x=Math.sin(tick+i*2)*2.7;m.position.z=Math.cos(tick*.65+i)*2;m.scale.setScalar(.65+.36*(i/8));});
    campLight.intensity=weather==='rain'?.3:.65+Math.sin(tick*11)*.1;
    food.visible=save.inventory.meals>0||activity==='cook';food.rotation.y=tick*.12;
   },
-  dispose(){scene.remove(root);root.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();/* shared materials disposed below */}});Object.values(mats).forEach(m=>{m.map?.dispose();m.dispose();});}
+  dispose(){scene.remove(root);root.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();/* shared materials disposed below */}});fishingLineGeometry.dispose();fishingLineMaterial.dispose();float.material.dispose();Object.values(mats).forEach(m=>{m.map?.dispose();m.dispose();});}
  };
  return world;
 }
-return {SITES,closestSite,approachSite,farmPick,huntTargetAt,sceneWorld};
+return {SITES,closestSite,approachSite,farmPick,huntTargetAt,alignStaticSite,sceneWorld};
 });
 </script><script>/* Original deterministic companion behaviour for Scout (offline).
  * A responsive, playable friend rather than a visual mesh glued to the player.
@@ -6960,8 +7159,8 @@ return Object.freeze({create});
   const roofs=['#615b59','#75544a','#626d69'].map((color,i)=>
    new THREE.MeshStandardMaterial({color:0xffffff,map:createTexture(THREE,'roof',color,i+14),
     roughness:.94,metalness:0,side:THREE.DoubleSide}));
-  const road=new THREE.MeshLambertMaterial({color:0x555b5b,map:createTexture(THREE,'road','#a9b4b3',9),side:THREE.DoubleSide,
-   polygonOffset:true,polygonOffsetFactor:-2});
+  const road=new THREE.MeshStandardMaterial({color:0x555b5b,map:createTexture(THREE,'road','#a9b4b3',9),side:THREE.DoubleSide,
+   roughness:.94,metalness:.02,polygonOffset:true,polygonOffsetFactor:-2});
   const terrainMap=createTexture(THREE,'terrain','#f3f6e9',10);
   const glass=new THREE.MeshStandardMaterial({color:0x426679,roughness:.19,metalness:.17,
    emissive:0x0a1821,emissiveIntensity:.12,side:THREE.DoubleSide});
@@ -6972,10 +7171,23 @@ return Object.freeze({create});
      family==='limestone'?walls[2]:family==='metal'?walls[7]:family==='batten'?walls[6]:walls[3+rec.i%2];
    return {family,wall,roof:roofs[rec.i%roofs.length],glass,trim};
   }
+  let previousWeather=null;
+  function setWeather(weather){
+   const key=weather==='rain'?'rain':weather==='mist'?'mist':'clear';
+   if(key===previousWeather)return false;
+   previousWeather=key;
+   // Real PBR wetness response, not a screen-space filter or reflective planar RTT.
+   const wet=key==='rain',damp=key==='mist';
+   road.roughness=wet?.42:damp?.75:.94;
+   road.metalness=wet?.06:.02;
+   for(const roof of roofs)roof.roughness=wet?.52:damp?.79:.94;
+   glass.roughness=wet?.085:.19;
+   return true;
+  }
   function dispose(){
    [...walls,...roofs,road,glass,trim].forEach(m=>{if(m.map)m.map.dispose();m.dispose();});terrainMap?.dispose();
   }
-  return Object.freeze({pick,dispose,road,terrainMap,wallCount:walls.length,roofCount:roofs.length});
+  return Object.freeze({pick,setWeather,dispose,road,terrainMap,wallCount:walls.length,roofCount:roofs.length});
  }
  return Object.freeze({facadeFamily,hueVariation,make});
 });
@@ -7074,6 +7286,232 @@ return Object.freeze({create});
    material.uniforms.uSunDirection.value.set(Math.cos(angle),Math.max(.08,Math.sin(angle)),-.16).normalize();
  }
  return Object.freeze({create,update,parameters,qualityDetail,vertexShader:VS,fragmentShader:FS});
+});
+</script>
+<script>/* River Valley cinematic daylight and atmosphere, real WebGL scene parameters.
+ * Game art, not a physical lighting simulation. Offline, original and deterministic.
+ */
+(function(root,factory){
+ const api=factory();
+ if(typeof module==='object'&&module.exports)module.exports=api;
+ else root.ValleyCinematicLighting=api;
+})(typeof globalThis==='object'?globalThis:this,function(){
+ 'use strict';
+ const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+ const finite=(v,fallback)=>Number.isFinite(v)?v:fallback;
+ const HEX=Object.freeze({
+  noon:{sky:'#a9c9d8',horizon:'#f0d6a3',zenith:'#437fab',fog:'#b9c8bd',sun:'#fff0d4',hemi:'#cbe5fb',ground:'#596a47'},
+  golden:{sky:'#a6b1b2',horizon:'#ffd3a0',zenith:'#3a648c',fog:'#d3b6a0',sun:'#ffc07b',hemi:'#ffd9b1',ground:'#635644'},
+  blue:{sky:'#344e6a',horizon:'#9d8992',zenith:'#16294f',fog:'#667f90',sun:'#b3bfe2',hemi:'#91b1d5',ground:'#333d48'},
+  night:{sky:'#17243b',horizon:'#333c55',zenith:'#0c1831',fog:'#3c4d61',sun:'#8fa8d0',hemi:'#7498c2',ground:'#2b3343'},
+  storm:{sky:'#556875',horizon:'#aab3a9',zenith:'#34475b',fog:'#71818a',sun:'#c8dae2',hemi:'#9bb8ca',ground:'#4f5350'},
+ });
+ const color=(hex)=>[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
+ function mix(a,b,t){
+  const left=color(a),right=color(b),weight=clamp(t,0,1);
+  return '#'+left.map((n,i)=>Math.round(n+(right[i]-n)*weight).toString(16).padStart(2,'0')).join('');
+ }
+ function blend(left,right,t){
+  const output={};
+  for(const key of Object.keys(left))output[key]=mix(left[key],right[key],t);
+  return output;
+ }
+ // Smooth, continuous hour curves avoid a lighting snap across cinematic shots.
+ function sample({time=15.5,weather='clear',look='natural',quality='balanced',
+                  effects='full',mobile=false}={}){
+  const hour=((finite(time,15.5)%24)+24)%24;
+  const phase=(hour-6)*Math.PI/12;
+  const daylight=clamp(Math.sin(phase),0,1);
+  const edge=clamp((daylight-.01)/.30,0,1);
+  const morning=hour<12;
+  const goldenWindow=(hour>=5.5&&hour<=9)||(hour>=16.25&&hour<=19.5);
+  const dusk=goldenWindow?1-clamp((daylight-.02)/.63,0,1):0;
+  const lateBlue=(hour>=18&&hour<21)||(hour>=4.5&&hour<6.5);
+  const blue=lateBlue?clamp((.43-daylight)/.35,0,1):0;
+  let palette=blend(HEX.night,HEX.noon,edge);
+  palette=blend(palette,HEX.golden,dusk*(look==='golden'?1:.88));
+  palette=blend(palette,HEX.blue,blue*(look==='blue'?1:.82));
+  if(look==='lantern'||(hour>=21||hour<4.5))palette=blend(palette,HEX.night,.82);
+  const storm=weather==='rain'||look==='storm';
+  if(storm)palette=blend(palette,HEX.storm,.78);
+  const mist=weather==='mist';
+  const sunHeight=Math.max(look==='golden'?.095:.025,daylight);
+  const sunPower=storm?.44:mist?.75:1;
+  const desiredSun=(.16+2.35*Math.pow(sunHeight,.75))*sunPower;
+  const isNight=daylight<.03&&!(look==='golden'&&goldenWindow);
+  const sunIntensity=isNight?.055:desiredSun;
+  const hemiIntensity=(isNight?.38:.68+daylight*.35)*(storm?.9:1);
+  const exposure=clamp((isNight?.94:1.03+daylight*.12)*(storm?.93:1),.65,1.3);
+  const fogBase=mist?.00053:storm?.00038:isNight?.00026:dusk?.000245:.00017;
+  const fogDensity=effects==='lite'?Math.min(fogBase,.00010):fogBase*(quality==='cinematic'?1.13:1);
+  // Direction is shared with atmosphere and water: sunrise east, sunset west.
+  const x=Math.cos(phase),z=-.16,inv=1/Math.hypot(x,sunHeight,z);
+  const allowShadows=quality==='cinematic'&&effects!=='lite'&&!mobile&&!storm;
+  return Object.freeze({
+   hour,look,weather,daylight,dusk,blue,morning,
+   sky:palette.sky,horizon:palette.horizon,zenith:palette.zenith,
+   fog:palette.fog,sun:palette.sun,hemi:palette.hemi,ground:palette.ground,
+   sunIntensity,hemiIntensity,exposure,fogDensity,allowShadows,
+   sunDirection:Object.freeze({x:x*inv,y:sunHeight*inv,z:z*inv})
+  });
+ }
+ function apply(three,{scene,renderer,sunLight,ambient,playerX=0,playerZ=0,
+                        playerY=0,preset}={}){
+  if(!preset||!scene||!renderer||!sunLight||!ambient)return false;
+  scene.background.set(preset.sky);
+  if(scene.fog){scene.fog.color.set(preset.fog);scene.fog.density=preset.fogDensity;}
+  ambient.color.set(preset.hemi);
+  if(ambient.groundColor)ambient.groundColor.set(preset.ground);
+  ambient.intensity=preset.hemiIntensity;
+  sunLight.color.set(preset.sun);
+  sunLight.intensity=preset.sunIntensity;
+  const vector=preset.sunDirection;
+  sunLight.position.set(playerX+vector.x*540,playerY+vector.y*540,playerZ+vector.z*540);
+  if(sunLight.target){
+   sunLight.target.position.set(playerX,playerY,playerZ);
+   sunLight.target.updateMatrixWorld?.();
+  }
+  renderer.toneMappingExposure=preset.exposure;
+  if(renderer.shadowMap&&sunLight.shadow){
+   const shadowAllowed=!!preset.allowShadows;
+   if(renderer.shadowMap.enabled!==shadowAllowed){
+    renderer.shadowMap.enabled=shadowAllowed;
+    renderer.shadowMap.needsUpdate=true;
+   }
+   sunLight.castShadow=shadowAllowed;
+   if(shadowAllowed&&sunLight.shadow.camera){
+    sunLight.shadow.camera.left=-100;sunLight.shadow.camera.right=100;
+    sunLight.shadow.camera.top=100;sunLight.shadow.camera.bottom=-100;
+    sunLight.shadow.camera.near=1;sunLight.shadow.camera.far=900;
+    if(sunLight.shadow.mapSize?.set)sunLight.shadow.mapSize.set(1024,1024);
+    sunLight.shadow.bias=-.00025;sunLight.shadow.normalBias=.025;
+    sunLight.shadow.camera.updateProjectionMatrix?.();
+   }
+  }
+  return true;
+ }
+ return Object.freeze({HEX,sample,apply,mix,blend});
+});
+</script>
+<script>/* Mount Vernon-inspired cinematic set dressing. Authored game art.
+ * Based on thematic observations from riverfront/Main Street walking-tour coverage;
+ * no copied frames, inferred survey dimensions, mapped properties or proprietary assets.
+ */
+(function(root,factory){
+ const api=factory();
+ if(typeof module==='object'&&module.exports)module.exports=api;
+ else root.ValleyCinematicSetDressing=api;
+})(typeof globalThis==='object'?globalThis:this,function(){
+ 'use strict';
+ const BENCHES=Object.freeze([
+  [74,1064,0],[109,1060,0],[154,1060,0],[194,1058,0],[231,1048,0],
+  [-37,530,1.57],[-26,469,1.57],[52,465,1.57],[63,526,1.57]
+ ]);
+ const LAMPS=Object.freeze([
+  [55,1076],[97,1076],[138,1076],[178,1076],[218,1076],
+  [-46,550],[-40,459],[49,454],[70,550]
+ ]);
+ const PLANTERS=Object.freeze([
+  [-31,539],[-17,539],[42,535],[57,533],[-40,488],[-38,501],
+  [55,480],[58,500],[72,1042],[112,1041],[149,1040],[187,1038]
+ ]);
+ function create(THREE,scene,ground,{mobile=false}={}){
+  if(!THREE?.InstancedMesh||!scene||typeof ground!=='function')
+   throw new Error('Three.js, scene and sampled terrain are required');
+  const meshes=[],lights=[];
+  const stone=new THREE.MeshStandardMaterial({color:0x8b8277,roughness:.91,metalness:0});
+  const wood=new THREE.MeshStandardMaterial({color:0x775441,roughness:.77,metalness:0});
+  const iron=new THREE.MeshStandardMaterial({color:0x343b3d,roughness:.43,metalness:.68});
+  const leaves=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.92,metalness:0});
+  const lantern=new THREE.MeshStandardMaterial({color:0xffe0a3,roughness:.24,
+    emissive:0xffc36e,emissiveIntensity:.12,metalness:.03});
+  const boxGeo=new THREE.BoxGeometry(1,1,1);
+  const postGeo=new THREE.CylinderGeometry(.16,.24,7.1,8);
+  const lanternGeo=new THREE.SphereGeometry(.72,10,8);
+  const potGeo=new THREE.CylinderGeometry(1.2,1.05,1.5,8);
+  const flowerGeo=new THREE.IcosahedronGeometry(1.5,1);
+  const temp=new THREE.Object3D(),color=new THREE.Color();
+  function make(name,geo,material,n,descriptors){
+   const instanced=new THREE.InstancedMesh(geo,material,n);
+   instanced.name=name;
+   for(const [i,{x,y,z,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1,tint}] of descriptors.entries()){
+    temp.position.set(x,y,z);
+    temp.rotation.set(rx,ry,rz);
+    temp.scale.set(sx,sy,sz);
+    temp.updateMatrix();
+    instanced.setMatrixAt(i,temp.matrix);
+    if(tint)instanced.setColorAt(i,color.setHex(tint));
+   }
+   instanced.instanceMatrix.needsUpdate=true;
+   if(instanced.instanceColor)instanced.instanceColor.needsUpdate=true;
+   instanced.castShadow=false;instanced.receiveShadow=true;
+   instanced.computeBoundingSphere?.();
+   scene.add(instanced);meshes.push(instanced);
+   return instanced;
+  }
+  const seats=[],backs=[],supports=[];
+  for(const [x,z,rotation] of BENCHES){
+   const y=ground(x,z),dir=Math.cos(rotation),side=Math.sin(rotation);
+   if(!Number.isFinite(y))continue;
+   seats.push({x,y:y+1.55,z,ry:rotation,sx:4.8,sy:.22,sz:1.2});
+   backs.push({x:x-side*.45,y:y+2.23,z:z+dir*.45,ry:rotation,sx:4.8,sy:1.15,sz:.19});
+   for(const d of [-1.75,1.75]){
+    supports.push({x:x+d*dir,y:y+.82,z:z-d*side,ry:rotation,sx:.2,sy:1.45,sz:1.13});
+   }
+  }
+  make('Cinematic/riverfront-and-square-benches',boxGeo,wood,seats.length,seats);
+  make('Cinematic/benches-backs',boxGeo,wood,backs.length,backs);
+  make('Cinematic/benches-iron-legs',boxGeo,iron,supports.length,supports);
+  const poleRows=[],caps=[];
+  for(const [x,z] of LAMPS){
+   const y=ground(x,z);
+   if(!Number.isFinite(y))continue;
+   poleRows.push({x,y:y+3.55,z});
+   caps.push({x,y:y+7.4,z});
+  }
+  make('Cinematic/historic-streetlamps',postGeo,iron,poleRows.length,poleRows);
+  make('Cinematic/streetlamp-warm-glass',lanternGeo,lantern,caps.length,caps);
+  const pots=[],flowers=[];
+  for(let i=0;i<PLANTERS.length;i++){
+   const [x,z]=PLANTERS[i],y=ground(x,z);
+   if(!Number.isFinite(y))continue;
+   pots.push({x,y:y+.78,z});
+   flowers.push({x,y:y+2.25,z,sx:1.05+(i%3)*.12,
+     sy:.68+(i%2)*.09,sz:1.07,
+     tint:[0x567b4b,0x6f8b52,0x8b8d5d,0x697b49][i%4]});
+  }
+  make('Cinematic/stone-planting-tubs',potGeo,stone,pots.length,pots);
+  make('Cinematic/garden-planting-forms',flowerGeo,leaves,flowers.length,flowers);
+  // Two local lamps maximum. Additional emissive bulbs use no light sources.
+  if(!mobile&&THREE.PointLight){
+   for(const i of [1,6]){
+    if(!caps[i])continue;
+    const lamp=new THREE.PointLight(0xffc27d,0,45,1.9);
+    lamp.position.set(caps[i].x,caps[i].y,caps[i].z);
+    lamp.castShadow=false;
+    scene.add(lamp);lights.push(lamp);
+   }
+  }
+  const result={
+   name:'Mount Vernon artistic street dressing',
+   classification:'GAME_ART_NOT_SURVEYED',
+   benches:seats.length,lamps:caps.length,planters:pots.length,
+   drawCalls:meshes.length,localPointLights:lights.length
+  };
+  function update(time,weather,quality='balanced'){
+   const night=time>=19.3||time<6,storm=weather==='rain';
+   lantern.emissiveIntensity=night?1.85:storm?.75:.12;
+   for(const light of lights)light.intensity=quality==='cinematic'&&night?9:0;
+  }
+  function dispose(){
+   for(const mesh of meshes)scene.remove(mesh);
+   for(const light of lights)scene.remove(light);
+   for(const item of [boxGeo,postGeo,lanternGeo,potGeo,flowerGeo,
+                      stone,wood,iron,leaves,lantern])item.dispose();
+  }
+  return Object.freeze({meshes,result,update,dispose});
+ }
+ return Object.freeze({BENCHES,LAMPS,PLANTERS,create});
 });
 </script><script>// CPU scene preparation for the hosted and single-file editions.
 (function (root) {
@@ -9091,7 +9529,7 @@ function axis(value,deadzone=.18){
  return Math.sign(n)*(Math.abs(n)-deadzone)/(1-deadzone);
 }
 function sampleGamepad(getGamepads,enabled=true){
- const none={connected:false,x:0,z:0,sprint:false,jump:false,interact:false,map:false,pause:false,back:false};
+ const none={connected:false,x:0,z:0,lookX:0,lookY:0,aimLeft:false,aimRight:false,sprint:false,jump:false,interact:false,map:false,pause:false,back:false};
  if(!enabled||typeof getGamepads!=='function')return none;
  let pads;
  try{pads=getGamepads();}catch(_){return none;}
@@ -9101,7 +9539,8 @@ function sampleGamepad(getGamepads,enabled=true){
  let x=axis(pad.axes?.[0]),z=axis(pad.axes?.[1]);
  if(pressed(14))x=-1;else if(pressed(15))x=1;
  if(pressed(12))z=-1;else if(pressed(13))z=1;
- return {connected:true,x,z,sprint:pressed(7)||pressed(6),jump:pressed(0),
+ return {connected:true,x,z,lookX:axis(pad.axes?.[2]),lookY:axis(pad.axes?.[3]),
+  aimLeft:pressed(4),aimRight:pressed(5),sprint:pressed(7)||pressed(6),jump:pressed(0),
   interact:pressed(2),map:pressed(3),pause:pressed(9),back:pressed(1)};
 }
 return Object.freeze({STORAGE_KEY,DEFAULTS,normalize,load,store,apply,createPreferences,axis,sampleGamepad});
@@ -9126,7 +9565,7 @@ let shotPlaying=false,shotStart=0,shotIndex=0;
 const SHOTS=Object.freeze([{scene:'riverfront',look:'natural',title:'01 · Ohio River · Arrival'},{scene:'farm',look:'golden',title:'02 · Valley Farm · Golden Fields'},{scene:'woods',look:'lantern',title:'03 · Oak Grove · Firefly Night'},{scene:'riverfront',look:'storm',title:'04 · Ohio River · Summer Storm'},{scene:'riverfront',look:'blue',title:'05 · Riverfront · Blue Hour'}]);
 const SHOT_DURATION=4200;
 let director3D=null,directorLastFX=0,perfFrames=0,perfSince=0,perfFPS=0,cinemaPrefs={look:"natural",quality:"balanced",strength:.72,grain:false,showStats:false};
-let atmosphere=null,gameModels=[],terrainMeshes=[],terrainIndex=null,terrainAt={x:Infinity,z:Infinity,dist:Infinity,viewHeight:0},terrainStats={tiles:0,triangles:0,levels:{}},roadMesh=null,buildingMesh=null,buildingItems=[],detailBuildings=new Map(),detailGroup=null,detailLast={x:Infinity,z:Infinity},lastLODLabel='';
+let atmosphere=null,cinematicDressing=null,gameModels=[],terrainMeshes=[],terrainIndex=null,terrainAt={x:Infinity,z:Infinity,dist:Infinity,viewHeight:0},terrainStats={tiles:0,triangles:0,levels:{}},roadMesh=null,buildingMesh=null,buildingItems=[],detailBuildings=new Map(),detailGroup=null,detailLast={x:Infinity,z:Infinity},lastLODLabel='';
 let roofInstances=null,tourCurve=null,courthouseFootprintIndex=-1;
 let activeTerrainSegments=16,terrainDetail='auto',visualEffects='full';
 let time=15.5,weather='clear',season='summer',keys=new Set(),pointerDown=false,pointerX=0,pointerY=0,cameraYaw=.2,cameraDist=74,mapZoom=1;
@@ -9157,11 +9596,12 @@ let currentTravelSpeed=0;
 const G=window.THREE;
 const POLISH=window.ValleyVisualPolish,BIOME=window.ValleyBiomeStreamer,LODPLAN=window.ValleyLODTransition,GRAPHICS=window.ValleyGraphicsQuality,ASSET_CODEC=window.ValleyCompressedAssets;
 const RIVER_WATER=window.ValleyRiverWater,ROOFS=window.ValleyBuildingRoofs,LANDMARKS=window.ValleyLandmarkAnchors;
+const CINEMATIC=window.ValleyCinematicLighting,DRESS=window.ValleyCinematicSetDressing,SKILLS=window.ValleyGameplaySkills;
 const ACCESS=window.ValleyLandmarkAccess;
 const CUSTOM_HERO=window.ValleyCustomHero,CAST_WARDROBE=window.ValleyCastWardrobe;
 const UX=window.ValleyPlayerExperience;
 let playerPreferences=null,paused=false,pauseReturnFocus=null,accumulatedPauseMs=0,pauseBeganAt=0;
-let gamepadInput={connected:false,x:0,z:0,sprint:false,jump:false,interact:false,map:false,pause:false,back:false};
+let gamepadInput={connected:false,x:0,z:0,lookX:0,lookY:0,aimLeft:false,aimRight:false,sprint:false,jump:false,interact:false,map:false,pause:false,back:false};
 const HERO=window.ValleyHero;let heroController=null,driverController=null,heroOneShot=null,heroOneShotUntil=0,heroState='idle';const STAGE=window.ValleyHeroStage;let heroPreviewStage=null;let heroInspection=false,heroPreviewPose='idle',previousHeroCamera=null;
 let facadePalette=null,grassLayer=null,groundPlacementDirty=false,lastVegetationTime=0,terrainTransition=null,retiringTerrain=null;
 
@@ -9258,8 +9698,10 @@ function tryRenderer(){
   scene=new G.Scene();scene.background=new G.Color('#a8bec2');scene.fog=new G.FogExp2('#bdd0ca',0.00019);
   camera=new G.PerspectiveCamera(60,Math.max(1,innerWidth)/Math.max(1,innerHeight),.2,10500);cameraGoal=new G.Vector3();
   ambient=new G.HemisphereLight(0xd5e6ff,0x404e36,2.3);scene.add(ambient);
-  sunLight=new G.DirectionalLight(0xffe1a8,2.3);sunLight.position.set(100,220,-180);scene.add(sunLight);
+  sunLight=new G.DirectionalLight(0xffe1a8,2.3);sunLight.position.set(100,220,-180);scene.add(sunLight);scene.add(sunLight.target);
+  if(renderer.shadowMap)renderer.shadowMap.type=G.PCFSoftShadowMap;
   facadePalette=POLISH?POLISH.make(G):null;buildTerrain();buildRiver();buildRoads();buildBuildings();buildTrees();if(PAINT)terrainDecor=PAINT.scatter(G,scene,height,{mobile:innerWidth<781,limit:LIMIT});buildBeacons();buildPlayer();buildHouse();buildOriginalModels();
+  if(DRESS)cinematicDressing=DRESS.create(G,scene,height,{mobile:innerWidth<781});
   if(COUNTY_SCENES&&COUNTY){countyVignettes=COUNTY_SCENES.create(G,scene,height,COUNTY);
     collisionWorld=COLLISION.create([...buildingItems,...countyVignettes.colliders],{radius:1.7,stepHeight:2.8});}
   if(WORLD)worldGame=WORLD.sceneWorld(G,scene,height);if(ATM)atmosphere=ATM.create(G,scene,height,LIMIT);if(DIR)director3D=DIR.makeWorldFX(G,scene,height,LIMIT);
@@ -9302,7 +9744,7 @@ function commitTerrainLOD(job){
    job.meshes.push(seam);
  }
  const old=terrainMeshes;
- for(const m of job.meshes)scene.add(m);
+ for(const m of job.meshes){m.traverse(obj=>{if(obj.isMesh)obj.receiveShadow=true;});scene.add(m);}
  terrainMeshes=job.meshes;terrainMesh=job.meshes[0];terrainIndex=job.index;
  groundPlacementDirty=!!buildingMesh||!!foliageJobs; // Re-anchor against the newly committed visible surface.
  if(retiringTerrain){disposeTerrainMeshes(retiringTerrain.meshes);retiringTerrain=null;}
@@ -9701,6 +10143,7 @@ function buildPlayer(){
  groundShadow=MOTION.createContactShadow(G);if(groundShadow)scene.add(groundShadow);
  avatar=heroController.root;
  avatar.name='Playable River Explorer';
+ avatar.traverse(obj=>{if(obj.isMesh)obj.castShadow=true;});
  scene.add(avatar);
  car=new G.Group();
  const paint=new G.MeshStandardMaterial({color:0xa26c4c,roughness:.51,metalness:.16});
@@ -9722,7 +10165,7 @@ function buildPlayer(){
  driverController.root.name='Explorer driving';
  driverController.root.scale.setScalar(.53);
  driverController.root.position.set(-2.45,1.5,-1.0);
- car.add(driverController.root);scene.add(car);
+ car.add(driverController.root);car.traverse(obj=>{if(obj.isMesh)obj.castShadow=true;});scene.add(car);
  dog=new G.Group();dog.name='Scout / animated faithful companion';
  const fur=new G.MeshStandardMaterial({color:0xb99872,roughness:.98}),dark=new G.MeshStandardMaterial({color:0x554338,roughness:.93}),
   cream=new G.MeshStandardMaterial({color:0xe1c9a5,roughness:.96}),collar=new G.MeshStandardMaterial({color:0x467b80,roughness:.73});
@@ -9917,6 +10360,7 @@ function buildOriginalModels(){
       status:match.status};
    }
    group.position.set(bx,ground,bz);group.scale.setScalar(modelScale);group.userData.model=name;
+   group.traverse(obj=>{if(obj.isMesh){obj.castShadow=true;obj.receiveShadow=true;}});
    if(name==='oak_cottage'){if(house){scene.remove(house);house.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();obj.material.dispose();}});}house=group;group.visible=false;}
    scene.add(group);gameModels.push(group);
   }catch(err){console.warn('Optional 3D model not available:',name,err.message);}
@@ -9933,10 +10377,25 @@ function updateVisuals(dt,stamp){
   return;
  }
 
- const radians=(time-6)/24*Math.PI*2,light=C.clamp(.25+Math.sin(radians)*.8,.06,1.05);
- const mist=weather==='mist';scene.background.set(light<.25?'#13273e':(weather==='rain'?'#839d9d':'#9cb8b3'));
- scene.fog.color.set(light<.25?'#3e5360':mist?'#b1c5bd':'#aec8c1');scene.fog.density=visualEffects==='lite'?.00004:(mist?.0006:weather==='rain'?.00033:.00018);
- ambient.intensity=.6+1.8*light;sunLight.intensity=.25+2.2*light;sunLight.position.set(-200,Math.max(30,380*light),180);renderer.toneMappingExposure=.75+light*.62;
+ const cinematicFrame=CINEMATIC?CINEMATIC.sample({
+  time,weather,look:cinemaPrefs.look,quality:cinemaPrefs.quality,
+  effects:visualEffects,mobile:innerWidth<781
+ }):null;
+ if(cinematicFrame){
+  CINEMATIC.apply(G,{scene,renderer,sunLight,ambient,
+   playerX:player.x,playerZ:player.z,playerY:height(player.x,player.z),
+   preset:cinematicFrame});
+ }else{
+  // Fallback for independently embedded older/offline distributions.
+  const radians=(time-6)/24*Math.PI*2,light=C.clamp(.25+Math.sin(radians)*.8,.06,1.05);
+  const mist=weather==='mist';
+  scene.background.set(light<.25?'#13273e':(weather==='rain'?'#839d9d':'#9cb8b3'));
+  scene.fog.color.set(light<.25?'#3e5360':mist?'#b1c5bd':'#aec8c1');
+  scene.fog.density=visualEffects==='lite'?.00004:(mist?.0006:weather==='rain'?.00033:.00018);
+  ambient.intensity=.6+1.8*light;sunLight.intensity=.25+2.2*light;
+  sunLight.position.set(-200,Math.max(30,380*light),180);
+  renderer.toneMappingExposure=.75+light*.62;
+ }
  avatar.position.set(player.x,height(player.x,player.z)+heroHeightOffset,player.z);
  vehicleState=suspension.update({x:player.x,z:player.z,yaw:playerHeading,groundAt:height,dt:save.mode==='drive'?dt:0});
  car.position.set(player.x,height(player.x,player.z)+vehicleState.bodyHeight,player.z);
@@ -9971,10 +10430,12 @@ function updateVisuals(dt,stamp){
  if(beaconGroup)beaconGroup.children.forEach((g,i)=>{g.rotation.y+=dt*.5;g.position.y=height(g.position.x,g.position.z)+8+Math.sin(stamp/450+i)*2;g.visible=!save.completed.includes(g.userData.id);});
  if(house)house.visible=save.homestead;
  if(waterMesh){if(RIVER_WATER&&waterMesh.material.uniforms)RIVER_WATER.update(waterMesh.material,stamp,weather,time,visualEffects);else waterMesh.material.opacity=.82+Math.sin(stamp/900)*.045;}
+ if(facadePalette?.setWeather)facadePalette.setWeather(weather);
  if(roadMesh?.material){roadMesh.material.color.setHex(weather==='rain'?0x3b464b:0x62686a);
   roadMesh.material.needsUpdate=false;}
- if(worldGame)worldGame.update({stamp,save,activity:worldActive,huntRound:worldHuntRound,fishRound:worldFishRound,aim:worldAim,weather});
- if(atmosphere)atmosphere.update(camera,time,weather,season,stamp);if(director3D)director3D.update(stamp,time,weather,cinemaPrefs.strength,cinemaPrefs.quality);
+ if(worldGame)worldGame.update({stamp,save,activity:worldActive,huntRound:worldHuntRound,fishRound:worldFishRound,aim:worldAim,weather,player,now:Date.now()});
+ if(cinematicDressing)cinematicDressing.update(time,weather,cinemaPrefs.quality);
+ if(atmosphere)atmosphere.update(camera,time,weather,season,stamp,cinematicFrame);if(director3D)director3D.update(stamp,time,weather,cinemaPrefs.strength,cinemaPrefs.quality);
  applyTerrainLOD();
  if(terrainTransition)terrainTransition.pump(save.mode==='drive'?(visualEffects==='lite'?3:5):(visualEffects==='lite'?6:10));
  fadeRetiringTerrain(stamp);
@@ -10134,6 +10595,7 @@ function pollGamepad(){
  if(paused){if(rising('back'))setPaused(false);return;}
  if(heroInspection||activity)return;
  if(rising('interact')&&!worldPrimaryAction())interact();
+ if(rising('jump')&&worldActive)worldPrimaryAction();
  if(rising('map')&&!backdropOpen)toggleMap();
 }
 function play(resume){paused=false;accumulatedPauseMs=0;pauseBeganAt=0;
@@ -10187,25 +10649,52 @@ function openWorldActivity(id){
 }
 function worldAction(action){
  if(!worldActive||!isWorld3D())return;
- if(action==='cast')cueHero('fish',1000);
+ if(action==='cast'||action==='reel')cueHero('fish',action==='cast'?1000:640);
  if(action==='track'||action==='shoot')cueHero('hunt',700);
- if(action==='plot'||action==='water')cueHero('farm',950);
- if(action==='cook'||action.startsWith('recipe'))cueHero('cook',1400);
+ if(action==='plot'||action.startsWith('plot-')||action==='water')cueHero('farm',950);
+ if(action==='cook'||C.RECIPES[action])cueHero('cook',1400);
  const now=Date.now();let r;
  if(worldActive==='hunt'){
   if(action==='track'){const list=['deer','turkey','rabbit'];const baseTarget=.18+rand()*.64;worldHuntRound={target:baseTarget,baseTarget,startedAt:now,kind:list[Math.floor(rand()*list.length)],expiresAt:now+12000};worldStatus='Track the moving wildlife target. Slide the gold marker to align, then take your shot.';}
   if(action==='shoot'&&worldHuntRound){worldHuntRound.target=WORLD.huntTargetAt(worldHuntRound,now);r=C.huntShot(save,worldAim,worldHuntRound.target,now,worldHuntRound.expiresAt);save=r.save;worldStatus=r.result==='hit'?'🎯 Wildlife challenge complete! +1 virtual game · 35 coins · 60 XP.':r.result==='missed'?'Clean miss. Try tracking again.':'The wildlife moved on. Track again.';worldHuntRound=null;if(r.result==='hit')audioChime();}
  }else if(worldActive==='fish'){
-  if(action==='cast'){const kinds=['bluegill','channelCatfish','bass'];worldFishRound={biteAt:now+1550+Math.floor(rand()*2400),kind:kinds[Math.floor(rand()*3)]};worldStatus='Line in the water! Watch the floating bobber for a bite.';}
-  if(action==='reel'&&worldFishRound){r=C.fishReel(save,worldFishRound.biteAt,now,worldFishRound.kind);save=r.save;worldStatus=r.result==='caught'?`🐟 Caught ${worldFishRound.kind}! +1 fish · 30 coins · 55 XP.`:r.result==='early'?'Too early. Let the bobber dip.':'The fish escaped. Cast again.';worldFishRound=null;if(r.result==='caught')audioChime();}
+  if(action==='cast'){
+   const kinds=['bluegill','channelCatfish','bass'];
+   worldFishRound=SKILLS.newFishingRound(now+1550+Math.floor(rand()*2400),kinds[Math.floor(rand()*3)]);
+   worldStatus='Line in the water. Wait for the bobber to dip, then hook and manage the line.';
+  }
+  if(action==='reel'&&worldFishRound){
+   const species=worldFishRound.kind;
+   const attempt=SKILLS.reel(worldFishRound,now,worldAim);
+   worldFishRound=attempt.round;
+   if(attempt.result==='landed'){
+    r=C.landFish(save,species);save=r.save;
+    worldStatus=`🐟 Landed ${species}! +1 fish · 30 coins · 55 XP.`;
+    worldFishRound=null;audioChime();
+   }else if(attempt.result==='hooked')worldStatus='Fish hooked! Keep the slider near the moving tension target and reel three good times.';
+   else if(attempt.result==='good-reel')worldStatus=`Good reel! ${worldFishRound.progress}/3 · keep the line steady.`;
+   else if(attempt.result==='slack-or-strain')worldStatus='Uneven tension. Follow the changing target and try again.';
+   else if(attempt.result==='early')worldStatus='Not biting yet. Watch the bobber before hooking.';
+   else if(attempt.result==='cooldown')worldStatus='Let the reel settle briefly.';
+   else if(['escaped','line-broke'].includes(attempt.result)){worldFishRound=null;worldStatus='The fish got away. Cast again.';}
+  }
  }else if(worldActive==='farm'){
   if(action==='water')r=C.waterFarm(save,now);
-  if(action==='plot'){let p=WORLD.farmPick(save,now);r=C.farmAction(save,p.index,now);}
+  if(action==='plot'||action.startsWith('plot-')){
+   const chosen=action.startsWith('plot-')?SKILLS.farmPlotIndex(Number(action.slice(5))):null;
+   const plot=chosen===null?WORLD.farmPick(save,now).index:chosen;
+   r=C.farmAction(save,plot,now);
+  }
   if(r){save=r.save;worldStatus=({'planted':'🌱 Seeds planted in the visible field.','harvested':'🌽 Harvested corn! +45 coins · 45 XP.','watered':'💧 Growing crops watered.','growing':'The crops are still growing.','needs-coins':'You need more coins. Collect a discovery stamp first.','none':'Plant some corn before watering.'})[r.result]||r.result;if(r.result==='harvested')audioChime();}
  }else if(worldActive==='cook'){
   if(C.RECIPES[action]){r=C.cookRecipe(save,action);save=r.save;worldStatus=r.result==='cooked'?`🍲 ${C.RECIPES[action].title} is ready! Added to your saved pantry.`:'You need more ingredients. Fish and farm in the world first.';if(r.result==='cooked')audioChime();}
  }
  showWorldActivity();updateHUD();persist();
+}
+function adjustWorldAim(delta){
+ if(!worldActive||!Number.isFinite(delta))return;
+ worldAim=C.clamp(worldAim+delta,0,1);
+ $('worldAim').value=String(Math.round(worldAim*100));
 }
 function worldPrimaryAction(){if(!worldActive)return false;
  if(worldActive==='hunt')worldAction(worldHuntRound?'shoot':'track');
@@ -10217,13 +10706,23 @@ function worldPrimaryAction(){if(!worldActive)return false;
 function showWorldActivity(){
  const id=worldActive;if(!id)return;const place=WORLD.SITES[id];$('worldActivityTitle').textContent=place.label+' · '+place.title;
  const pantry=`Pantry: 🌽 ${save.inventory.corn} · 🐟 ${save.inventory.fish} · 🦌 ${save.inventory.game} · 🍲 ${save.inventory.meals}`;
- let text='',actions=[],aim=id==='hunt'&&!!worldHuntRound;
+ let text='',actions=[],aim=(id==='hunt'&&!!worldHuntRound)||(id==='fish'&&worldFishRound?.phase==='fight');
  if(id==='hunt'){text='Track deer, turkey, or rabbit models moving through the clearing. Align the 3D gold targeting ring with the animal; no gore.';actions=worldHuntRound?[['shoot','🎯 Take shot']]:[['track','🔭 Track wildlife']];}
- if(id==='fish'){text='Cast directly from the 3D fishing pier. Watch the animated river bobber; reel when the bite flashes.';actions=worldFishRound?[['reel','🎣 Reel now!']]:[['cast','🎣 Cast line']];}
- if(id==='farm'){const pick=WORLD.farmPick(save,Date.now());text='Work the nine actual farm plots. Growing corn appears in 3D; harvest is saved to your pantry.';actions=[['plot',pick.action==='harvest'?'🌽 Harvest ready crop':pick.action==='plant'?'🌱 Plant next plot (15 coins)':'🌿 Check crops'],['water','💧 Water (20 coins)']];}
+ if(id==='fish'){
+  text='Fish from the real-time 3D pier. Hook when the bobber dips, then align line tension with the moving target and complete three controlled reels.';
+  actions=worldFishRound?[['reel',worldFishRound.phase==='fight'?'🧵 Reel at the target':'🎣 Hook on the bite']]:[['cast','🎣 Cast line']];
+ }
+ if(id==='farm'){
+  const pick=WORLD.farmPick(save,Date.now());
+  text='Select any of the nine terrain-aligned 3D plots. Plant, water and harvest individually; crop stages persist locally.';
+  actions=[['plot',pick.action==='harvest'?'🌽 Harvest ready crop':pick.action==='plant'?'🌱 Plant next plot (15 coins)':'🌿 Check crops'],['water','💧 Water (20 coins)']];
+ }
  if(id==='cook'){text='Cook beside the animated campfire in your world. Gather fish and corn first; meals are saved.';actions=Object.entries(C.RECIPES).map(([id,r])=>[id,r.title+' · '+r.coins+' coins',!Object.entries(r.ingredients).every(([k,n])=>save.inventory[k]>=n)]);}
- $('worldActivityText').textContent=text;$('worldAimLabel').hidden=!aim;
- $('worldActionButtons').innerHTML=actions.map(([action,label,disabled],i)=>`<button ${disabled?'disabled':''} class="${i===0?'primaryAction':''}" data-worldaction="${action}">${label}</button>`).join('');
+ $('worldActivityText').textContent=text+' Controls: E/Space or gamepad X/A to act; Q/R, gamepad LB/RB or touch slider to aim. Farm: number keys 1–9 select plots.';$('worldAimLabel').hidden=!aim;
+ $('worldAimTitle').textContent=id==='fish'?'Line tension — match the moving target':'Track wildlife — align the marker';
+ const plots=id==='farm'?'<div class="worldFarmGrid" role="group" aria-label="Select any field">'+save.farmPlots.map((t,i)=>
+  `<button class="farmPlotButton" data-worldaction="plot-${i}" aria-label="Field ${i+1}">${t===0?'🌱':t>Date.now()?'🌿':'🌽'} Plot ${i+1}</button>`).join('')+'</div>':'';
+ $('worldActionButtons').innerHTML=actions.map(([action,label,disabled],i)=>`<button ${disabled?'disabled':''} class="${i===0?'primaryAction':''}" data-worldaction="${action}">${label}</button>`).join('')+plots;
  $('worldActivityMeter').textContent=worldStatus?worldStatus+' · '+pantry:pantry;
 }
 function updateWorldHUD(){if(!worldActive)return;const now=Date.now();const label=$('worldActivityMeter');
@@ -10232,7 +10731,13 @@ function updateWorldHUD(){if(!worldActive)return;const now=Date.now();const labe
   const hint=save.pet?COMPANION.hint(worldAim,worldHuntRound.target):null;
   label.textContent=`Wildlife tracking · ${left.toFixed(1)}s left · Aim ${(worldAim*100).toFixed(0)}% · ${hint==='close'?'🐕 Scout: near the trail':hint==='left'?'🐕 Scout: look left':hint==='right'?'🐕 Scout: look right':'Track by eye'}`;
  if(left===0){worldHuntRound=null;worldStatus='Time elapsed. The animal moved away.';showWorldActivity();}}
- else if(worldFishRound){label.textContent=now<worldFishRound.biteAt?'🌊 Watch the 3D bobber…':now<=worldFishRound.biteAt+1100?'⚡ BITE! REEL NOW!':'💨 Fish gone. Reel to reset, or cast again.';}
+ else if(worldFishRound){
+  const cue=SKILLS.fishCue(worldFishRound,now);
+  if(cue.phase==='fight'){
+   label.textContent=`🎣 Reel ${cue.progress}/3 · Aim ${Math.round(worldAim*100)}% · tension target ${Math.round(cue.target*100)}% · strain ${Math.round(cue.tension*100)}%`;
+   $('worldAimLabel').hidden=false;
+  }else label.textContent=cue.phase==='waiting'?'🌊 Watch the 3D bobber…':now<=worldFishRound.biteAt+1100?'⚡ BITE! HOOK NOW!':'💨 Fish gone. Reel to reset, or cast again.';
+ }
 }
 function renderFarm(){
  const now=Date.now();$('farmGrid').innerHTML=save.farmPlots.map((t,i)=>{
@@ -10332,6 +10837,14 @@ function update(dt,stamp){
  if(heroInspection||activity){motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;currentTravelSpeed=0;return;}
  currentTravelSpeed=0;
  if(touring){motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;stepTour(dt);}else{
+  // Standard gamepad right stick is camera look; shoulder buttons control
+  // the shared targeting/tension slider during real 3D activities.
+  if(gamepadInput.connected){
+   cameraYaw-=gamepadInput.lookX*dt*2.1;
+   if(!worldActive)cameraDist=C.clamp(cameraDist+gamepadInput.lookY*dt*50,42,310);
+   if(worldActive&&gamepadInput.aimLeft!==gamepadInput.aimRight)
+    adjustWorldAim((gamepadInput.aimRight?1:-1)*dt*.63);
+  }
   let x=0,z=0;
   if(keys.has('w')||keys.has('arrowup')||keys.has('up'))z-=1;
   if(keys.has('s')||keys.has('arrowdown')||keys.has('down'))z+=1;
@@ -10520,7 +11033,7 @@ function bindUI(){
  $('closePanel').addEventListener('click',()=>$('panel').classList.remove('open'));
  $('openCinema').addEventListener('click',openCinema);$('closeCinema').addEventListener('click',closeCinema);$('openStage').addEventListener('click',openBackdrop);$('closeStage').addEventListener('click',closeBackdrop);$('stageScene').addEventListener('change',e=>{shotPlaying=false;$('stageTour').textContent='▶ Play scenic tour';backdropLocation=e.target.value;$('stageShotLabel').textContent='Custom · '+STORY.SCENES[backdropLocation];$('stageShotCount').textContent='Custom';backdropLast=0;});$('stageCapture').addEventListener('click',captureBackdrop);$('stageNext').addEventListener('click',()=>{shotPlaying=false;$('stageTour').textContent='▶ Play scenic tour';applyShot(shotIndex+1);});$('stagePrev').addEventListener('click',()=>{shotPlaying=false;$('stageTour').textContent='▶ Play scenic tour';applyShot(shotIndex-1);});$('stageTour').addEventListener('click',startStopShotTour);$('stageBoard').addEventListener('click',exportShotBoard);
  $('cineLook').addEventListener('change',e=>chooseCinemaLook(e.target.value));
- $('cineGolden').addEventListener('click',()=>chooseCinemaLook('golden'));$('cineNight').addEventListener('click',()=>chooseCinemaLook('lantern'));$('cineReset').addEventListener('click',()=>chooseCinemaLook('natural'));
+ $('cineGolden').addEventListener('click',()=>chooseCinemaLook('golden'));$('cineNight').addEventListener('click',()=>chooseCinemaLook('lantern'));$('cineReset').addEventListener('click',()=>chooseCinemaLook('natural'));$('cineFly').addEventListener('click',()=>{if(!started||view!=='3d'||!renderer){toast('Start the adventure in 3D view first.');return;}closeCinema();if(!touring)startTour();});
  $('cineQuality').addEventListener('change',e=>{cinemaPrefs.quality=e.target.value;syncCinemaControls();saveCinemaPrefs();toast('Graphics effect budget: '+cinemaPrefs.quality);});
  $('cineStrength').addEventListener('input',e=>{cinemaPrefs.strength=Number(e.target.value)/100;syncCinemaControls();saveCinemaPrefs();});
  for(const [id,key] of [['cineGrain','grain'],['cineStats','showStats']])$(id).addEventListener('change',e=>{cinemaPrefs[key]=e.target.checked;syncCinemaControls();saveCinemaPrefs();});
@@ -10594,10 +11107,14 @@ function bindUI(){
   }
   if(e.target.matches('input,select,textarea'))return;
   if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();keys.add(k);
+  // One gameplay action per real keypress; held keys still drive continuous movement.
+  if(e.repeat&&(k==='e'||k===' '))return;
   if(!started)return;
   if(k==='v'){heroInspection?closeHeroStudio():openHeroStudio();return;}
   if(heroInspection){if(k==='escape')closeHeroStudio();return;}
   if(k==='e'||k===' '){if(!activity&&!worldPrimaryAction())interact();}
+   if(worldActive&&(k==='q'||k==='r'))adjustWorldAim(k==='q'?-.055:.055);
+   if(worldActive==='farm'&&/^[1-9]$/.test(k))worldAction('plot-'+(Number(k)-1));
   // J / mobile JUMP is sampled in the kinematic step and never auto-repeats.
  if(k==='b')openScout();if(k==='n')openCounty();if(k==='h')openWorldActivity('hunt');if(k==='f')openWorldActivity('fish');if(k==='g')openWorldActivity('farm');if(k==='k')openWorldActivity('cook');if(k==='m'&&!activity&&!backdropOpen)toggleMap();if(k==='p')screenshot();if(k==='c'&&!activity){$('cinemaPanel').classList.contains('open')?closeCinema():openCinema();}if(k==='escape'){if(!$('countyPanel').hidden){closeCounty();return;}if(!$('scoutPanel').hidden){$('scoutPanel').hidden=true;return;}if(worldActive)closeWorldActivity();else if(backdropOpen)closeBackdrop();else if(activity)closeActivity();else if($('cinemaPanel').classList.contains('open'))closeCinema();else if($('panel').classList.contains('open'))$('panel').classList.remove('open');else setPaused(true);}
  });document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;});
@@ -10643,7 +11160,7 @@ function init(){
  }
  resize();updateHUD();mapDraw(mapCtx,mapCanvas.width,mapCanvas.height,false);
  requestAnimationFrame(loop);
- window.RiverValleyDebug={getState:()=>({paused,gamepadConnected:!!gamepadInput.connected,playerExperience:playerPreferences?.snapshot()||null,scoutRigAction:dog?.userData.customScout?.userData.active||null,scoutRigReady:!!dog?.userData.customScout?.userData.mixer,worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,heroPreviewReady:!!heroPreviewStage,heroInspection,heroPreviewPose,heroPreviewFocus:heroPreviewStage?.focus||null,heroPreviewAngle:heroPreviewStage?.angle||null,heroState,heroModel:!!heroController,heroProfile:HERO?.PROFILE?.id||null,heroSkinned:!!heroController?.skinned,heroLOD:heroController?.lod||'FALLBACK',heroCustomGLB:heroController?.lod==='CUSTOM',castPrototypeId:heroController?.castId||null,castPrototypeSelected:CAST_WARDROBE?.selection?.()||null,heroAssetFallback:!!heroController?.root?.userData?.fallback,heroRigLoadError:window.ValleyHeroRigFailure||null,scout:scout?.snapshot()||null,scoutCustomMesh:!!dog?.userData?.customScout,scoutBond:save.scoutBond,countyRegion:save.countyRegion,countyVisited:[...save.countyVisited],countyBoundaryVertices:COUNTY_DATA?.boundary?.length||0,countyVignettes:countyVignettes?.counts||null,collision:collisionWorld.snapshot(),vehicleSuspension:suspension.snapshot(),worldPaint:terrainDecor?.counts||null,lastCollision,audio:soundscape.snapshot(),performance:frameProbe.summary(),performanceScenes:frameProbe.cohorts(),terrainTransition:terrainTransition?.status()||null,roadRefreshQueued,pixelRatio:activePixelRatio,heroHeightOffset,groundShadowReady:!!groundShadow,motionState:motion.snapshot(),heroTexturedMeshes:heroController?.meshes?.filter(m=>!!m.material?.map).length||0,heroEmbeddedTextures:heroController?.embeddedTextures||null,heroStudioEmbeddedTextures:heroPreviewStage?.hero?.embeddedTextures||null,heroRigOverlay:heroPreviewStage?.skeletonVisible||false,heroStudioSkeletonBones:heroPreviewStage?.skeletonBoneCount||0,heroActiveClip:heroController?.activeClip||null,heroGaiterPrintReady:!!heroController?.gaiterDecalReady,heroFootContacts:heroController?.footContacts||null,heroBoneCount:heroController?.skinned?Object.keys(heroController.joints).length:0,heroClipCount:heroController?.clips?.length||0,heroParts:heroController?Object.keys(heroController.joints).length:0,terrainTransition:terrainTransition?.status()||null,vegetation:foliageStats||null,renderWorkers:{buildings:buildingJobs?.snapshot(),foliage:foliageJobs?.snapshot(),buildingStrategy},meadow:grassLayer?.snapshot()||null,graphicsQuality:visualEffects,optionalGzipSupport:!!(ASSET_CODEC&&typeof DecompressionStream==='function'),facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,courthouseAnchor:LANDMARKS?.courthouse?.gamePosition||null,courthouseFootprintIndex,courthouseRoofStatus:LANDMARKS?.courthouse?.roofHeightStatus||'UNVERIFIED',imageryYear:leafonImage&&LEAFON?'2025-partial / 2023-fallback':REF?.metadata?.downtownTileYear||null,leafOn2025:{bundled:!!LEAFON,ready:!!leafonImage,draped:!!leafonDrape,coverage:LEAFON?.metadata?.validPixelCoverageFraction||0,sourceSHA256:LEAFON?.metadata?.overlaySHA256||null}},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),resetPerformance:()=>frameProbe.reset(),capturePerformance:()=>frameProbe.report({renderer:'WebGL',viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio||1},mode:save.mode,quality:visualEffects,userAgent:navigator.userAgent}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
+ window.RiverValleyDebug={getState:()=>({paused,gamepadConnected:!!gamepadInput.connected,playerExperience:playerPreferences?.snapshot()||null,scoutRigAction:dog?.userData.customScout?.userData.active||null,scoutRigReady:!!dog?.userData.customScout?.userData.mixer,worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,worldFishPhase:worldFishRound?.phase??null,worldFishTarget:worldFishRound?SKILLS.fishCue(worldFishRound,Date.now()).target:null,worldFishProgress:worldFishRound?.progress??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,heroPreviewReady:!!heroPreviewStage,heroInspection,heroPreviewPose,heroPreviewFocus:heroPreviewStage?.focus||null,heroPreviewAngle:heroPreviewStage?.angle||null,heroState,heroModel:!!heroController,heroProfile:HERO?.PROFILE?.id||null,heroSkinned:!!heroController?.skinned,heroLOD:heroController?.lod||'FALLBACK',heroCustomGLB:heroController?.lod==='CUSTOM',castPrototypeId:heroController?.castId||null,castPrototypeSelected:CAST_WARDROBE?.selection?.()||null,heroAssetFallback:!!heroController?.root?.userData?.fallback,heroRigLoadError:window.ValleyHeroRigFailure||null,scout:scout?.snapshot()||null,scoutCustomMesh:!!dog?.userData?.customScout,scoutBond:save.scoutBond,countyRegion:save.countyRegion,countyVisited:[...save.countyVisited],countyBoundaryVertices:COUNTY_DATA?.boundary?.length||0,countyVignettes:countyVignettes?.counts||null,collision:collisionWorld.snapshot(),vehicleSuspension:suspension.snapshot(),worldPaint:terrainDecor?.counts||null,lastCollision,audio:soundscape.snapshot(),performance:frameProbe.summary(),performanceScenes:frameProbe.cohorts(),terrainTransition:terrainTransition?.status()||null,roadRefreshQueued,pixelRatio:activePixelRatio,heroHeightOffset,groundShadowReady:!!groundShadow,motionState:motion.snapshot(),heroTexturedMeshes:heroController?.meshes?.filter(m=>!!m.material?.map).length||0,heroEmbeddedTextures:heroController?.embeddedTextures||null,heroStudioEmbeddedTextures:heroPreviewStage?.hero?.embeddedTextures||null,heroRigOverlay:heroPreviewStage?.skeletonVisible||false,heroStudioSkeletonBones:heroPreviewStage?.skeletonBoneCount||0,heroActiveClip:heroController?.activeClip||null,heroGaiterPrintReady:!!heroController?.gaiterDecalReady,heroFootContacts:heroController?.footContacts||null,heroBoneCount:heroController?.skinned?Object.keys(heroController.joints).length:0,heroClipCount:heroController?.clips?.length||0,heroParts:heroController?Object.keys(heroController.joints).length:0,terrainTransition:terrainTransition?.status()||null,vegetation:foliageStats||null,renderWorkers:{buildings:buildingJobs?.snapshot(),foliage:foliageJobs?.snapshot(),buildingStrategy},meadow:grassLayer?.snapshot()||null,graphicsQuality:visualEffects,optionalGzipSupport:!!(ASSET_CODEC&&typeof DecompressionStream==='function'),facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,courthouseAnchor:LANDMARKS?.courthouse?.gamePosition||null,courthouseFootprintIndex,courthouseRoofStatus:LANDMARKS?.courthouse?.roofHeightStatus||'UNVERIFIED',imageryYear:leafonImage&&LEAFON?'2025-partial / 2023-fallback':REF?.metadata?.downtownTileYear||null,leafOn2025:{bundled:!!LEAFON,ready:!!leafonImage,draped:!!leafonDrape,coverage:LEAFON?.metadata?.validPixelCoverageFraction||0,sourceSHA256:LEAFON?.metadata?.overlaySHA256||null}},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),resetPerformance:()=>frameProbe.reset(),capturePerformance:()=>frameProbe.report({renderer:'WebGL',viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio||1},mode:save.mode,quality:visualEffects,userAgent:navigator.userAgent}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
 }
 window.ValleyCastBridge=Object.freeze({applySelection:()=>{
  updateHeroGeometryQuality(true);
