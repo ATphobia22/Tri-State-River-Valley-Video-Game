@@ -55,7 +55,11 @@ def inspect(page, *, mobile: bool):
                 scriptAssignments: [...document.scripts].filter(s => s.textContent.includes('window.ValleyLeafOn2025=')).length,
                 georefSource: typeof window.ValleyGeoReference,
                 roofFidelitySource: typeof window.ValleyRoofFidelity,
-                gameScriptCount: document.scripts.length
+                gameScriptCount: document.scripts.length,
+                scriptEvidence: [...document.scripts].map(s=>({
+                   src:s.src?.split('/').slice(-2).join('/'),len:s.textContent?.length||0,
+                   start:(s.textContent||'').slice(0,52)
+                })).filter(s=>s.start.includes('IGIO')||s.start.includes('ValleyLeafOn')||s.src.includes('leafon')||s.len>500000).slice(0,10)
             })"""),
             "state":{
                 "renderMode":snapshot.get("renderMode") if snapshot else None,
