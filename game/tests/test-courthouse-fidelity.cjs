@@ -24,6 +24,11 @@ test('courthouse is a detailed low-draw architectural mesh grounded to shared DE
  assert.equal(mesh.userData.heightStatus,'DESIGN_ESTIMATE_NOT_LIDAR');
  assert.ok(mesh.position.y>=0&&mesh.position.y<20);
  assert.equal(mesh.rotation.y,anchor.rotationY);
+ assert.equal(mesh.userData.horizontalSource,'https://gisdata.in.gov/server/rest/services/Hosted/Building_Footprints/FeatureServer/0');
+ const gameSource=fs.readFileSync(path.join(__dirname,'../src/game.js'),'utf8');
+ assert.ok(gameSource.includes('COURTHOUSE.create(G,GEOREF,height)'));
+ assert.ok(gameSource.includes('COURTHOUSE.isSourceBuilding(footprint,courtAnchor)'));
+
  let drawCalls=0,triangles=0;
  mesh.traverse(obj=>{if(obj.isMesh){
    drawCalls++;
