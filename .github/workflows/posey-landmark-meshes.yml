@@ -11,6 +11,12 @@ on:
       - game/tests/test_posey_courthouse_mesh.py
       - game/tests/test_landmark_anchors.py
       - game/tests/test-courthouse-contract.cjs
+      - game/src/landmark-access.js
+      - game/src/game.js
+      - game/src/core.js
+      - game/index.html
+      - game/sw.js
+      - game/tests/test-landmark-access.cjs
   workflow_dispatch:
 
 permissions:
