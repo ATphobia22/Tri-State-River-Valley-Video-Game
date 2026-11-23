@@ -29,10 +29,13 @@ with tempfile.TemporaryDirectory() as folder, sync_playwright() as pw:
         context = browser.new_context(offline=offline, viewport={'width':900,'height':580})
         page = context.new_page()
         errors = []
-        page.on('pageerror', lambda ex: errors.append(str(ex)))
-        page.on('console', lambda msg: print(msg.text, flush=True) if msg.type=='error' else None)
+        page.on('pageerror', lambda ex: (errors.append(str(ex)), print('PAGE ERROR:', str(ex), flush=True)))
+        page.on('console', lambda msg: print('BROWSER '+msg.type+': '+msg.text, flush=True) if msg.type in ('error','warning') else None)
         url = (root/'valley-offline.html').as_uri() if offline else f'http://127.0.0.1:{server.server_port}/'
         page.goto(url, wait_until='domcontentloaded')
+        page.wait_for_timeout(3500)
+        print('BOOT:', page.locator('#status').inner_text(), 'SCENE:', page.evaluate('Boolean(window.ValleyScene)'), flush=True)
+        if errors:raise AssertionError('Browser initialization error: '+repr(errors))
         page.wait_for_function('window.ValleyScene?.diagnostics().fineTiles > 0',timeout=120000)
         def diag():
             return page.evaluate('ValleyScene.diagnostics()')
