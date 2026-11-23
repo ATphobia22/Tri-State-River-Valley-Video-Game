@@ -1,0 +1,55 @@
+name: Courthouse reconstruction adapters — headless tests
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'game/tools/reconstruction_engine.py'
+      - 'game/tools/cpu_volume.py'
+      - 'game/tools/requirements-reconstruction.txt'
+      - 'game/tests/test_reconstruction_engine.py'
+      - 'game/courthouse-review.html'
+      - 'game/tools/build_pages.py'
+      - '.github/workflows/reconstruction-adapters.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'game/tools/reconstruction_engine.py'
+      - 'game/tools/cpu_volume.py'
+      - 'game/tools/requirements-reconstruction.txt'
+      - 'game/tests/test_reconstruction_engine.py'
+      - 'game/courthouse-review.html'
+      - 'game/tools/build_pages.py'
+      - '.github/workflows/reconstruction-adapters.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  adapters:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install bounded adapter math dependencies
+        run: python -m pip install -r game/tools/requirements-reconstruction.txt
+      - name: Parse and test real COLMAP/OpenMVS adapters without invented native runs
+        run: |
+          python -m compileall -q game/tools/reconstruction_engine.py game/tools/cpu_volume.py game/tests/test_reconstruction_engine.py
+          python -m unittest discover -s game/tests -p test_reconstruction_engine.py -v
+      - name: Inspect available native programs, do not pretend to run missing binaries
+        run: python game/tools/reconstruction_engine.py doctor
+      - name: Confirm reviewed GLB is opt-in and worker remains absent from production runtime
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          html=Path('game/index.html').read_text()
+          review=Path('game/courthouse-review.html').read_text()
+          engine=Path('game/tools/reconstruction_engine.py').read_text()
+          assert 'RiverGLTFLoader' in review
+          assert 'courthouse_candidate_REVIEW_ONLY.glb' in engine
+          assert 'courthouse_candidate_REVIEW_ONLY.glb' not in html
+          assert 'serviceWorker.register(' not in review
+          print('PASS: reconstruction is review-only and does not restore service workers')
+          PY
