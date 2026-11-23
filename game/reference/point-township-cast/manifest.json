@@ -1,0 +1,126 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Reference-only character art direction for Point Township Family + Friends cutscenes/minigames",
+  "verification": "Labels transcribed from box art; not independent identification of pictured people",
+  "game": "ATphobia22/Tri-State-River-Valley-Video-Game",
+  "public_photos_embedded": false,
+  "source_images_uploaded_but_not_published": true,
+  "characters": [
+    {
+      "asset_id": "point-township-fig-01",
+      "number": "01",
+      "box_label": "Pete Yeida",
+      "visual_features": "Orange knit cap; glasses; light-blue work shirt; blue jeans; brown boots",
+      "source": "user-supplied collectible box illustration",
+      "status": "REFERENCE_ONLY",
+      "skeletal_mesh": false,
+      "animation_clips": 0,
+      "texture_atlas": false,
+      "public_photo_included": false
+    },
+    {
+      "asset_id": "point-township-fig-02",
+      "number": "02",
+      "box_label": "Larry Goldman",
+      "visual_features": "Dark cap; sunglasses; mustache; bark-pattern jacket; blue jeans",
+      "source": "user-supplied collectible box illustration",
+      "status": "REFERENCE_ONLY",
+      "skeletal_mesh": false,
+      "animation_clips": 0,
+      "texture_atlas": false,
+      "public_photo_included": false
+    },
+    {
+      "asset_id": "point-township-fig-03",
+      "number": "03",
+      "box_label": "Richard Stratton",
+      "visual_features": "Orange knit cap; gray beard; plaid overshirt; dark shirt; blue jeans; ATV scene",
+      "source": "user-supplied collectible box illustration",
+      "status": "REFERENCE_ONLY",
+      "skeletal_mesh": false,
+      "animation_clips": 0,
+      "texture_atlas": false,
+      "public_photo_included": false
+    },
+    {
+      "asset_id": "point-township-fig-04",
+      "number": "04",
+      "box_label": "Marcus Stevens",
+      "visual_features": "Orange knit cap; beard; sunglasses; green camouflage jacket and trousers",
+      "source": "user-supplied collectible box illustration",
+      "status": "REFERENCE_ONLY",
+      "skeletal_mesh": false,
+      "animation_clips": 0,
+      "texture_atlas": false,
+      "public_photo_included": false
+    },
+    {
+      "asset_id": "point-township-fig-05",
+      "number": "05",
+      "box_label": "Roy Tenney",
+      "visual_features": "Red knit cap; mustache; bark-pattern jacket; blue hooded layer; jeans",
+      "source": "user-supplied collectible box illustration",
+      "status": "REFERENCE_ONLY",
+      "skeletal_mesh": false,
+      "animation_clips": 0,
+      "texture_atlas": false,
+      "public_photo_included": false
+    },
+    {
+      "asset_id": "point-township-fig-06",
+      "number": "06",
+      "box_label": "Bill Tucker",
+      "visual_features": "Light camouflage cap; bark-pattern jacket; red collar; jeans",
+      "source": "user-supplied collectible box illustration",
+      "status": "REFERENCE_ONLY",
+      "skeletal_mesh": false,
+      "animation_clips": 0,
+      "texture_atlas": false,
+      "public_photo_included": false
+    },
+    {
+      "asset_id": "point-township-fig-07",
+      "number": "07",
+      "box_label": "Wally Wallace",
+      "visual_features": "Gray beard; eyeglasses; camouflage cap and jacket; olive trousers",
+      "source": "user-supplied collectible box illustration",
+      "status": "REFERENCE_ONLY",
+      "skeletal_mesh": false,
+      "animation_clips": 0,
+      "texture_atlas": false,
+      "public_photo_included": false
+    },
+    {
+      "asset_id": "point-township-fig-08",
+      "number": "08",
+      "box_label": "Allen Tucker",
+      "visual_features": "Camouflage cap; camouflage shirt; blue jeans; deer antlers",
+      "source": "user-supplied collectible box illustration",
+      "status": "REFERENCE_ONLY",
+      "skeletal_mesh": false,
+      "animation_clips": 0,
+      "texture_atlas": false,
+      "public_photo_included": false
+    },
+    {
+      "asset_id": "point-township-set-tucker-family",
+      "box_label": "The Tucker Family",
+      "visual_features": "Family grouping and deer display in boxed set",
+      "source": "user-supplied collectible box illustration",
+      "status": "REFERENCE_ONLY",
+      "skeletal_mesh": false,
+      "animation_clips": 0,
+      "public_photo_included": false
+    },
+    {
+      "asset_id": "point-township-set-yeida-family",
+      "box_label": "The Yeida Family",
+      "visual_features": "Family collector-set image with memorial packaging text",
+      "source": "user-supplied collectible box illustration",
+      "status": "REFERENCE_ONLY",
+      "skeletal_mesh": false,
+      "animation_clips": 0,
+      "public_photo_included": false
+    }
+  ]
+}
