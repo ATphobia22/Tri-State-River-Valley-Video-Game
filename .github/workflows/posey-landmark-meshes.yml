@@ -17,6 +17,9 @@ on:
       - game/index.html
       - game/sw.js
       - game/tests/test-landmark-access.cjs
+      - game/tools/intake_character_candidate.py
+      - game/tests/test_character_candidate_intake.py
+      - game/reference/character-candidates-20261123.json
   workflow_dispatch:
 
 permissions:
@@ -49,6 +52,8 @@ jobs:
           python -m unittest discover -s game/tests -p 'test_landmark_anchors.py' -v
           python -m unittest discover -s game/tests -p 'test_posey_courthouse_mesh.py' -v
           node --test game/tests/test-building-roofs.cjs
+          node --test game/tests/test-landmark-access.cjs
+          python -m unittest discover -s game/tests -p 'test_character_candidate_intake.py' -v
       - name: Generate the mesh, official horizontal anchor, and provenance receipt
         run: |
           python game/build_models.py
