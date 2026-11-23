@@ -97,6 +97,10 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Test playable 3D hero on desktop and phone-sized Chromium
         run: python game/tests/browser_hero_smoke.py
+      - name: Test default Pages packaging and opt-in character-review isolation
+        run: python -m unittest discover -s game/tests -p test_pages_build.py -v
+      - name: Verify opt-in River and Scout WebGL rigs and exported asset hashes
+        run: python game/tests/browser_cast_review.py
       - name: Capture controlled 24-condition world rendering matrix on SwiftShader
         run: python game/tests/browser_perf_matrix.py --frames 18 --output /tmp/river-hero-visual-qa/perf-matrix.json
       - name: Prove fully offline gameplay and save-slot replay in Chromium

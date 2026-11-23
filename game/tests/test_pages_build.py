@@ -30,6 +30,16 @@ class PagesBuildTests(unittest.TestCase):
         self.assertNotIn('http-equiv="refresh"', html)
         self.assertEqual((self.out / 'game.html').read_bytes(), (self.out / 'index.html').read_bytes())
 
+    def test_opt_in_character_review_preserves_normal_pages_entry(self):
+        self.build()
+        regular = (self.out / 'index.html').read_text()
+        review = (self.out / 'character-review.html').read_text()
+        self.assertNotIn('window.ValleyCharacterReview=', regular)
+        self.assertIn('window.ValleyCharacterReview=', review)
+        self.assertIn('riverHash', review)
+        self.assertIn('scoutHash', review)
+        self.assertEqual(review.count('window.ValleyCharacterReview='), 1)
+
     def test_subpath_pwa_offline_root_and_local_icons(self):
         self.build()
         m = json.loads((self.out / 'game.webmanifest').read_text())
