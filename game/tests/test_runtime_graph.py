@@ -27,6 +27,15 @@ class RuntimeGraphAudit(unittest.TestCase):
             self.assertTrue(any("Unsafe or remote" in x for x in result["errors"]))
             self.assertTrue(any("Missing runtime dependency" in x for x in result["errors"]))
 
+    def test_rejects_active_service_worker_handlers(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "index.html").write_text('<script src="src/game.js"></script>')
+            (root / "sw.js").write_text("self.addEventListener('fetch', () => {});")
+            result = mod.audit(root)
+            self.assertFalse(result["ok"])
+            self.assertTrue(any("Legacy service worker must unregister" in err for err in result["errors"]))
+
     def test_missing_files_are_not_an_empty_success(self):
         with tempfile.TemporaryDirectory() as folder:
             result = mod.audit(Path(folder))
