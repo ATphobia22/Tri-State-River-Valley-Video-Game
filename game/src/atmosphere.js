@@ -48,7 +48,7 @@ function create(THREE,scene,terrainHeight,limit,seed=74378){
  const glints=new THREE.Points(glintGeo,new THREE.PointsMaterial({color:0xf9e0b1,size:2.5,transparent:true,opacity:.54,depthWrite:false}));scene.add(glints);
  function update(camera,time,weather,season,stamp,film){
   sky.position.copy(camera.position);
-  const day=Math.max(0,Math.sin((time-6)*Math.PI/12)),night=1-Math.min(1,day*2.4);
+  const day=Math.max(0,Math.sin((time-6)*Math.PI/12)),night=(film?.look==='golden'&&time>=17.5&&time<19.2)?0:1-Math.min(1,day*2.4);
   skyMat.uniforms.uNight.value=night;
   // One shared art-directed sun/sky palette, not mismatched background and water lighting.
   skyMat.uniforms.uHorizon.value.set(film?.horizon||(weather==='rain'?'#677d91':day<.25?'#a77272':'#e8b892'));
