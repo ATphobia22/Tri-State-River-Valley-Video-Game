@@ -9,7 +9,7 @@ const ctx=atlas.getContext('2d',{alpha:false}); // separate 2D surface; WebGL us
 const mapCtx=mapCanvas.getContext('2d');
 const nameKey=i=>'river-family-adventure-v1-slot-'+i;
 let slot=0,save=C.freshSave('Family Explorer'),started=false,touring=false,tourAt=0,tourTimer=0,tourFrom=null,toastTimer=0;
-let player={x:16,z:504},near=null,selected='riverfront',view='auto',renderer=null,scene=null,camera=null,avatar=null,car=null,dog=null,beaconGroup=null,terrainMesh=null,treeMeshes=[],sunLight=null,ambient=null,waterMesh=null,house=null;
+let player={x:-30,z:503},near=null,selected='riverfront',view='auto',renderer=null,scene=null,camera=null,avatar=null,car=null,dog=null,beaconGroup=null,terrainMesh=null,treeMeshes=[],sunLight=null,ambient=null,waterMesh=null,house=null;
 let activity=null,huntRound=null,fishRound=null,activityInterval=null;
 let worldGame=null,worldActive=null,worldHuntRound=null,worldFishRound=null,worldAim=.5,worldStatus="",lastWorldHUD=0,playerHeading=0;
 let countyVignettes=null,countySelected='mount-vernon',dogParts=null,scout=COMPANION?.create();
@@ -49,6 +49,7 @@ let currentTravelSpeed=0;
 const G=window.THREE;
 const POLISH=window.ValleyVisualPolish,BIOME=window.ValleyBiomeStreamer,LODPLAN=window.ValleyLODTransition,GRAPHICS=window.ValleyGraphicsQuality,ASSET_CODEC=window.ValleyCompressedAssets;
 const RIVER_WATER=window.ValleyRiverWater,ROOFS=window.ValleyBuildingRoofs,LANDMARKS=window.ValleyLandmarkAnchors;
+const ACCESS=window.ValleyLandmarkAccess;
 const CUSTOM_HERO=window.ValleyCustomHero,CAST_WARDROBE=window.ValleyCastWardrobe;
 const HERO=window.ValleyHero;let heroController=null,driverController=null,heroOneShot=null,heroOneShotUntil=0,heroState='idle';const STAGE=window.ValleyHeroStage;let heroPreviewStage=null;let heroInspection=false,heroPreviewPose='idle',previousHeroCamera=null;
 let facadePalette=null,biomeStreamer=null,grassLayer=null,groundPlacementDirty=false,lastVegetationTime=0,terrainTransition=null,retiringTerrain=null;
@@ -915,7 +916,7 @@ function audioChime(){if(save.muted)return;try{
  }catch(err){console.warn('Audio playback blocked',err.message);}}
 function persist(){save.position={x:player.x,z:player.z};save.time=time;save.weather=weather;save.season=season;try{localStorage.setItem(nameKey(slot),JSON.stringify(save));return true;}catch(_){return false;}}
 function readSlot(idx){try{const t=localStorage.getItem(nameKey(idx));return t?C.validateSave(JSON.parse(t)):null;}catch(_){return null;}}
-function applyState(s){save=C.validateSave(s);countySelected=save.countyRegion;scout?.reset();player={...save.position};suspension.reset();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;time=save.time;weather=save.weather;season=save.season;document.body.classList.toggle('rainy',weather==='rain');document.body.classList.toggle('misty',weather==='mist');$('playerName').value=save.name;needsMap=true;updateHUD();}
+function applyState(s){save=C.validateSave(s);countySelected=save.countyRegion;scout?.reset();player=ACCESS?.safeResume({...save.position},LANDMARKS?.courthouse)||{...save.position};save.position={...player};suspension.reset();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;time=save.time;weather=save.weather;season=save.season;document.body.classList.toggle('rainy',weather==='rain');document.body.classList.toggle('misty',weather==='mist');$('playerName').value=save.name;needsMap=true;updateHUD();}
 function play(resume){soundscape.unlock();frameProbe.reset();lastGpuTune=0;soundscape.setMuted(save.muted);slot=Number($('startSlot').value)||0;$('slot').value=String(slot);const loaded=resume?readSlot(slot):null;
  applyState(loaded||C.freshSave($('playerName').value));soundscape.setMuted(save.muted);started=true;$('start').classList.add('hidden');
  if(!renderer){view='2d';$('quality').value='2d';toast('2D Atlas adventure loaded. 3D requires WebGL support.');}
