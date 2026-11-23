@@ -54,7 +54,16 @@
       "uv0": false,
       "embeddedImages": 0,
       "materials": 1,
-      "decision": "PROTOTYPE_RETARGETED_SKIN_DOES_NOT_MEET_TEXTURED_PBR_OR_MANUAL_DEFORMATION_ACCEPTANCE"
+      "decision": "PROTOTYPE_RETARGETED_SKIN_DOES_NOT_MEET_TEXTURED_PBR_OR_MANUAL_DEFORMATION_ACCEPTANCE",
+      "staticNamedClips": [
+        "Drive",
+        "Jump",
+        "Farm"
+      ],
+      "animationFinding": "These three named clips contain no measurable changes across their keyframe samples; clip names alone are not proof of animated deformation.",
+      "multiweightedVertexFraction": 0.279,
+      "influencedJointsAboveFivePercent": 17,
+      "deformationStatus": "REQUIRES_RETARGETING_AND_VIEWPORT_TEST"
     },
     {
       "file": "river_valley_characters_master_turnaround.glb",
@@ -98,7 +107,8 @@
     "gameManifest": "game/assets/models/river_explorer_manifest.json",
     "expectedJoints": 27,
     "expectedClips": 13,
-    "gameplayPolicy": "PRESERVE_EXISTING_RIG_UNTIL_FULL_PRODUCTION_ACCEPTANCE"
+    "gameplayPolicy": "PRESERVE_EXISTING_RIG_UNTIL_FULL_PRODUCTION_ACCEPTANCE",
+    "productionPolicy": "Original 27-joint, 13-clip, textured player remains the live character; candidate evaluation cannot substitute for exact rigged asset promotion."
   },
   "userBinaryImportedToGitHub": false,
   "reason": "Submitted Library binary sources do not meet production visual and compatibility gates; preserve as separately inspected candidates; no false GLB deployment.",
