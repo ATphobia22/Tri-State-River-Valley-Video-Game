@@ -38,16 +38,23 @@
    }
    // Ensure scene props never escape the animal-viewing clearing.
    x=clamp(x,-47,47);z=clamp(z,-24,24);
-   const speed=1+Math.abs(drift)*.5;
    const heading=Math.atan2(-s.radius*s.rate*Math.cos(tick*s.rate+phase),
                             -2*Math.sin(tick*s.rate*.63+phase));
-   const moving=selected||Math.abs(drift)>.2;
+   const distance=Math.hypot(site.x+x-px,site.z+z-pz);
+   const fleeing=!active&&distance<s.fleeRadius*.94;
+   const grazing=!fleeing&&!selected&&Math.sin(tick*.37+phase)>.35;
+   const moving=selected||fleeing||!grazing;
+   const stride=selected?1:fleeing?2.1:grazing?.16:.85;
+   const gait=Math.sin(tick*s.gait*5*stride+phase)*(moving?.31*stride:.05);
    animals[kind]=Object.freeze({
     x,z,height:s.height,rotationY:Number.isFinite(heading)?heading:0,
-    gait:Math.sin(tick*s.gait*5+phase)*(moving?.27:.05),
-    bob:Math.abs(Math.sin(tick*s.gait*5+phase))*(kind==='rabbit'?.75:.13),
+    behavior:fleeing?'flee':selected?'tracked':grazing?'forage':'wander',
+    gait,headDip:grazing?.2+.18*Math.sin(tick*.75+phase):fleeing?-.14:0,
+    earFlick:Math.sin(tick*3.1+phase)*.13,
+    tailSwish:Math.sin(tick*4.6+phase)*.23,
+    bob:Math.abs(Math.sin(tick*s.gait*5*stride+phase))*(kind==='rabbit'?.7:stride*.11),
     visible:active?selected:true,
-    fleeing:!active&&Math.hypot(site.x+x-px,site.z+z-pz)<s.fleeRadius
+    fleeing
    });
   }
   return Object.freeze(animals);
