@@ -36,10 +36,22 @@ def inspect(page, *, mobile: bool):
     assert state()["renderMode"] == "webgl", "WebGL fallback cannot validate hero stage"
     # The actual 2025 source-derived map must be decoded and draped in the
     # playable WebGL scene. A data file merely present in Git is insufficient.
-    page.wait_for_function(
-        "() => !!window.RiverValleyDebug?.getState()?.georeference?.leafOn2025?.draped",
-        timeout=45_000,
-    )
+    try:
+        page.wait_for_function(
+            "() => !!window.RiverValleyDebug?.getState()?.georeference?.leafOn2025?.draped",
+            timeout=45_000,
+        )
+    except Exception:
+        snapshot=page.evaluate("window.RiverValleyDebug?.getState?.() || null")
+        print("AERIAL_DRAPE_TIMEOUT_DEBUG",json.dumps({
+            "mobile":mobile,"issues":issues,"state":{
+                "renderMode":snapshot.get("renderMode") if snapshot else None,
+                "georeference":snapshot.get("georeference") if snapshot else None,
+                "courthouseFidelity":snapshot.get("courthouseFidelity") if snapshot else None,
+                "terrainTiles":snapshot.get("terrainTiles") if snapshot else None,
+                "modelCount":snapshot.get("modelCount") if snapshot else None
+            }},default=str),flush=True)
+        raise
     assert state()["georeference"]["leafOn2025"]["coverage"] > 0.98
     assert state()["georeference"]["imageryYear"] == "2025-partial / 2023-fallback"
 
