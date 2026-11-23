@@ -14,7 +14,7 @@ permissions:
 
 concurrency:
   group: posey-leafon-2025-import
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   acquire:
