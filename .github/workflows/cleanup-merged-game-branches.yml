@@ -1,0 +1,58 @@
+name: Clean up merged River Valley game branches
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cleanup-merged-game-branches.yml'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Audit only; do not delete any fully merged branches'
+        type: boolean
+        default: false
+permissions:
+  contents: write
+  pull-requests: read
+concurrency:
+  group: river-game-merged-branch-reconciliation
+  cancel-in-progress: false
+jobs:
+  cleanup-verified-merged:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify deletion gates with offline mocked GitHub API
+        run: python -m unittest discover -s game/tests -p test_branch_reconcile.py -v
+      - name: Inspect repository branches and delete only fully merged, unprotected branches
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          command=(python game/tools/reconcile_merged_branches.py --repository "$GITHUB_REPOSITORY" --report "$RUNNER_TEMP/game-merged-branch-audit.json")
+          if [[ "$DRY_RUN" != "true" ]]; then command+=(--apply); fi
+          "${command[@]}"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          obj=json.loads((Path(os.environ["RUNNER_TEMP"])/"game-merged-branch-audit.json").read_text())
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a") as out:
+              out.write("# River Valley verified branch reconciliation\n\n")
+              out.write(f"Mode: {obj['mode']}; inspected {obj['inspected']}; deleted {obj['deleted']}; retained branches with unique commits {obj['retained_unmerged']}; API errors {obj['error_count']}\n\n")
+              out.write("| Branch | Outcome | Ahead of main |\n|---|---|---|\n")
+              for row in obj["branches"]:
+                  out.write(f"| {row['name']} | {row['status']} | {row.get('ahead_by','-')} |\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: river-game-branch-reconciliation-audit
+          path: ${{ runner.temp }}/game-merged-branch-audit.json
+          if-no-files-found: warn
