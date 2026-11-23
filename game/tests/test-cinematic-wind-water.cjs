@@ -17,8 +17,8 @@ test('physically inspired shore foam tracks the actual sinuous game bank, not a 
   assert.equal(water.foamMask(x,bank+40,'cinematic'),0);
   assert.equal(water.foamMask(x,bank+1,'lite'),0);
  }
- assert.match(water.fragmentShader,/125\.0\s*\*\s*sin\(p\.x\s*\/\s*550\.0\)/);
- assert.match(water.fragmentShader,/65\.0\s*\*\s*cos\(p\.x\s*\/\s*175\.0\)/);
+ assert.match(water.vertexShader,/125\.0\s*\*\s*sin\(world\.x\s*\/\s*550\.0\)/);
+ assert.match(water.vertexShader,/65\.0\s*\*\s*cos\(world\.x\s*\/\s*175\.0\)/);
 });
 test('water wind effect follows weather and quality without new web requests',()=>{
  const calm=water.parameters('clear',15,'high');
@@ -29,6 +29,9 @@ test('water wind effect follows weather and quality without new web requests',()
  assert.equal(mobile.detail,0);
  assert.match(water.fragmentShader,/uniform float uWind;/);
  assert.match(water.fragmentShader,/foam/);
+ assert.match(water.fragmentShader,/varying float vShoreDistance;/);
+ assert.doesNotMatch(water.fragmentShader,/125\.0\s*\*\s*sin/);
+ assert.doesNotMatch(water.fragmentShader,/float windWave=wave/);
  assert.doesNotMatch(read('src/river-water.js'),/fetch\(|https?:\/\//);
 });
 test('grass wind shader moves foliage vertices but not instance anchors',()=>{
