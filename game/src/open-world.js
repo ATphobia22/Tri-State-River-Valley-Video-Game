@@ -2,7 +2,8 @@
  * The geometry shares the terrain sample function supplied by the main render engine.
  * All hunting/fishing progression is handled by the existing unit-tested ValleyCore.
  */
-(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.ValleyOpenWorld=api;})(typeof globalThis==='object'?globalThis:this,function(){'use strict';
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.ValleyOpenWorld=api;})(typeof globalThis==='object'?globalThis:this,function(root){'use strict';
+const SKILLS=root.ValleyGameplaySkills||(typeof require==='function'?require('./gameplay-skills.js'):null);
 const SITES=Object.freeze({
  hunt:{x:1260,z:-900,title:'Wildflower Wildlife Trail',label:'🦌 Woodland Hunt',kind:'trail'},
  fish:{x:130,z:1150,title:'Ohio River Fishing Pier',label:'🎣 River Fishing',kind:'river'},
@@ -50,7 +51,8 @@ function sceneWorld(T,scene,ground){
  for(let i=-1;i<=1;i+=2){for(let n=0;n<6;n++){const z=-52+n*19;const post=cyl(hunt,mats.woodLight,i*55,4,z,1.5,1.6,8,6);cube(hunt,mats.woodLight,i*55,6,z+8,1,1.5,19);}}
  const deer=new T.Group();deer.name='Animated low-poly deer';hunt.add(deer);
  cube(deer,mats.animal,0,7,0,7,5,13);cube(deer,mats.cream,0,5,-5.5,4.3,1.4,4);cube(deer,mats.animal,0,10,-6.5,3,7,3);ball(deer,mats.animal,0,13,-7,2.9);
- for(const side of [-1,1]){for(const z of [-4.2,4.2])cube(deer,mats.animal,side*2.2,2,z,1.4,5,1.2);const antler=cyl(deer,mats.wood,side*2,17,-7,.45,.7,6,6);antler.rotation.z=side*.27;}
+ let legIndex=0;
+ for(const side of [-1,1]){for(const z of [-4.2,4.2]){const leg=cube(deer,mats.animal,side*2.2,2,z,1.4,5,1.2);leg.userData.legIndex=legIndex++;}const antler=cyl(deer,mats.wood,side*2,17,-7,.45,.7,6,6);antler.rotation.z=side*.27;}
  const tail=make(new T.ConeGeometry(1.8,4,5),mats.cream,deer,[0,8,7],[Math.PI/2,0,0]);
  const turkey=new T.Group();turkey.name='Animated turkey';hunt.add(turkey);
  ball(turkey,mats.animal,0,4,0,3.8);ball(turkey,mats.cream,0,6,-2.5,1.7);
@@ -115,26 +117,31 @@ function sceneWorld(T,scene,ground){
  for(const x of [-38,-20])cyl(kitchen,mats.wood,x,1,23,1,1,6,7);
  const campLight=new T.PointLight(0xffb066,.64,160,2);campLight.position.set(0,16,0);kitchen.add(campLight);
  const world={root,groups,deer,wildlife,fishModel,aimRing,float,line,ripple,patches,crops,flames,smoke,food,campLight,counts:{activitySites:4,animalModels:3,fieldPlots:9,animatedSmokePuffs:8,barnModels:1,grainSilos:1},
-  update({stamp=0,save,activity,huntRound,fishRound,aim=.5,weather='clear'}){
+  update({stamp=0,save,activity,huntRound,fishRound,aim=.5,weather='clear',player=null,now=Date.now()}){
    const tick=stamp*.001;
    // Local animation is deterministic and tied to game clock, not browser FPS.
-   const targetX=huntRound?(huntRound.target-.5)*67:Math.sin(tick*.48)*31;
+   const moving=SKILLS?.sampleWildlife(stamp,player||{x:-10000,z:-10000},SITES.hunt,huntRound);
    for(const [kind,animal] of Object.entries(wildlife)){
-    animal.visible=kind===(huntRound?.kind||'deer');
-    animal.position.set(targetX,ground(SITES.hunt.x+targetX,SITES.hunt.z-5)-ground(SITES.hunt.x,SITES.hunt.z)+(kind==='rabbit'?.6:0),-5);
-    animal.rotation.y=Math.sin(tick*(kind==='rabbit'?1.7:.9))*.14;
+    const state=moving?.[kind];if(!state)continue;
+    animal.visible=state.visible;
+    animal.position.set(state.x,ground(SITES.hunt.x+state.x,SITES.hunt.z+state.z)-ground(SITES.hunt.x,SITES.hunt.z)+state.height+state.bob,state.z);
+    animal.rotation.y=state.rotationY;
+    animal.userData.state=state.fleeing?'avoiding-player':huntRound?'tracked':'wandering';
    }
-   deer.children.forEach((c,i)=>{if(i>=3&&i<=6)c.rotation.x=Math.sin(tick*3+i*1.5)*.13;});
-   turkey.rotation.z=Math.sin(tick*4)*.04;rabbit.rotation.z=Math.sin(tick*4.5)*.055;
-   aimRing.position.set((aim-.5)*67,0,-5);aimRing.visible=activity==='hunt'&&!!huntRound;
+   deer.children.forEach(c=>{if(c.userData.legIndex!==undefined)c.rotation.x=(moving?.deer?.gait||0)*(c.userData.legIndex%2?1:-1);});
+   turkey.rotation.z=(moving?.turkey?.gait||0)*.12;
+   rabbit.rotation.z=(moving?.rabbit?.gait||0)*.10;
+   const ringX=(aim-.5)*67;
+   aimRing.position.set(ringX,ground(SITES.hunt.x+ringX,SITES.hunt.z-5)-ground(SITES.hunt.x,SITES.hunt.z),-5);
+   aimRing.visible=activity==='hunt'&&!!huntRound;
    line.position.set(15,-3,40);line.visible=activity==='fish';
-   const biting=fishRound&&Date.now()>=fishRound.biteAt&&Date.now()<=fishRound.biteAt+1100;
+   const biting=fishRound&&SKILLS?.fishCue(fishRound,now).phase==='bite';
    float.position.y=Math.sin(tick*5)*.45-(biting?2.5:0);
    fishModel.visible=!!biting;fishModel.position.set(0,(biting?2.5:0)+Math.abs(Math.sin(tick*7))*1.3,0);
    fishTail.rotation.y=Math.sin(tick*13)*.45;
    float.material.color.setHex(biting?0xff5c43:0xf4cb4b);
    ripple.scale.setScalar(biting?1.6:1+.15*Math.sin(tick*4));
-   for(let i=0;i<9;i++){const t=save.farmPlots[i],growing=t>Date.now(),ready=t>0&&!growing;
+   for(let i=0;i<9;i++){const t=save.farmPlots[i],growing=t>now,ready=t>0&&!growing;
     const c=crops[i];c.visible=t>0;c.scale.y=ready?1:growing?Math.max(.18,1-Math.min(8000,t-Date.now())/9700):.001;
    }
    flames.scale.y=1+Math.sin(tick*10)*.13;
