@@ -225,7 +225,11 @@ def run(images,workspace,kind,license_id,appearance="none",
     work.mkdir(parents=True,exist_ok=True)
     (work/"sparse").mkdir()
     (work/"openmvs").mkdir()
+    from courthouse_gis_adapter import verify as verify_game_reference
+    game_reference=verify_game_reference(Path(__file__).resolve().parents[1])
     receipt={
+        "game_reference":game_reference,
+        "alignment_status":"NOT_ALIGNED_TO_SURVEY_CONTROL",
         "status":"FAILED","kind":kind,"license_id":license_id,
         "created_utc":datetime.now(timezone.utc).isoformat(),
         "input_images":photos,"crs":"UNREGISTERED_LOCAL",
@@ -328,7 +332,9 @@ def main():
         print(json.dumps(inspect_glb(options.path),indent=2));return
     if options.action=="plan":
         photos=image_inventory(options.images)
-        print(json.dumps({"source_class":options.kind,"license":options.license_id,
+        from courthouse_gis_adapter import verify as verify_game_reference
+        print(json.dumps({"game_reference":verify_game_reference(Path(__file__).resolve().parents[1]),
+                          "source_class":options.kind,"license":options.license_id,
                           "inputs":photos,"native_toolchain":tools(),
                           "colmap_commands":commands(options.images,options.workspace),
                           "status":"PLAN_ONLY_NOT_EXECUTED"},indent=2));return
