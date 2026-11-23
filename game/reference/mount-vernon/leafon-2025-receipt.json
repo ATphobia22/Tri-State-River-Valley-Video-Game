@@ -1,0 +1,35 @@
+{
+  "timestampUTC": "2026-11-23T05:03:01.797383+00:00",
+  "sourceYear": 2025,
+  "officialIGIONotice": "https://secure.in.gov/gis/geoinsights/posts/indiana-leafoff-and-leaf-on-imagery-updates",
+  "officialViewer": "https://www.arcgis.com/sharing/rest/content/items/91469d388ae34f2bacab2cb6897252fb/data?f=json",
+  "s3Originals": "s3://gisimageryleafoningov/imageryoptimized/2025/SPW/06in/",
+  "sourceRenderServices": [
+    {
+      "service": "https://iserver5.surdex.com/arcgis/rest/services/Indiana/P3500372s1/ImageServer",
+      "exportImageSHA256": "293a55e02df34a65503e90f9678022566a40736b6b1c2bad756b6df4ce0893d8",
+      "returnedExtentWGS84": [
+        -87.92800000029864,
+        37.908993408,
+        -87.85299999970137,
+        37.960006592
+      ]
+    }
+  ],
+  "failedCandidateServices": [],
+  "coveredFraction": 0.985361,
+  "geographicExtentWGS84": [
+    -87.928,
+    37.90899340820312,
+    -87.853,
+    37.960006591796876
+  ],
+  "dimensions": [
+    2048,
+    1393
+  ],
+  "sourceOverlaySHA256": "d9a1d57beb3db990a71dfbfc132790d6013de2bd63697b3673bb38ec8064830a",
+  "JS_SHA256": "00575c9c2e7b59fca58d8067792574ec9050dd4b190d7bff837e5012640459f8",
+  "verticalDatumValidated": false,
+  "status": "SOURCE_DERIVED_PARTIAL_2025_OVERLAY"
+}
