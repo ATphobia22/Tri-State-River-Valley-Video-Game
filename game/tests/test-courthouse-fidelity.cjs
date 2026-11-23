@@ -37,6 +37,9 @@ test('courthouse is a detailed low-draw architectural mesh grounded to shared DE
  }});
  assert.ok(triangles>900,'real window, roof, cornice and cupola geometry');
  assert.ok(drawCalls<22,'phone friendly batches');
+ const textured=[];mesh.traverse(o=>{if(o.isMesh&&o.material?.map?.isDataTexture)textured.push(o);});
+ assert.ok(textured.length>=2,'courthouse brick and roof must use local original procedural PBR texture maps');
+
 });
 test('source landmark footprint is excluded from city generic geometry but remains collidable',()=>{
  const anchor=COURT.anchor(GEO);
