@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "assessment": "Local inspection of user-supplied GLB binaries; NOT committed as gameplay replacements",
+  "basis": "Original user-provided conversation/library GLBs, GLB JSON and binary headers inspected; native Blender source .blend/.fbx for the named Point Township cast was not present in the reference pack",
+  "releasedGameplayHero": {
+    "path": "game/assets/models/river_explorer_rigged.glb",
+    "sha256": "dcb6e4ebd33216dfd851a8f024ac822adc41965090e663065635ce801e688b60",
+    "jointCount": 27,
+    "clipCount": 13,
+    "uv": true,
+    "embeddedTextures": 8,
+    "status": "KEEP_PRODUCTION_BASELINE_ORIGINAL_PROCEDURAL"
+  },
+  "candidates": [
+    {
+      "file": "river_explorer_hero_v2.glb",
+      "sha256": "d65c283981568a290820f7e1ccce183fe2330db06da22887630da3a98af50950",
+      "bytes": 15412,
+      "skinJointCount": 17,
+      "clipCount": 1,
+      "clips": [
+        "Idle_Breathing"
+      ],
+      "uvPrimitiveCount": 7,
+      "embeddedTextureImages": 0,
+      "status": "BLOCKED_FROM_RUNTIME",
+      "blockers": [
+        "generic Joint_0..Joint_16 joint names not the named gameplay skeleton",
+        "12 missing gameplay action clips",
+        "no embedded imagery/PBR texture assets",
+        "deformation, retargeting and physical device QA absent"
+      ]
+    },
+    {
+      "file": "river_valley_characters_master_rigged_v2.glb",
+      "duplicateOf": "river_explorer_hero_v2.glb",
+      "sha256": "d65c283981568a290820f7e1ccce183fe2330db06da22887630da3a98af50950",
+      "bytes": 15412,
+      "skinJointCount": 17,
+      "clipCount": 1,
+      "uvPrimitiveCount": 7,
+      "embeddedTextureImages": 0,
+      "status": "BLOCKED_FROM_RUNTIME"
+    },
+    {
+      "file": "river_explorer_autoskin27.glb",
+      "source": "River_Valley_Characters_Rigged_Prototype_and_Sources.zip",
+      "sha256": "29f67edac5aedd378e522d378a498d051c37fa114dccd90ea7796cbd30797861",
+      "bytes": 255628,
+      "skinJointCount": 27,
+      "clipCount": 13,
+      "uvPrimitiveCount": 0,
+      "embeddedTextureImages": 0,
+      "status": "STRUCTURAL_CANDIDATE_VISUAL_QA_AND_TEXTURES_REQUIRED",
+      "blockers": [
+        "automatic heuristic skin weights unverified under deformation",
+        "no UV/PBR textures",
+        "no deforming gait and hand grip checks",
+        "not accepted as close-up game replacement"
+      ]
+    },
+    {
+      "file": "river_explorer_hero.glb",
+      "sha256": "e4ea5eed06c34358b25bdfb3ee390fd7f3e0e3869dcc8dd567fae40e1f16ad3a",
+      "bytes": 145096,
+      "skinJointCount": 0,
+      "clipCount": 0,
+      "status": "STATIC_REFERENCE_NOT_RIGGED"
+    },
+    {
+      "file": "river_valley_characters_master_turnaround.glb",
+      "sha256": "7d702aaf820e36afd441ce2f536e77fffd4ef0ad5876f616e46d65fa48e8d086",
+      "bytes": 197232,
+      "skinJointCount": 0,
+      "clipCount": 0,
+      "status": "STATIC_TURNAROUND_REFERENCE"
+    },
+    {
+      "file": "scout_companion_dog.glb",
+      "sha256": "4cf3200520ba3e11dcaae57ea6b23e690545bc42999b6f3eb1a5bcb3b660fe40",
+      "bytes": 19524,
+      "skinJointCount": 0,
+      "clipCount": 0,
+      "status": "STATIC_DOG_REFERENCE"
+    }
+  ],
+  "visualSheets": {
+    "sourceArchive": "Point_Township_Game_Character_Reference_Pack.zip",
+    "contains": "9 JPEG concept/composite images, cast_manifest.json and index.html",
+    "nativeRigMeshesPresent": false,
+    "status": "REFERENCE_ONLY"
+  },
+  "allowedForAutomaticPromotion": false,
+  "requiredForProduction": [
+    "actual editable master Blender source or compatible full-geometry GLB",
+    "27 named game skeleton joints and 13 action clips or validated retargeter",
+    "UV0 and embedded PBR map authoring",
+    "skinning weight norms, bind-pose and scale checks",
+    "deformation image proofs for idle/walk/sprint/fishing/driving/landing",
+    "desktop WebGL and physical iPhone FPS/memory/thermal test"
+  ],
+  "canonicalBuildWarning": "npm prebuild/pretest regenerates the canonical hero GLB from game/tools/build_rigged_hero.py; binary replacement alone will not survive a build"
+}

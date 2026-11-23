@@ -42,6 +42,16 @@ def inspect(page, *, mobile: bool):
     )
     assert state()["georeference"]["leafOn2025"]["coverage"] > 0.98
     assert state()["georeference"]["imageryYear"] == "2025-partial / 2023-fallback"
+    # A 3D courthouse GLB in the bundle is not evidence it is in the world.
+    # The visible procedural building it replaces must be identified and hidden.
+    page.wait_for_function(
+        "() => window.RiverValleyDebug.getState().georeference.courthouseFootprintIndex >= 0",
+        timeout=15_000,
+    )
+    anchor = state()["georeference"]["courthouseAnchor"]
+    assert anchor is not None and 10 < anchor["x"] < 22 and 495 < anchor["z"] < 512
+    assert state()["georeference"]["courthouseRoofStatus"] == "UNVERIFIED_NOT_FROM_BARE_EARTH_DEM"
+
 
     assert state()["heroParts"] >= 10
     assert state()["heroSkinned"] is True, "Rigged GLB did not instantiate: procedural fallback used"
@@ -66,6 +76,10 @@ def inspect(page, *, mobile: bool):
         "() => window.RiverValleyDebug.getState().started === true",
         timeout=15_000,
     )
+    # New saves should not begin inside the corrected historic courthouse.
+    position = state()
+    assert abs(position["x"] - anchor["x"]) > 30, "Hero spawned inside courthouse mesh"
+
     page.locator("#settingsBtn").click(timeout=12_000)
     # Quality settings must swap the actual playable skinned GLB, not merely its label.
     target = "LOD1" if mobile else "LOD0"
