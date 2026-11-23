@@ -12,6 +12,14 @@ Elevation comes from the project’s admitted USGS 3DEP downtown grid and a coar
 
 River has a reconstructed garment cage, modeled glasses, hair, gaiter, backpack, hands and footwear, a UV-mapped turnaround atlas, normal and packed material maps, and 13 retargeted clips. Bill uses newly modeled cap and face details, his game wardrobe, and the same anatomical rig. His likeness is provisional. Scout has 16 joints and three clips. Blender measured deformed vertices at 17 times per clip after decoding all three shipped Draco GLBs. See [measurements](evidence/deformation.json) and the [72-frame River and Scout studio walk rendered in Blender and graded in Natron](evidence/cast-graded.mp4).
 
+## Parcel zoning (gameplay, not legal zoning)
+
+The Zoning toolbar uses 210 Indiana GIO 2025 parcel polygons with immutable source object IDs. R1/R2/R3/C/I/AG are fictional game classifications, **not** official municipal zoning. Built status comes from nearby GIS building footprint proxies; road access is a geometric estimate. Utility availability and flood safety are **not verified**. All demand and desirability parameters are fictional tuning values.
+
+Painting, monthly growth and bulldozing mutate only parcel save diffs. They do not edit underlying geospatial files or the original mapped town buildings. Generated buildings use parcel geometry; the Courthouse and Coliseum remain separate hero GLBs. The WebGL renderer and pinned local Three.js package are bundled for the single-file offline HTML. Do not substitute network-dependent CDN imports.
+
+When refreshing the geographic snapshot, acquire official GIO object IDs and regenerate the zoning GeoJSON alongside terrain and buildings. Keep provenance and snapshots distinct from planning authority zoning.
+
 ## Build and verify
 
 Run the following in this directory. The Pages builder packages the same scene.

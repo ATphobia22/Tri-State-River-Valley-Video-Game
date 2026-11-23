@@ -82,8 +82,11 @@ parcels=json.loads((DATA/'parcels-response.json').read_text())
 if parcels.get('exceededTransferLimit'):raise ValueError('Partial parcel response')
 atlas=img.copy();draw=ImageDraw.Draw(atlas)
 for f in parcels['features']:
-    for ring in f['geometry']['rings']:
-        draw.line([((lon-b[0])/(b[2]-b[0])*img.width,(b[3]-lat)/(b[3]-b[1])*img.height) for lon,lat in ring],fill=(207,177,91),width=1)
+    geom=shape(f['geometry'])
+    for p in (geom.geoms if geom.geom_type=='MultiPolygon' else [geom]):
+        for ring in [p.exterior,*p.interiors]:
+            draw.line([((lon-b[0])/(b[2]-b[0])*img.width,(b[3]-lat)/(b[3]-b[1])*img.height)
+                       for lon,lat in ring.coords],fill=(207,177,91),width=1)
 # Toggleable registered parcel texture shares UVs with the aerial material.
 atlas.save(OUT/'downtown-parcels.jpg',quality=88)
 dem_mesh(np.linspace(-2000,2000,201),np.linspace(-2000,2000,201),img,b).export(OUT/'mount_vernon_lod0.glb')
@@ -189,4 +192,7 @@ manifest={'origin':[lon0,lat0],'metresPerDegree':[sx,sz],'tiles':tile_manifest,'
           'courthouseYaw':anchor['rotationRadians'],'regionalBounds':[x0,z0,x1,z1],
           'parcels':len(parcels['features']),'water':list(water),'routes':bool(routes[1])}
 (OUT/'scene.json').write_text(json.dumps(manifest,separators=(',',':')))
+from build_zoning import build_zoned
+build_zoned(parcels,manifest,json.loads((REF/'buildings.geojson').read_text()),
+            json.loads((REF/'roads.geojson').read_text()),OUT/'mount_vernon_zoned.geojson')
 print(len(tile_manifest),'town tiles;',len(parcels['features']),'parcels;',list(water))

@@ -95,6 +95,11 @@ jobs:
         run: |
           python -m pip install "playwright>=1.50,<2"
           python -m playwright install --with-deps chromium
+      - name: Validate and bundle pinned Three.js Mount Vernon scene
+        run: |
+          npm --prefix game/valley-scene ci
+          npm --prefix game/valley-scene test
+          npm --prefix game/valley-scene run build
       - name: Verify streamed region and standalone WebGL scene offline
         run: python game/valley-scene/tools/browser_scene.py
       - name: Test playable 3D hero on desktop and phone-sized Chromium

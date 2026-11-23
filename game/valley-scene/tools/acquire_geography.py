@@ -26,11 +26,13 @@ meta = json.loads(request(imagery, **params))
 (out/'regional-imagery.json').write_text(json.dumps(dict(request=imagery+'?'+urlencode(params), extent=meta['extent'])))
 parcels = 'https://gisdata.in.gov/server/rest/services/Hosted/Parcel_Boundaries_of_Indiana_2025/FeatureServer/0/query'
 envelope=dict(xmin=-87.898,ymin=37.930,xmax=-87.892,ymax=37.934,spatialReference=dict(wkid=4326))
-data = json.loads(request(parcels, where='1=1', outFields='OBJECTID', geometry=json.dumps(envelope),
-    geometryType='esriGeometryEnvelope',inSR=4326,outSR=4326,returnGeometry='true',f='json'))
-if not data.get('features') or data.get('exceededTransferLimit'):
+data = json.loads(request(parcels, where='1=1', outFields='objectid', geometry=json.dumps(envelope),
+    geometryType='esriGeometryEnvelope',inSR=4326,outSR=4326,returnGeometry='true',f='geojson'))
+if not data.get('features') or data.get('properties', {}).get('exceededTransferLimit'):
     raise ValueError('Incomplete Indiana parcel response')
-(out/'parcels-response.json').write_text(json.dumps({'features':[{'geometry':f['geometry']} for f in data['features']]}))
+if any(f.get('properties', {}).get('objectid') is None for f in data['features']):
+    raise ValueError('Parcels lack source objectid; refuse unstable saves')
+(out/'parcels-response.json').write_text(json.dumps(data))
 for layer, counties, folder in [('areawater', ('18129','17059','17193','21101','21225'), 'water'),
                                 ('roads', ('18129',), 'countyroads')]:
     for fips in counties:
