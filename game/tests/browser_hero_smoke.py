@@ -58,6 +58,16 @@ def inspect(page, *, mobile: bool):
         timeout=15_000,
     )
     page.locator("#settingsBtn").click(timeout=12_000)
+    # Quality settings must swap the actual playable skinned GLB, not merely its label.
+    target = "LOD1" if mobile else "LOD0"
+    assert state()["heroLOD"] == target, "Incorrect default gameplay character LOD"
+    for quality,expected in (("cinematic","LOD0"),("lite","LOD2"),("full",target)):
+        page.locator("#visualEffects").select_option(quality,timeout=15_000)
+        page.wait_for_function(
+            "(expected) => window.RiverValleyDebug.getState().heroLOD === expected",
+            arg=expected,timeout=20_000,
+        )
+        assert state()["heroSkinned"] is True, "LOD swap activated the blocky procedural fallback"
     page.locator("#heroStudioOpen").click(timeout=12_000)
     page.wait_for_function(
         "() => { const state = window.RiverValleyDebug.getState(); "
@@ -146,8 +156,50 @@ def inspect(page, *, mobile: bool):
     page.locator("#heroPose").select_option("idle")
     page.wait_for_timeout(350)
     page.screenshot(path=str(OUT / f"{prefix}-studio-reset.png"))
+    # Import the genuine second-quality skinned GLB via the same local file picker
+    # used on iPhone Safari, then verify the gameplay model actually changes.
+    page.locator("#customHeroFile").set_input_files(str(ROOT / "assets/models/river_explorer_lod2.glb"))
+    page.wait_for_function(
+        "() => window.RiverValleyDebug.getState().heroCustomGLB === true",
+        timeout=20_000,
+    )
+    assert state()["heroSkinned"] is True
+    assert state()["heroLOD"] == "CUSTOM"
+    assert state()["heroBoneCount"] == 27
+    assert state()["heroClipCount"] == 13
+    page.screenshot(path=str(OUT / f"{prefix}-local-import-rigged-playable.png"))
+    page.locator("#clearCustomHero").click(timeout=15_000)
+    page.wait_for_function(
+        "() => window.RiverValleyDebug.getState().heroCustomGLB === false",
+        timeout=20_000,
+    )
+    assert state()["heroSkinned"] is True, "Restoring the built-in game rig failed"
     page.locator("#heroStudioClose").click(timeout=10_000)
     assert state()["heroInspection"] is False
+    # User-supplied collectible references have eight original wardrobe prototypes,
+    # but family/memorial sets never masquerade as playable character models.
+    page.locator("#familyCastOpen").click(timeout=12_000)
+    assert page.locator("#familyCastPanel").is_visible()
+    assert page.locator("#familyCastGrid .familyCastCard").count() == 10
+    assert page.locator("#familyCastGrid .castPrototypeSelect").count() == 8
+    page.locator("#familyCastGrid .castPrototypeSelect").first.click(timeout=12_000)
+    page.wait_for_function(
+        "() => window.RiverValleyDebug.getState().castPrototypeId === 'pete-yeida'",
+        timeout=20_000,
+    )
+    assert state()["heroSkinned"] is True, "Family prototype destroyed the animation rig"
+    assert state()["heroBoneCount"] == 27
+    page.locator("#familyCastClose").click(timeout=12_000)
+    page.wait_for_timeout(200)
+    page.screenshot(path=str(OUT / f"{prefix}-pete-yeida-prototype-in-game.png"))
+    page.locator("#familyCastOpen").click(timeout=12_000)
+    page.locator("#familyCastOriginal").click(timeout=12_000)
+    page.wait_for_function(
+        "() => window.RiverValleyDebug.getState().castPrototypeId === null",
+        timeout=20_000,
+    )
+    page.locator("#familyCastClose").click(timeout=12_000)
+    assert page.locator("#familyCastPanel").is_hidden()
     # County guide is a real source-backed map over the same playable engine.
     assert state()["countyBoundaryVertices"] >= 150
     page.locator("#countyBtn").click(timeout=12_000)
