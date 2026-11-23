@@ -49,7 +49,7 @@ let currentTravelSpeed=0;
 const G=window.THREE;
 const POLISH=window.ValleyVisualPolish,BIOME=window.ValleyBiomeStreamer,LODPLAN=window.ValleyLODTransition,GRAPHICS=window.ValleyGraphicsQuality,ASSET_CODEC=window.ValleyCompressedAssets;
 const RIVER_WATER=window.ValleyRiverWater,ROOFS=window.ValleyBuildingRoofs,LANDMARKS=window.ValleyLandmarkAnchors;
-const CINEMATIC=window.ValleyCinematicLighting,DRESS=window.ValleyCinematicSetDressing;
+const CINEMATIC=window.ValleyCinematicLighting,DRESS=window.ValleyCinematicSetDressing,SKILLS=window.ValleyGameplaySkills;
 const ACCESS=window.ValleyLandmarkAccess;
 const CUSTOM_HERO=window.ValleyCustomHero,CAST_WARDROBE=window.ValleyCastWardrobe;
 const UX=window.ValleyPlayerExperience;
@@ -886,7 +886,7 @@ function updateVisuals(dt,stamp){
  if(facadePalette?.setWeather)facadePalette.setWeather(weather);
  if(roadMesh?.material){roadMesh.material.color.setHex(weather==='rain'?0x3b464b:0x62686a);
   roadMesh.material.needsUpdate=false;}
- if(worldGame)worldGame.update({stamp,save,activity:worldActive,huntRound:worldHuntRound,fishRound:worldFishRound,aim:worldAim,weather});
+ if(worldGame)worldGame.update({stamp,save,activity:worldActive,huntRound:worldHuntRound,fishRound:worldFishRound,aim:worldAim,weather,player,now:Date.now()});
  if(cinematicDressing)cinematicDressing.update(time,weather,cinemaPrefs.quality);
  if(atmosphere)atmosphere.update(camera,time,weather,season,stamp,cinematicFrame);if(director3D)director3D.update(stamp,time,weather,cinemaPrefs.strength,cinemaPrefs.quality);
  applyTerrainLOD();
@@ -1110,11 +1110,33 @@ function worldAction(action){
   if(action==='track'){const list=['deer','turkey','rabbit'];const baseTarget=.18+rand()*.64;worldHuntRound={target:baseTarget,baseTarget,startedAt:now,kind:list[Math.floor(rand()*list.length)],expiresAt:now+12000};worldStatus='Track the moving wildlife target. Slide the gold marker to align, then take your shot.';}
   if(action==='shoot'&&worldHuntRound){worldHuntRound.target=WORLD.huntTargetAt(worldHuntRound,now);r=C.huntShot(save,worldAim,worldHuntRound.target,now,worldHuntRound.expiresAt);save=r.save;worldStatus=r.result==='hit'?'🎯 Wildlife challenge complete! +1 virtual game · 35 coins · 60 XP.':r.result==='missed'?'Clean miss. Try tracking again.':'The wildlife moved on. Track again.';worldHuntRound=null;if(r.result==='hit')audioChime();}
  }else if(worldActive==='fish'){
-  if(action==='cast'){const kinds=['bluegill','channelCatfish','bass'];worldFishRound={biteAt:now+1550+Math.floor(rand()*2400),kind:kinds[Math.floor(rand()*3)]};worldStatus='Line in the water! Watch the floating bobber for a bite.';}
-  if(action==='reel'&&worldFishRound){r=C.fishReel(save,worldFishRound.biteAt,now,worldFishRound.kind);save=r.save;worldStatus=r.result==='caught'?`🐟 Caught ${worldFishRound.kind}! +1 fish · 30 coins · 55 XP.`:r.result==='early'?'Too early. Let the bobber dip.':'The fish escaped. Cast again.';worldFishRound=null;if(r.result==='caught')audioChime();}
+  if(action==='cast'){
+   const kinds=['bluegill','channelCatfish','bass'];
+   worldFishRound=SKILLS.newFishingRound(now+1550+Math.floor(rand()*2400),kinds[Math.floor(rand()*3)]);
+   worldStatus='Line in the water. Wait for the bobber to dip, then hook and manage the line.';
+  }
+  if(action==='reel'&&worldFishRound){
+   const species=worldFishRound.kind;
+   const attempt=SKILLS.reel(worldFishRound,now,worldAim);
+   worldFishRound=attempt.round;
+   if(attempt.result==='landed'){
+    r=C.landFish(save,species);save=r.save;
+    worldStatus=`🐟 Landed ${species}! +1 fish · 30 coins · 55 XP.`;
+    worldFishRound=null;audioChime();
+   }else if(attempt.result==='hooked')worldStatus='Fish hooked! Keep the slider near the moving tension target and reel three good times.';
+   else if(attempt.result==='good-reel')worldStatus=`Good reel! ${worldFishRound.progress}/3 · keep the line steady.`;
+   else if(attempt.result==='slack-or-strain')worldStatus='Uneven tension. Follow the changing target and try again.';
+   else if(attempt.result==='early')worldStatus='Not biting yet. Watch the bobber before hooking.';
+   else if(attempt.result==='cooldown')worldStatus='Let the reel settle briefly.';
+   else if(['escaped','line-broke'].includes(attempt.result)){worldFishRound=null;worldStatus='The fish got away. Cast again.';}
+  }
  }else if(worldActive==='farm'){
   if(action==='water')r=C.waterFarm(save,now);
-  if(action==='plot'){let p=WORLD.farmPick(save,now);r=C.farmAction(save,p.index,now);}
+  if(action==='plot'||action.startsWith('plot-')){
+   const chosen=action.startsWith('plot-')?SKILLS.farmPlotIndex(Number(action.slice(5))):null;
+   const plot=chosen===null?WORLD.farmPick(save,now).index:chosen;
+   r=C.farmAction(save,plot,now);
+  }
   if(r){save=r.save;worldStatus=({'planted':'🌱 Seeds planted in the visible field.','harvested':'🌽 Harvested corn! +45 coins · 45 XP.','watered':'💧 Growing crops watered.','growing':'The crops are still growing.','needs-coins':'You need more coins. Collect a discovery stamp first.','none':'Plant some corn before watering.'})[r.result]||r.result;if(r.result==='harvested')audioChime();}
  }else if(worldActive==='cook'){
   if(C.RECIPES[action]){r=C.cookRecipe(save,action);save=r.save;worldStatus=r.result==='cooked'?`🍲 ${C.RECIPES[action].title} is ready! Added to your saved pantry.`:'You need more ingredients. Fish and farm in the world first.';if(r.result==='cooked')audioChime();}
