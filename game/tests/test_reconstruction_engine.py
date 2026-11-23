@@ -13,6 +13,7 @@ import numpy as np
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"tools"))
 import reconstruction_engine as engine
 import cpu_volume as volume
+import courthouse_gis_adapter as gis
 
 class PhotogrammetryWorkerTests(unittest.TestCase):
     def make_model(self,folder,registered):
@@ -76,6 +77,13 @@ class PhotogrammetryWorkerTests(unittest.TestCase):
             report=engine.inspect_glb(glb)
             self.assertFalse(report["embedded_texture"])
             self.assertEqual(report["classification"],"GEOMETRY_REVIEW_ONLY")
+    def test_official_game_gis_registers_horizontal_only(self):
+        reference=gis.verify(Path(__file__).resolve().parents[1])
+        self.assertEqual(reference["objectid"],741267)
+        self.assertEqual(reference["reference_crs"],"EPSG:4326")
+        self.assertEqual(reference["vertical_datum"],"UNVERIFIED")
+        self.assertFalse(reference["can_automatically_promote_candidate"])
+
     def test_worker_does_not_execute_without_native_toolchain(self):
         with tempfile.TemporaryDirectory() as dirname:
             root=Path(dirname);photos=root/"input";photos.mkdir()
