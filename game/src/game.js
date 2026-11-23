@@ -1365,6 +1365,9 @@ async function importRiggedHero(file){
  }
 }
 function bindUI(){
+ $('pauseToggle').addEventListener('click',()=>setPaused(!paused));
+ $('pauseResume').addEventListener('click',()=>setPaused(false));
+ $('pauseSave').addEventListener('click',()=>{if(started){persist();toast('Progress saved on this device.');}});
  $('customHeroFile').addEventListener('change',e=>{const file=e.target.files?.[0];if(file)void importRiggedHero(file);});
  $('customScoutFile').addEventListener('change',e=>{const file=e.target.files?.[0];if(file)void importStaticScout(file);});
  $('clearCustomScout').addEventListener('click',()=>{clearStaticScout();try{localStorage.removeItem(SCOUT_GLB_KEY);}catch(_){}$('customScoutFile').value='';$('customScoutStatus').textContent='Animated built-in Scout restored.';});
@@ -1452,15 +1455,29 @@ function bindUI(){
  $('missionList').addEventListener('click',e=>{const b=e.target.closest('button[data-stop]');if(!b)return;const id=b.dataset.stop,fast=selected===id;selectStop(id,fast);});
  mapCanvas.addEventListener('click',e=>{const rect=mapCanvas.getBoundingClientRect(),x=(e.clientX-rect.left)/rect.width*TWO-LIMIT,z=(e.clientY-rect.top)/rect.height*TWO-LIMIT;const dst=C.STOPS.find(s=>Math.hypot(s.x-x,s.z-z)<180);if(dst)selectStop(dst.id,true);});
  document.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(paused){
+   if(k==='escape'){setPaused(false);return;}
+   if(k==='tab'){
+    const targets=[...$('pauseOverlay').querySelectorAll('button:not([disabled]),input:not([disabled])')];
+    if(targets.length){
+     const first=targets[0],last=targets[targets.length-1];
+     if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+     else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+    }
+   }
+   return; // Keyboard controls cannot reach gameplay through a modal.
+  }
   if(e.target.matches('input,select,textarea'))return;
-  const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();keys.add(k);
+  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();keys.add(k);
   if(!started)return;
   if(k==='v'){heroInspection?closeHeroStudio():openHeroStudio();return;}
   if(heroInspection){if(k==='escape')closeHeroStudio();return;}
   if(k==='e'||k===' '){if(!activity&&!worldPrimaryAction())interact();}
   // J / mobile JUMP is sampled in the kinematic step and never auto-repeats.
- if(k==='b')openScout();if(k==='n')openCounty();if(k==='h')openWorldActivity('hunt');if(k==='f')openWorldActivity('fish');if(k==='g')openWorldActivity('farm');if(k==='k')openWorldActivity('cook');if(k==='m'&&!activity&&!backdropOpen)toggleMap();if(k==='p')screenshot();if(k==='c'&&!activity){$('cinemaPanel').classList.contains('open')?closeCinema():openCinema();}if(k==='escape'){if(!$('countyPanel').hidden){closeCounty();return;}if(!$('scoutPanel').hidden){$('scoutPanel').hidden=true;return;}if(worldActive)closeWorldActivity();else if(backdropOpen)closeBackdrop();else if(activity)closeActivity();else if($('cinemaPanel').classList.contains('open'))closeCinema();else $('panel').classList.toggle('open');}
+ if(k==='b')openScout();if(k==='n')openCounty();if(k==='h')openWorldActivity('hunt');if(k==='f')openWorldActivity('fish');if(k==='g')openWorldActivity('farm');if(k==='k')openWorldActivity('cook');if(k==='m'&&!activity&&!backdropOpen)toggleMap();if(k==='p')screenshot();if(k==='c'&&!activity){$('cinemaPanel').classList.contains('open')?closeCinema():openCinema();}if(k==='escape'){if(!$('countyPanel').hidden){closeCounty();return;}if(!$('scoutPanel').hidden){$('scoutPanel').hidden=true;return;}if(worldActive)closeWorldActivity();else if(backdropOpen)closeBackdrop();else if(activity)closeActivity();else if($('cinemaPanel').classList.contains('open'))closeCinema();else if($('panel').classList.contains('open'))$('panel').classList.remove('open');else setPaused(true);}
  });document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&started&&!paused)setPaused(true);});
  canvas.addEventListener('pointerdown',e=>{pointerDown=true;pointerX=e.clientX;pointerY=e.clientY;});
  window.addEventListener('pointerup',()=>pointerDown=false);
  canvas.addEventListener('pointermove',e=>{if(!pointerDown||!renderer||view==='2d')return;cameraYaw+=(e.clientX-pointerX)*.005;cameraDist=C.clamp(cameraDist+(e.clientY-pointerY)*.2,42,310);pointerX=e.clientX;pointerY=e.clientY;});
@@ -1477,7 +1494,13 @@ function bindUI(){
  window.addEventListener('resize',resize);
 }
 function init(){
- bindUI();loadCinemaPrefs();setupReferenceImage();
+ bindUI();
+ if(UX){
+  let localStore=null;try{localStore=localStorage;}catch(_){}
+  playerPreferences=UX.createPreferences({storage:localStore,document});
+  playerPreferences.bind();
+ }
+ loadCinemaPrefs();setupReferenceImage();
  const review=window.ValleyCharacterReview;
  if(review)window.ValleyRiggedHeroOverrideData=review.river;
  else restoreLocalCustomHero();
