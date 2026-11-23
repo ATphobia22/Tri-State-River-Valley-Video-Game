@@ -28,9 +28,12 @@ class LeafOnTests(TestCase):
 
     def test_rejects_coverage_gaps_and_improper_source_colors(self):
         im=Image.new("RGBA",(10,10),(30,70,100,255))
-        m.verify_coverage(im)
-        im.putpixel((4,4),(0,0,0,0))
-        with self.assertRaisesRegex(ValueError,"gap"):m.verify_coverage(im)
+        for y in range(10):
+            for x in range(10):im.putpixel((x,y),(x*20,y*20,100,255))
+        self.assertEqual(m.verify_coverage(im),1.0)
+        for y in range(10):
+            for x in range(10):im.putpixel((x,y),(0,0,0,0))
+        with self.assertRaisesRegex(ValueError,"Insufficient"):m.verify_coverage(im)
         blank=Image.new("RGBA",(10,10),(10,10,10,255))
         with self.assertRaisesRegex(ValueError,"diversity"):m.verify_coverage(blank)
 
