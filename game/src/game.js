@@ -1435,12 +1435,20 @@ function bindUI(){
   const a=document.createElement('a');a.href=url;a.download='river-valley-device-performance.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);
   toast('📊 Local FPS report exported. Share it to compare your iPhone hardware.');
  });
- $('installOfflineBtn').addEventListener('click',async()=>{
-   const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+ $('installOfflineBtn').addEventListener('click',()=>{
    if(location.protocol==='file:'){
-     toast(ios?'On iPhone, open the HTTPS site in Safari and use Share → Add to Home Screen. Files preview cannot run a full local game.':'Desktop offline: open this HTML in Chrome or Edge. Saves remain in that browser.');
-   }else if(window.deferredInstallPrompt){window.deferredInstallPrompt.prompt();}
-   else toast(ios?'Safari: Share → Add to Home Screen, then open the installed game once while online.':'For offline use, install this game from the browser menu after its assets finish caching.');
+     toast('This downloaded HTML runs offline on supported desktop browsers. Saves remain local to this browser.');
+     return;
+   }
+   const sourceGame=location.pathname.includes('/game/');
+   const target=sourceGame?'./River_Valley_Family_Adventure_OFFLINE.html':'./offline.html';
+   const link=document.createElement('a');
+   link.href=new URL(target,location.href).href;
+   link.download='River_Valley_Family_Adventure_OFFLINE.html';
+   document.body.appendChild(link);
+   link.click();
+   link.remove();
+   toast('Standalone offline HTML download started. Website play requires an internet connection.');
  });
  $('saveBtn').addEventListener('click',()=>toast(persist()?'💾 Adventure saved on this device.':'Local storage is blocked in this browser.'));
  $('newBtn').addEventListener('click',()=>{if(!confirm('Start a new adventure in this save slot? Your existing progress in this slot will be replaced.'))return;applyState(C.freshSave(save.name));persist();toast('🌿 New family adventure started.');});
@@ -1490,7 +1498,7 @@ function bindUI(){
   b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);set(true);});
   for(const evt of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(evt,()=>set(false));
  }
- window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.deferredInstallPrompt=e;const el=$('offlineStatus');if(el)el.textContent='Install available — tap Install / Offline help';});
+
  window.addEventListener('resize',resize);
 }
 function init(){
