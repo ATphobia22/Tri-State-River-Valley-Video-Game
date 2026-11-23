@@ -1102,10 +1102,10 @@ function openWorldActivity(id){
 }
 function worldAction(action){
  if(!worldActive||!isWorld3D())return;
- if(action==='cast')cueHero('fish',1000);
+ if(action==='cast'||action==='reel')cueHero('fish',action==='cast'?1000:640);
  if(action==='track'||action==='shoot')cueHero('hunt',700);
- if(action==='plot'||action==='water')cueHero('farm',950);
- if(action==='cook'||action.startsWith('recipe'))cueHero('cook',1400);
+ if(action==='plot'||action.startsWith('plot-')||action==='water')cueHero('farm',950);
+ if(action==='cook'||C.RECIPES[action])cueHero('cook',1400);
  const now=Date.now();let r;
  if(worldActive==='hunt'){
   if(action==='track'){const list=['deer','turkey','rabbit'];const baseTarget=.18+rand()*.64;worldHuntRound={target:baseTarget,baseTarget,startedAt:now,kind:list[Math.floor(rand()*list.length)],expiresAt:now+12000};worldStatus='Track the moving wildlife target. Slide the gold marker to align, then take your shot.';}
