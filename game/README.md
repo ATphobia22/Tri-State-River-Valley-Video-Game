@@ -6,7 +6,7 @@
 
 [**Courthouse mesh and character source gate**](docs/POSEY_COURTHOUSE_AND_CHARACTER_SOURCE_GATE_20261123.md) · [**2025 Posey aerial source audit**](docs/MOUNT_VERNON_2025_LEAFON.md) · [**Play the game**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Repository overview](../README.md) · [Offline HTML download](River_Valley_Family_Adventure_OFFLINE.html) · [**Mount Vernon map links**](docs/MOUNT_VERNON_47620_MAP_LINKS.md) · [GitHub Actions](../.github/workflows/game-ci.yml)
 
-**Version 1.13.0** · Offline-first browser game · Original Three.js/WebGL world · Three local save slots · No account or server required.
+**Version 1.13.0** · Online website plus standalone offline download · Original Three.js/WebGL world · Three local save slots · No account or server required.
 
 This `game/` directory contains the **playable family adventure**. It is separate from the Tri-State Systems Manager digital twin. The official geographical references are used to orient the fictional game; game terrain, fictional towns, models, river effects and heights are not survey or regulatory products.
 
@@ -25,7 +25,7 @@ This `game/` directory contains the **playable family adventure**. It is separat
 | Cooking | Campfire kitchen, inventory-consuming ingredients and six recipes with progression rewards |
 | World visuals | Season/weather/daylight, terrain LOD, 709-road/4,819-footprint optional Mount Vernon visual reference, locally generated brick/clapboard/stone/steel/board-batten/roof textures, instanced reeds/rocks/flowers and quality-tiered instanced meadow |
 | Sound and performance | Offline synthesized footsteps/biome cues, user-gesture audio activation, bounded FPS telemetry and JSON export; resolution adaptation on slow WebGL frames |
-| Offline and accessibility | Downloadable single-file HTML, HTTPS PWA service worker, gamepad/touch/keyboard-style interfaces where implemented, 2D illustrated fallback, local saves |
+| Offline and accessibility | Downloadable single-file offline HTML, no website service worker, gamepad/touch/keyboard-style interfaces where implemented, 2D illustrated fallback, local saves |
 
 **Geographic limit:** The county boundary and settlement points are sourced reference geography, **not** evidence of continuous countywide 3D terrain. New Harmony, Griffin, Poseyville and Cynthiana are thematic *vignettes inside the existing Mount Vernon-area local stage*, not site-accurate town reconstructions. [Data provenance and scope](docs/POSEY_COUNTY_EXPANSION_v1.10.md).
 
@@ -52,7 +52,7 @@ This `game/` directory contains the **playable family adventure**. It is separat
 | [`src/visual-polish.js`](src/visual-polish.js) / [`src/world-paint.js`](src/world-paint.js) | Procedural PBR materials and instanced terrain details |
 | [`src/soundscape.js`](src/soundscape.js) / [`src/frame-probe.js`](src/frame-probe.js) | Synthesized audio and device-side frame-time recording |
 | [`reference/mount-vernon/`](reference/mount-vernon/) | Official-origin reference inputs, registration and checksums |
-| [`tests/`](tests/) | Node tests; Python source/packaging tests; Chromium WebGL and offline replay tests |
+| [`tests/`](tests/) | Node tests; Python source/packaging tests; Chromium WebGL and service-worker-disabled browser tests |
 | [`unreal-starter/`](unreal-starter/README.md) | Optional Unreal Engine 5.8 Blueprint-only River asset art lab; editor inventory check only, not the playable game |
 
 The **engine runs locally**. External open-source projects documented in research notes are design references unless a dependency or asset has been explicitly reviewed, admitted and shipped. Do not imply that a third-party physics engine, motion-capture set or recording library has been installed merely because it appears in a research guide.
@@ -72,9 +72,9 @@ python -m unittest discover -s game/tests -p test_pages_build.py -v
 python game/tools/build_pages.py --output _site
 ```
 
-`npm test` invokes the original-rig GLB generator before running the `test-*.cjs` Node tests. Building creates both the standalone `River_Valley_Family_Adventure_OFFLINE.html` and hosted `game.html`. The Pages builder produces a working `_site/index.html` plus local PWA manifest, icons, service worker and `offline.html`. All gameplay scripts and original GLBs are bundled without remote gameplay requests.
+`npm test` invokes the original-rig GLB generator before running the `test-*.cjs` Node tests. Building creates both the standalone `River_Valley_Family_Adventure_OFFLINE.html` and hosted `game.html`. The Pages builder produces a working `_site/index.html` plus local manifest/icons, an inactive legacy-worker cleanup file, and `offline.html`. Website gameplay requires a network connection; only the standalone HTML is intentionally offline. All gameplay scripts and original GLBs are bundled without remote gameplay requests.
 
-### Real browser and offline replay gates
+### Real browser and disabled-worker gates
 
 The continuous integration workflows also test **actual software-WebGL Chromium** at desktop and phone-sized viewports. After installing Playwright Chromium, reproduce them from repository root:
 
@@ -82,18 +82,18 @@ The continuous integration workflows also test **actual software-WebGL Chromium*
 python -m pip install "playwright>=1.50,<2"
 python -m playwright install chromium
 python game/tests/browser_hero_smoke.py
-python game/tests/offline_pwa_smoke.py --site-dir game --entry game.html
-python game/tests/offline_pwa_smoke.py --site-dir _site --entry index.html
+python game/tests/service_worker_disabled_smoke.py --site-dir game --entry game.html
+python game/tests/service_worker_disabled_smoke.py --site-dir _site --entry index.html
 ```
 
-The offline test **really disables networking** after a cache warm-up, navigates to the game again, resumes the save, and checks that New Harmony exploration and Scout bond progress survive. It is now required in **both** [Game CI](../.github/workflows/game-ci.yml) and the [Pages build](../.github/workflows/deploy-pages.yml) following the merge of [PR #11](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/pull/11).
+The hosted-game smoke test verifies that no service worker is registered, no legacy game cache remains, and New Harmony exploration and Scout bonding survive a **normal online reload**. This is required in both [Game CI](../.github/workflows/game-ci.yml) and the [Pages build](../.github/workflows/deploy-pages.yml). For offline play, download the self-contained HTML game; hosted offline replay from PR #11 has been retired.
 
 **Verified November 22, 2026, on game commit `b92ce3b72dbb8607cad460290a61e79031d7ccde`:** [main CI passed](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/actions/runs/45028870961), [asset synchronization passed](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/actions/runs/45028870921), and [Pages deployment passed](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/actions/runs/45028870922). Subsequent documentation commits must be verified separately.
 
 ### Offline play notes
 
 - **On Windows:** Open the self-contained HTML game file in a supported desktop browser. This is not a native `.exe` installer.
-- **On iPhone:** Load the HTTPS game in Safari online first and optionally add it to the Home Screen. Caching and local storage availability may depend on device/browser settings. This is not a native IPA.
+- **On iPhone:** Load the HTTPS game in Safari while online, and optionally add a shortcut to the Home Screen. The hosted website does not support offline replay without a service worker; saved progress may persist locally according to browser settings. This is not a native IPA.
 - **Saves:** Progress stays in local browser storage, with no cloud sync. Clearing that storage may erase saves.
 - **Device FPS:** Settings → **Export iPhone FPS** saves a JSON report of real in-browser frame timings. Phone-sized Chromium software WebGL is **not** a physical iPhone benchmark.
 
