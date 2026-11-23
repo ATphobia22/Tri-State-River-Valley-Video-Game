@@ -77,6 +77,14 @@ def discover():
                         result["subtrees"][prefix]=list_prefix(prefix)
             except Exception as e:
                 result["failures"].append(f"Subtree {root}: {e}")
+    for prefix in ("imageryoptimized/2025/SPW/","imageryoptimized/2025/SPE/",
+                   "imageryraw/2025/SPW/","imagerymrsid/2025/SPW/"):
+        try:
+            level=list_prefix(prefix)
+            result["subtrees"][prefix]=level
+            for deeper in level["prefixes"][:4]:
+                result["subtrees"][deeper]=list_prefix(deeper)
+        except Exception as e:result["failures"].append(f"County prefix {prefix}: {e}")
     try:
         raw=get(WEBMAP)
         result["webmapLayers"]=parse_map(raw)
