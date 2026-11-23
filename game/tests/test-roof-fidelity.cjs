@@ -20,6 +20,9 @@ test('historic storefronts default to no invented ridge and yield watertight par
  const out=R.planRoof(p,16,{form:'parapet'});
  assert.equal(out.kind,'ILLUSTRATIVE_PARAPET');
  assert.equal(out.ridgeY,null);
+ assert.equal(R.suggestedForm({points:p,dx:21,dz:31}),'parapet');
+ assert.equal(R.suggestedForm({points:[[0,0],[12,0],[12,17],[0,17]],dx:12,dz:17}),'gable');
+
  assert.equal(out.positions.length,4*6*3);
  for(let i=1;i<out.positions.length;i+=3)assert.ok(out.positions[i]>=16&&out.positions[i]<=17.25);
 });
