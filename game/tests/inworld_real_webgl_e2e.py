@@ -38,8 +38,19 @@ with sync_playwright() as p:
     d.worldAction('shoot');const game=d.getState().inventory.game;
     d.openWorldActivity('fish');d.worldAction('cast');
     const bite=d.getState().worldFishBiteAt;
-    const savedNow=Date.now;Date.now=()=>bite+100;
-    try{d.worldAction('reel')}finally{Date.now=savedNow;}
+    const savedNow=Date.now;let simulated=bite+100;Date.now=()=>simulated;
+    let hooked=false;
+    try{
+      d.worldAction('reel');hooked=d.getState().worldFishPhase==='fight';
+      for(let i=0;i<3;i++){
+        simulated+=320;
+        const target=d.getState().worldFishTarget;
+        const meter=document.getElementById('worldAim');
+        meter.value=String(Math.round(target*100));
+        meter.dispatchEvent(new Event('input',{bubbles:true}));
+        d.worldAction('reel');
+      }
+    }finally{Date.now=savedNow;}
     const fish=d.getState().inventory.fish;
     d.openWorldActivity('cook');d.worldAction('fishFry');
     const meals=d.getState().inventory.meals;
