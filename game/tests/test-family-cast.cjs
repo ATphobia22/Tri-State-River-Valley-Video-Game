@@ -7,6 +7,10 @@ test('all eight individually numbered Point Township figures are present exactly
  assert.equal(entries.length,10);assert.equal(figures.length,8);
  assert.deepEqual(figures.map(x=>x.number).sort(),['01','02','03','04','05','06','07','08']);
  assert.equal(new Set(entries.map(x=>x.id)).size,10);
+ assert.equal(new Set(entries.map(x=>x.spriteIndex)).size,10);
+ assert.deepEqual(entries.map(x=>x.spriteIndex).sort((a,b)=>a-b),[0,1,2,3,4,5,6,7,8,9]);
+ assert.equal(cast.byId('pete-yeida').spriteIndex,7);
+ assert.equal(cast.byId('richard-stratton').spriteIndex,0);
  for(const entry of entries){assert.equal(entry.assetStatus,'PHOTO_REFERENCE_ONLY');assert.equal(entry.playable,false);assert.equal(entry.source,'user-2026-11-22');}
 });
 test('both special sets stay separate; Yeida memorial wording is preserved',()=>{
