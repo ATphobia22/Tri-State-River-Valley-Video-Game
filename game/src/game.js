@@ -1153,13 +1153,23 @@ function worldPrimaryAction(){if(!worldActive)return false;
 function showWorldActivity(){
  const id=worldActive;if(!id)return;const place=WORLD.SITES[id];$('worldActivityTitle').textContent=place.label+' · '+place.title;
  const pantry=`Pantry: 🌽 ${save.inventory.corn} · 🐟 ${save.inventory.fish} · 🦌 ${save.inventory.game} · 🍲 ${save.inventory.meals}`;
- let text='',actions=[],aim=id==='hunt'&&!!worldHuntRound;
+ let text='',actions=[],aim=(id==='hunt'&&!!worldHuntRound)||(id==='fish'&&worldFishRound?.phase==='fight');
  if(id==='hunt'){text='Track deer, turkey, or rabbit models moving through the clearing. Align the 3D gold targeting ring with the animal; no gore.';actions=worldHuntRound?[['shoot','🎯 Take shot']]:[['track','🔭 Track wildlife']];}
- if(id==='fish'){text='Cast directly from the 3D fishing pier. Watch the animated river bobber; reel when the bite flashes.';actions=worldFishRound?[['reel','🎣 Reel now!']]:[['cast','🎣 Cast line']];}
- if(id==='farm'){const pick=WORLD.farmPick(save,Date.now());text='Work the nine actual farm plots. Growing corn appears in 3D; harvest is saved to your pantry.';actions=[['plot',pick.action==='harvest'?'🌽 Harvest ready crop':pick.action==='plant'?'🌱 Plant next plot (15 coins)':'🌿 Check crops'],['water','💧 Water (20 coins)']];}
+ if(id==='fish'){
+  text='Fish from the real-time 3D pier. Hook when the bobber dips, then align line tension with the moving target and complete three controlled reels.';
+  actions=worldFishRound?[['reel',worldFishRound.phase==='fight'?'🧵 Reel at the target':'🎣 Hook on the bite']]:[['cast','🎣 Cast line']];
+ }
+ if(id==='farm'){
+  const pick=WORLD.farmPick(save,Date.now());
+  text='Select any of the nine terrain-aligned 3D plots. Plant, water and harvest individually; crop stages persist locally.';
+  actions=[['plot',pick.action==='harvest'?'🌽 Harvest ready crop':pick.action==='plant'?'🌱 Plant next plot (15 coins)':'🌿 Check crops'],['water','💧 Water (20 coins)']];
+ }
  if(id==='cook'){text='Cook beside the animated campfire in your world. Gather fish and corn first; meals are saved.';actions=Object.entries(C.RECIPES).map(([id,r])=>[id,r.title+' · '+r.coins+' coins',!Object.entries(r.ingredients).every(([k,n])=>save.inventory[k]>=n)]);}
  $('worldActivityText').textContent=text;$('worldAimLabel').hidden=!aim;
- $('worldActionButtons').innerHTML=actions.map(([action,label,disabled],i)=>`<button ${disabled?'disabled':''} class="${i===0?'primaryAction':''}" data-worldaction="${action}">${label}</button>`).join('');
+ $('worldAimTitle').textContent=id==='fish'?'Line tension — match the moving target':'Track wildlife — align the marker';
+ const plots=id==='farm'?'<div class="worldFarmGrid" role="group" aria-label="Select any field">'+save.farmPlots.map((t,i)=>
+  `<button class="farmPlotButton" data-worldaction="plot-${i}" aria-label="Field ${i+1}">${t===0?'🌱':t>Date.now()?'🌿':'🌽'} Plot ${i+1}</button>`).join('')+'</div>':'';
+ $('worldActionButtons').innerHTML=actions.map(([action,label,disabled],i)=>`<button ${disabled?'disabled':''} class="${i===0?'primaryAction':''}" data-worldaction="${action}">${label}</button>`).join('')+plots;
  $('worldActivityMeter').textContent=worldStatus?worldStatus+' · '+pantry:pantry;
 }
 function updateWorldHUD(){if(!worldActive)return;const now=Date.now();const label=$('worldActivityMeter');
@@ -1168,7 +1178,13 @@ function updateWorldHUD(){if(!worldActive)return;const now=Date.now();const labe
   const hint=save.pet?COMPANION.hint(worldAim,worldHuntRound.target):null;
   label.textContent=`Wildlife tracking · ${left.toFixed(1)}s left · Aim ${(worldAim*100).toFixed(0)}% · ${hint==='close'?'🐕 Scout: near the trail':hint==='left'?'🐕 Scout: look left':hint==='right'?'🐕 Scout: look right':'Track by eye'}`;
  if(left===0){worldHuntRound=null;worldStatus='Time elapsed. The animal moved away.';showWorldActivity();}}
- else if(worldFishRound){label.textContent=now<worldFishRound.biteAt?'🌊 Watch the 3D bobber…':now<=worldFishRound.biteAt+1100?'⚡ BITE! REEL NOW!':'💨 Fish gone. Reel to reset, or cast again.';}
+ else if(worldFishRound){
+  const cue=SKILLS.fishCue(worldFishRound,now);
+  if(cue.phase==='fight'){
+   label.textContent=`🎣 Reel ${cue.progress}/3 · Aim ${Math.round(worldAim*100)}% · tension target ${Math.round(cue.target*100)}% · strain ${Math.round(cue.tension*100)}%`;
+   $('worldAimLabel').hidden=false;
+  }else label.textContent=cue.phase==='waiting'?'🌊 Watch the 3D bobber…':now<=worldFishRound.biteAt+1100?'⚡ BITE! HOOK NOW!':'💨 Fish gone. Reel to reset, or cast again.';
+ }
 }
 function renderFarm(){
  const now=Date.now();$('farmGrid').innerHTML=save.farmPlots.map((t,i)=>{
