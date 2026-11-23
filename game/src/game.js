@@ -49,6 +49,7 @@ let currentTravelSpeed=0;
 const G=window.THREE;
 const POLISH=window.ValleyVisualPolish,BIOME=window.ValleyBiomeStreamer,LODPLAN=window.ValleyLODTransition,GRAPHICS=window.ValleyGraphicsQuality,ASSET_CODEC=window.ValleyCompressedAssets;
 const RIVER_WATER=window.ValleyRiverWater,ROOFS=window.ValleyBuildingRoofs,LANDMARKS=window.ValleyLandmarkAnchors;
+const CINEMATIC=window.ValleyCinematicLighting;
 const ACCESS=window.ValleyLandmarkAccess;
 const CUSTOM_HERO=window.ValleyCustomHero,CAST_WARDROBE=window.ValleyCastWardrobe;
 const UX=window.ValleyPlayerExperience;
@@ -150,7 +151,8 @@ function tryRenderer(){
   scene=new G.Scene();scene.background=new G.Color('#a8bec2');scene.fog=new G.FogExp2('#bdd0ca',0.00019);
   camera=new G.PerspectiveCamera(60,Math.max(1,innerWidth)/Math.max(1,innerHeight),.2,10500);cameraGoal=new G.Vector3();
   ambient=new G.HemisphereLight(0xd5e6ff,0x404e36,2.3);scene.add(ambient);
-  sunLight=new G.DirectionalLight(0xffe1a8,2.3);sunLight.position.set(100,220,-180);scene.add(sunLight);
+  sunLight=new G.DirectionalLight(0xffe1a8,2.3);sunLight.position.set(100,220,-180);scene.add(sunLight);scene.add(sunLight.target);
+  if(renderer.shadowMap)renderer.shadowMap.type=G.PCFSoftShadowMap;
   facadePalette=POLISH?POLISH.make(G):null;buildTerrain();buildRiver();buildRoads();buildBuildings();buildTrees();if(PAINT)terrainDecor=PAINT.scatter(G,scene,height,{mobile:innerWidth<781,limit:LIMIT});buildBeacons();buildPlayer();buildHouse();buildOriginalModels();
   if(COUNTY_SCENES&&COUNTY){countyVignettes=COUNTY_SCENES.create(G,scene,height,COUNTY);
     collisionWorld=COLLISION.create([...buildingItems,...countyVignettes.colliders],{radius:1.7,stepHeight:2.8});}
@@ -194,7 +196,7 @@ function commitTerrainLOD(job){
    job.meshes.push(seam);
  }
  const old=terrainMeshes;
- for(const m of job.meshes)scene.add(m);
+ for(const m of job.meshes){m.traverse(obj=>{if(obj.isMesh)obj.receiveShadow=true;});scene.add(m);}
  terrainMeshes=job.meshes;terrainMesh=job.meshes[0];terrainIndex=job.index;
  groundPlacementDirty=!!buildingMesh||!!foliageJobs; // Re-anchor against the newly committed visible surface.
  if(retiringTerrain){disposeTerrainMeshes(retiringTerrain.meshes);retiringTerrain=null;}
@@ -593,6 +595,7 @@ function buildPlayer(){
  groundShadow=MOTION.createContactShadow(G);if(groundShadow)scene.add(groundShadow);
  avatar=heroController.root;
  avatar.name='Playable River Explorer';
+ avatar.traverse(obj=>{if(obj.isMesh)obj.castShadow=true;});
  scene.add(avatar);
  car=new G.Group();
  const paint=new G.MeshStandardMaterial({color:0xa26c4c,roughness:.51,metalness:.16});
@@ -614,7 +617,7 @@ function buildPlayer(){
  driverController.root.name='Explorer driving';
  driverController.root.scale.setScalar(.53);
  driverController.root.position.set(-2.45,1.5,-1.0);
- car.add(driverController.root);scene.add(car);
+ car.add(driverController.root);car.traverse(obj=>{if(obj.isMesh)obj.castShadow=true;});scene.add(car);
  dog=new G.Group();dog.name='Scout / animated faithful companion';
  const fur=new G.MeshStandardMaterial({color:0xb99872,roughness:.98}),dark=new G.MeshStandardMaterial({color:0x554338,roughness:.93}),
   cream=new G.MeshStandardMaterial({color:0xe1c9a5,roughness:.96}),collar=new G.MeshStandardMaterial({color:0x467b80,roughness:.73});
@@ -825,10 +828,25 @@ function updateVisuals(dt,stamp){
   return;
  }
 
- const radians=(time-6)/24*Math.PI*2,light=C.clamp(.25+Math.sin(radians)*.8,.06,1.05);
- const mist=weather==='mist';scene.background.set(light<.25?'#13273e':(weather==='rain'?'#839d9d':'#9cb8b3'));
- scene.fog.color.set(light<.25?'#3e5360':mist?'#b1c5bd':'#aec8c1');scene.fog.density=visualEffects==='lite'?.00004:(mist?.0006:weather==='rain'?.00033:.00018);
- ambient.intensity=.6+1.8*light;sunLight.intensity=.25+2.2*light;sunLight.position.set(-200,Math.max(30,380*light),180);renderer.toneMappingExposure=.75+light*.62;
+ const cinematicFrame=CINEMATIC?CINEMATIC.sample({
+  time,weather,look:cinemaPrefs.look,quality:cinemaPrefs.quality,
+  effects:visualEffects,mobile:innerWidth<781
+ }):null;
+ if(cinematicFrame){
+  CINEMATIC.apply(G,{scene,renderer,sunLight,ambient,
+   playerX:player.x,playerZ:player.z,playerY:height(player.x,player.z),
+   preset:cinematicFrame});
+ }else{
+  // Fallback for independently embedded older/offline distributions.
+  const radians=(time-6)/24*Math.PI*2,light=C.clamp(.25+Math.sin(radians)*.8,.06,1.05);
+  const mist=weather==='mist';
+  scene.background.set(light<.25?'#13273e':(weather==='rain'?'#839d9d':'#9cb8b3'));
+  scene.fog.color.set(light<.25?'#3e5360':mist?'#b1c5bd':'#aec8c1');
+  scene.fog.density=visualEffects==='lite'?.00004:(mist?.0006:weather==='rain'?.00033:.00018);
+  ambient.intensity=.6+1.8*light;sunLight.intensity=.25+2.2*light;
+  sunLight.position.set(-200,Math.max(30,380*light),180);
+  renderer.toneMappingExposure=.75+light*.62;
+ }
  avatar.position.set(player.x,height(player.x,player.z)+heroHeightOffset,player.z);
  vehicleState=suspension.update({x:player.x,z:player.z,yaw:playerHeading,groundAt:height,dt:save.mode==='drive'?dt:0});
  car.position.set(player.x,height(player.x,player.z)+vehicleState.bodyHeight,player.z);
@@ -866,7 +884,7 @@ function updateVisuals(dt,stamp){
  if(roadMesh?.material){roadMesh.material.color.setHex(weather==='rain'?0x3b464b:0x62686a);
   roadMesh.material.needsUpdate=false;}
  if(worldGame)worldGame.update({stamp,save,activity:worldActive,huntRound:worldHuntRound,fishRound:worldFishRound,aim:worldAim,weather});
- if(atmosphere)atmosphere.update(camera,time,weather,season,stamp);if(director3D)director3D.update(stamp,time,weather,cinemaPrefs.strength,cinemaPrefs.quality);
+ if(atmosphere)atmosphere.update(camera,time,weather,season,stamp,cinematicFrame);if(director3D)director3D.update(stamp,time,weather,cinemaPrefs.strength,cinemaPrefs.quality);
  applyTerrainLOD();
  if(terrainTransition)terrainTransition.pump(save.mode==='drive'?(visualEffects==='lite'?3:5):(visualEffects==='lite'?6:10));
  fadeRetiringTerrain(stamp);
