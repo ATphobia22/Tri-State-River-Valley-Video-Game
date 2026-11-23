@@ -12,7 +12,9 @@ export function containsLonLat(g,x,y){
   const polys=g?.type==='Polygon'?[g.coordinates]:g?.type==='MultiPolygon'?g.coordinates:[];
   return polys.some(r=>r.length&&ringContains(r[0],x,y)&&!r.slice(1).some(h=>ringContains(h,x,y)));
 }
-export function createZoningSimulator(fc,{storage=typeof localStorage!=='undefined'?localStorage:null,key='valley-zoning-v1'}={}){
+export function createZoningSimulator(fc,options={}){
+  const storage=options.storage??(()=>{try{return localStorage;}catch{return null;}})();
+  const key=options.key??'valley-zoning-v1';
   if(fc?.type!=='FeatureCollection'||!Array.isArray(fc.features))throw Error('Invalid parcel GeoJSON');
   const source=String(fc.properties?.snapshot_id||'unversioned'),base=new Map(),state=new Map();
   for(const f of fc.features){

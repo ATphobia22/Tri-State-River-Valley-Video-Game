@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
+import {createHeightAt} from './world/terrain.mjs';
+import {resolveCircleBoxes} from './world/collisions.mjs';
+import {createZoningSimulator} from './world/zoning.mjs';
+import {createZoningView} from './world/zoning-view.mjs';
 import decoderJS from 'three/examples/jsm/libs/draco/gltf/draco_wasm_wrapper.js?text';
 import decoderWasm from 'three/examples/jsm/libs/draco/gltf/draco_decoder.wasm';
 
@@ -35,11 +39,9 @@ const location=new THREE.Vector3(-7,0,22);
 const matrixHelper=new THREE.Object3D();
 const dir=new THREE.Vector3(),temp=new THREE.Vector3();
 const groupNames=new Set();
-function height(x,z){
-  const u=THREE.MathUtils.clamp((x+2000)/20,0,200),v=THREE.MathUtils.clamp((z+2000)/20,0,200);
-  const i=Math.floor(u),j=Math.floor(v),k=Math.min(200,i+1),l=Math.min(200,j+1);
-  return ((ground[j*201+i]*(1-u+i)+ground[j*201+k]*(u-i))*(1-v+j)+(ground[l*201+i]*(1-u+i)+ground[l*201+k]*(u-i))*(v-j))*.01;
-}
+const blockers=[];let zoning=null,zoningView=null;
+let height=()=>0; // Initialized from the same real DEM grid as the terrain mesh.
+
 function worldFromGeo(lon,lat){
   return [(lon-manifest.origin[0])*manifest.metresPerDegree[0],(manifest.origin[1]-lat)*manifest.metresPerDegree[1]];
 }
@@ -133,6 +135,8 @@ function move(dt){
   if(moving){
     dir.set(Math.sin(yaw),0,Math.cos(yaw)).multiplyScalar(1.48*dt*forward);
     temp.copy(location);location.add(dir);location.clamp(new THREE.Vector3(-1600,0,-1600),new THREE.Vector3(1600,0,1600));
+    const corrected=resolveCircleBoxes(location.x,location.z,.38,blockers);
+    location.x=corrected.x;location.z=corrected.z;
     dir.copy(location).sub(temp);controls.target.add(dir);camera.position.add(dir);
   }
   for(const a of actorStates){
@@ -149,7 +153,8 @@ function diagnostics(){
     actors:actorStates.map(a=>({name:a.file,clip:a.current,bones:a.model.getObjectByProperty('isSkinnedMesh',true)?.skeleton.bones.length})),
     drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,
     fineTiles:tiles.filter(t=>t.detail).length,proxyInstances:tiles.reduce((s,t)=>s+(t.proxies.visible?t.proxies.count:0),0),
-    streamError,parcelCount:manifest.parcels,frames:frameTimes.length};
+    streamError,parcelCount:manifest.parcels,frames:frameTimes.length,
+    zoningMonth:zoning?.month??null,zonedParcels:zoning?.state?.size??0,collisionBoxes:blockers.length};
 }
 function tick(now){
   const delta=lastTime?(now-lastTime)/1000:0;lastTime=now;
@@ -178,6 +183,7 @@ async function start(){
   function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
   resize();addEventListener('resize',resize);
   [manifest,ground]=await Promise.all([jsonFile('scene.json'),bytes('ground.bin').then(b=>new Int16Array(b))]);
+  height=createHeightAt(ground);
   await Promise.all([actor('river',location.x,location.z,.107,0),actor('bill_tucker',location.x+1.35,location.z+.35,.107,0),actor('scout',location.x-1.25,location.z+.25,.85,0)]);
   const [region,low,high,water,court,col]=await Promise.all(['posey_terrain','mount_vernon_lod1','mount_vernon_lod0','rivers','courthouse','coliseum'].map(n=>load(n+'.glb')));
   install(region,'regional terrain');terrain=new THREE.LOD();terrain.addLevel(high.scene,0);terrain.addLevel(low.scene,3300,.1);root.add(terrain);
@@ -187,15 +193,68 @@ async function start(){
   for(const [model,name,x,z,rotation] of [[court,'Posey County Courthouse',0,0,manifest.courthouseYaw],[col,'Memorial Coliseum',...manifest.coliseum,0]]){
     const landmark=new THREE.LOD();landmark.name=name;landmark.position.set(x,height(x,z),z);landmark.rotation.y=rotation;
     model.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
-    const bounds=new THREE.Box3().setFromObject(model.scene);const box=new THREE.Mesh(new THREE.BoxGeometry(...bounds.getSize(new THREE.Vector3()).toArray()),new THREE.MeshStandardMaterial({color:0xb7a48f}));
+    const bounds=new THREE.Box3().setFromObject(model.scene);
+    const bc=bounds.getCenter(new THREE.Vector3()),bs=bounds.getSize(new THREE.Vector3());
+    blockers.push({x:x+Math.cos(rotation)*bc.x+Math.sin(rotation)*bc.z,
+      z:z-Math.sin(rotation)*bc.x+Math.cos(rotation)*bc.z,
+      halfX:bs.x/2,halfZ:bs.z/2,yaw:rotation});
+    const box=new THREE.Mesh(new THREE.BoxGeometry(...bounds.getSize(new THREE.Vector3()).toArray()),new THREE.MeshStandardMaterial({color:0xb7a48f}));
     bounds.getCenter(box.position);landmark.addLevel(model.scene,0);landmark.addLevel(box,950,.1);root.add(landmark);landmarks.push(landmark);
   }
+  zoning=createZoningSimulator(await jsonFile('mount_vernon_zoned.geojson'));
+  zoningView=createZoningView(root,manifest,height,zoning);
   setupTiles();setView('cast');
   $('place').onchange=e=>setView(e.target.value);
   $('walk').onpointerdown=e=>{if(lastSelection!=='cast')setView('cast');walking=true;e.currentTarget.setPointerCapture(e.pointerId);};
   for(const ev of ['pointerup','pointercancel','lostpointercapture'])$('walk').addEventListener(ev,()=>walking=false);
   for(const [ev,down] of [['keydown',true],['keyup',false]])addEventListener(ev,e=>{if(e.target.tagName==='SELECT'||!e.key.startsWith('Arrow'))return;e.preventDefault();down?pressed.add(e.key):pressed.delete(e.key);});
   addEventListener('blur',()=>{pressed.clear();walking=false;});
+  const zoneToggle=$('zone-toggle'),zonePanel=$('zone-panel'),zoneStatus=$('zone-status');
+  zoneToggle.onclick=()=>{
+    const on=zoneToggle.getAttribute('aria-pressed')!=='true';
+    zoneToggle.setAttribute('aria-pressed',String(on));zonePanel.hidden=!on;zoningView.layer.visible=on;
+    if(on)setView('town');
+    zoneStatus.textContent=on?'Select a parcel on the map to paint a simulated zone.':'Zoning overlay hidden.';
+  };
+  $('zone-apply').onclick=()=>{
+    const id=zoningView.selected;
+    if(!id){zoneStatus.textContent='Select a parcel first.';return;}
+    zoning.paint(id,$('zone-type').value);zoningView.refresh();
+    zoneStatus.textContent='Parcel '+id+' painted '+zoning.state.get(id).zone+' · local save updated.';
+  };
+  $('zone-bulldoze').onclick=()=>{
+    const id=zoningView.selected;if(!id){zoneStatus.textContent='Select a parcel first.';return;}
+    zoning.bulldoze(id);zoningView.refresh();
+    zoneStatus.textContent='Simulation state cleared for parcel '+id+'. Original GIS mesh remains unchanged.';
+  };
+  $('zone-month').onclick=()=>{
+    const added=zoning.advanceMonth({residential:2,commercial:0,industrial:0});
+    zoningView.refresh();zoneStatus.textContent='Game month '+zoning.month+': '+added.length+' new buildings (fictional demand).';
+  };
+  $('zone-export').onclick=()=>{
+    const payload=JSON.stringify({source:zoning.source,changes:zoning.save()},null,2);
+    const url=URL.createObjectURL(new Blob([payload],{type:'application/json'}));
+    const link=document.createElement('a');link.href=url;link.download='mount-vernon-game-parcel-diff.json';link.click();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+  };
+  const raycaster=new THREE.Raycaster(),surfacePoint=new THREE.Vector3(),up=new THREE.Vector3(0,1,0);
+  renderer.domElement.addEventListener('click',e=>{
+    if(zoneToggle.getAttribute('aria-pressed')!=='true')return;
+    const b=renderer.domElement.getBoundingClientRect();
+    raycaster.setFromCamera(new THREE.Vector2((e.clientX-b.left)/b.width*2-1,
+      -(e.clientY-b.top)/b.height*2+1),camera);
+    if(!raycaster.ray.intersectPlane(new THREE.Plane(up,0),surfacePoint))return;
+    for(let i=0;i<3;i++){
+      const y=height(surfacePoint.x+origin.x,surfacePoint.z+origin.z);
+      if(!raycaster.ray.intersectPlane(new THREE.Plane(up,-y),surfacePoint))break;
+    }
+    const f=zoning.findLocal(surfacePoint.x+origin.x,surfacePoint.z+origin.z,manifest);
+    zoningView.select(f?.id??null);
+    zoneStatus.textContent=f?
+      'Parcel '+f.id+' · '+zoning.state.get(f.id).zone+' · '+(zoning.state.get(f.id).built?'existing/grown':'vacant')+
+      ' · road '+(zoning.state.get(f.id).road_access?'nearby':'not found'):
+      'No mapped downtown parcel under this point.';
+  });
   $('land').onclick=async()=>{
     const button=$('land');button.disabled=true;
     try{
