@@ -122,6 +122,8 @@ jobs:
         run: python game/tests/browser_hero_smoke.py
       - name: Verify pause and accessibility UX in actual desktop and mobile Chromium
         run: python game/tests/browser_player_experience.py
+      - name: Verify in-world wildlife, fishing tension, farming, cooking and saved progress in real Chromium
+        run: python game/tests/inworld_real_webgl_e2e.py
       - name: Test default Pages packaging and opt-in character-review isolation
         run: python -m unittest discover -s game/tests -p test_pages_build.py -v
       - name: Verify opt-in River and Scout WebGL rigs and exported asset hashes

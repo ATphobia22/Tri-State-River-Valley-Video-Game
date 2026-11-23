@@ -68,7 +68,7 @@ function axis(value,deadzone=.18){
  return Math.sign(n)*(Math.abs(n)-deadzone)/(1-deadzone);
 }
 function sampleGamepad(getGamepads,enabled=true){
- const none={connected:false,x:0,z:0,sprint:false,jump:false,interact:false,map:false,pause:false,back:false};
+ const none={connected:false,x:0,z:0,lookX:0,lookY:0,aimLeft:false,aimRight:false,sprint:false,jump:false,interact:false,map:false,pause:false,back:false};
  if(!enabled||typeof getGamepads!=='function')return none;
  let pads;
  try{pads=getGamepads();}catch(_){return none;}
@@ -78,7 +78,8 @@ function sampleGamepad(getGamepads,enabled=true){
  let x=axis(pad.axes?.[0]),z=axis(pad.axes?.[1]);
  if(pressed(14))x=-1;else if(pressed(15))x=1;
  if(pressed(12))z=-1;else if(pressed(13))z=1;
- return {connected:true,x,z,sprint:pressed(7)||pressed(6),jump:pressed(0),
+ return {connected:true,x,z,lookX:axis(pad.axes?.[2]),lookY:axis(pad.axes?.[3]),
+  aimLeft:pressed(4),aimRight:pressed(5),sprint:pressed(7)||pressed(6),jump:pressed(0),
   interact:pressed(2),map:pressed(3),pause:pressed(9),back:pressed(1)};
 }
 return Object.freeze({STORAGE_KEY,DEFAULTS,normalize,load,store,apply,createPreferences,axis,sampleGamepad});

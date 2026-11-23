@@ -4,6 +4,7 @@ synthetic localStorage because this sandbox blocks HTTP(S) navigation / local-fi
 """
 from playwright.sync_api import sync_playwright
 from pathlib import Path
+import os
 from bs4 import BeautifulSoup
 import json, sys
 root=Path(__file__).resolve().parent.parent
@@ -12,10 +13,11 @@ shim=soup.new_tag('script');shim.string="""window.__gameStore={};Object.definePr
 html=str(soup)
 errors=[];checks={}
 with sync_playwright() as p:
-  browser=p.chromium.launch(executable_path='/usr/bin/chromium',headless=False,args=['--no-sandbox','--use-gl=angle','--use-angle=gl','--ignore-gpu-blocklist','--enable-webgl','--disable-dev-shm-usage'])
+  browser=p.chromium.launch(executable_path=os.environ.get('RIVER_CHROME'),headless=True,args=['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist','--disable-dev-shm-usage'])
   page=browser.new_page(viewport={'width':1280,'height':800})
   page.on('pageerror',lambda e:errors.append(str(e)))
-  page.set_content(html,wait_until='domcontentloaded',timeout=45000)
+  page.set_content(html,wait_until='domcontentloaded',timeout=90000)
+  page.wait_for_function("() => !!window.RiverValleyDebug?.getState()?.heroModel",timeout=90000)
   page.evaluate("document.getElementById('playBtn').click()")
   checks['webgl']=page.evaluate("RiverValleyDebug.getState().renderMode==='webgl'")
   checks['four_physical_sites']=page.evaluate('RiverValleyDebug.getState().worldSites===4')
@@ -38,8 +40,19 @@ with sync_playwright() as p:
     d.worldAction('shoot');const game=d.getState().inventory.game;
     d.openWorldActivity('fish');d.worldAction('cast');
     const bite=d.getState().worldFishBiteAt;
-    const savedNow=Date.now;Date.now=()=>bite+100;
-    try{d.worldAction('reel')}finally{Date.now=savedNow;}
+    const savedNow=Date.now;let simulated=bite+100;Date.now=()=>simulated;
+    let hooked=false;
+    try{
+      d.worldAction('reel');hooked=d.getState().worldFishPhase==='fight';
+      for(let i=0;i<3;i++){
+        simulated+=320;
+        const target=d.getState().worldFishTarget;
+        const meter=document.getElementById('worldAim');
+        meter.value=String(Math.round(target*100));
+        meter.dispatchEvent(new Event('input',{bubbles:true}));
+        d.worldAction('reel');
+      }
+    }finally{Date.now=savedNow;}
     const fish=d.getState().inventory.fish;
     d.openWorldActivity('cook');d.worldAction('fishFry');
     const meals=d.getState().inventory.meals;
@@ -53,7 +66,8 @@ with sync_playwright() as p:
   checks.update({'reward_coins':r['initial']>0,'farm_in_world':r['growing'],'corn_harvested':r['corn']==1,'hunt_success':r['game']==1,'fish_success':r['fish']==1,'cook_success':r['meals']==1,'drive_mode':r['mode']=='drive','no_legacy_modal':not r['isModal'],'local_save':r['persisted']})
   page.screenshot(path=str(root/'docs/v17-inworld-browser-verified.png'),animations='disabled',timeout=12000)
   restored=BeautifulSoup(html,'html.parser');init=restored.new_tag('script');init.string='Object.assign(window.__gameStore,'+r['stored']+');';restored.head.insert(1,init)
-  page.set_content(str(restored),wait_until='domcontentloaded',timeout=45000)
+  page.set_content(str(restored),wait_until='domcontentloaded',timeout=90000)
+  page.wait_for_function("() => !!window.RiverValleyDebug?.getState()?.heroModel",timeout=90000)
   page.evaluate("document.getElementById('resumeBtn').click()")
   checks['save_reload_meals']=page.evaluate('RiverValleyDebug.getState().inventory.meals')==r['meals']
   checks['save_reload_drive']=page.evaluate('RiverValleyDebug.getState().mode')=='drive'

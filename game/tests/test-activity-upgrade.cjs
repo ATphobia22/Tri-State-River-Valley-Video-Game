@@ -36,5 +36,6 @@ test('game uses dynamically measured wildlife target and non-static Scout hints'
  const source=fs.readFileSync(__dirname+'/../src/game.js','utf8');
  assert.match(source,/WORLD.huntTargetAt/);
  assert.match(source,/COMPANION.hint/);
- assert.match(source,/fishRound.biteAt\+1100/);
+ assert.match(source,/SKILLS.fishCue/);
+ assert.match(source,/SKILLS.reel/);
 });

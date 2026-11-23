@@ -106,14 +106,19 @@ function huntShot(raw,aim,target,now,expiresAt){
  s=gainReward(s,35,60);s.inventory.game=clamp(s.inventory.game+1,0,9999);
  return {save:s,result:'hit'};
 }
+function landFish(raw,kind){
+ let s=validateSave(raw);
+ if(!['bluegill','channelCatfish','bass'].includes(kind))return {save:s,result:'invalid'};
+ s=gainReward(s,30,55);s.inventory.fish=clamp(s.inventory.fish+1,0,9999);
+ return {save:s,result:'caught'};
+}
 function fishReel(raw,biteAt,now,kind){
  let s=validateSave(raw);
  if(!['bluegill','channelCatfish','bass'].includes(kind))return {save:s,result:'invalid'};
  if(!Number.isFinite(now)||!Number.isFinite(biteAt))return {save:s,result:'invalid'};
  if(now<biteAt)return {save:s,result:'early'};
  if(now>biteAt+1100)return {save:s,result:'late'};
- s=gainReward(s,30,55);s.inventory.fish=clamp(s.inventory.fish+1,0,9999);
- return {save:s,result:'caught'};
+ return landFish(s,kind);
 }
 const RECIPES=Object.freeze({
  fishFry:{title:'Riverside Fish Fry',ingredients:{fish:1,corn:1},coins:75,xp:90},
@@ -148,5 +153,5 @@ function sampleGrid(g,values,u,v){
  return (h(x,y)*(1-a)+h(x1,y)*a)*(1-b)+(h(x,y1)*(1-a)+h(x1,y1)*a)*b;
 }
 function formatTime(h){const hh=Math.floor(((h%24)+24)%24), m=Math.floor((h-Math.floor(h))*60);return `${(hh%12)||12}:${String(m).padStart(2,'0')} ${hh>=12?'PM':'AM'}`;}
-return {LIMIT,STOPS,COUNTY_REGION_IDS,visitCountyRegion,clamp,clampPosition,safeName,freshSave,validateSave,gainReward,completeStop,buildHomestead,farmAction,waterFarm,huntShot,fishReel,cookRecipe,RECIPES,sampleGrid,formatTime};
+return {LIMIT,STOPS,COUNTY_REGION_IDS,visitCountyRegion,clamp,clampPosition,safeName,freshSave,validateSave,gainReward,completeStop,buildHomestead,farmAction,waterFarm,huntShot,fishReel,landFish,cookRecipe,RECIPES,sampleGrid,formatTime};
 });
