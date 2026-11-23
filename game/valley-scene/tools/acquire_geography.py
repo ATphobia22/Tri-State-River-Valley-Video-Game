@@ -24,13 +24,43 @@ params = dict(**common, size='1536,1584', format='jpg', f='pjson')
 meta = json.loads(request(imagery, **params))
 (out/'regional.jpg').write_bytes(request(meta['href']))
 (out/'regional-imagery.json').write_text(json.dumps(dict(request=imagery+'?'+urlencode(params), extent=meta['extent'])))
+# Official lower-case objectid is required; the older OBJECTID field fails.
+# Pagination and source IDs are mandatory for stable per-parcel game save diffs.
+from datetime import datetime, timezone
+import hashlib
+
 parcels = 'https://gisdata.in.gov/server/rest/services/Hosted/Parcel_Boundaries_of_Indiana_2025/FeatureServer/0/query'
-envelope=dict(xmin=-87.898,ymin=37.930,xmax=-87.892,ymax=37.934,spatialReference=dict(wkid=4326))
-data = json.loads(request(parcels, where='1=1', outFields='OBJECTID', geometry=json.dumps(envelope),
-    geometryType='esriGeometryEnvelope',inSR=4326,outSR=4326,returnGeometry='true',f='json'))
-if not data.get('features') or data.get('exceededTransferLimit'):
-    raise ValueError('Incomplete Indiana parcel response')
-(out/'parcels-response.json').write_text(json.dumps({'features':[{'geometry':f['geometry']} for f in data['features']]}))
+envelope = dict(xmin=-87.898, ymin=37.930, xmax=-87.892, ymax=37.934, spatialReference=dict(wkid=4326))
+query = dict(where='1=1', geometry=json.dumps(envelope), geometryType='esriGeometryEnvelope',
+             inSR=4326, outSR=4326, f='json')
+count_response = json.loads(request(parcels, **query, returnCountOnly='true'))
+expected = count_response.get('count')
+if not isinstance(expected, int) or expected < 100:
+    raise ValueError('Missing or implausible GIO parcel count')
+records = []
+for offset in range(0, expected, 100):
+    result = json.loads(request(parcels, **query, outFields='objectid',
+                                orderByFields='objectid ASC', returnGeometry='true',
+                                resultOffset=offset, resultRecordCount=100))
+    if result.get('error') or result.get('exceededTransferLimit'):
+        raise ValueError(f'Incomplete 2025 parcel data at offset {offset}: {result.get("error")}')
+    for feature in result.get('features', []):
+        fid = feature.get('attributes', {}).get('objectid')
+        geom = feature.get('geometry', {})
+        if not isinstance(fid, int) or not geom.get('rings'):
+            raise ValueError('GIO parcel missing objectid or polygon rings')
+        records.append({'id': str(fid), 'properties': {'parcel_id': str(fid)},
+                        'geometry': geom})
+if len(records) != expected or len({row['id'] for row in records}) != expected:
+    raise ValueError('Duplicate or missing authoritative parcel identifiers')
+raw = json.dumps({'features': records}, separators=(',', ':')).encode()
+(out/'parcels-response.json').write_bytes(raw)
+(out/'parcels-receipt.json').write_text(json.dumps({
+    'count': expected, 'recordCount': len(records), 'source': parcels,
+    'sourceField': 'objectid', 'bboxWGS84': envelope,
+    'capturedUTC': datetime.now(timezone.utc).isoformat(),
+    'sha256': hashlib.sha256(raw).hexdigest(),
+    'surveyOrLegalZoning': False}, indent=2))
 for layer, counties, folder in [('areawater', ('18129','17059','17193','21101','21225'), 'water'),
                                 ('roads', ('18129',), 'countyroads')]:
     for fips in counties:
