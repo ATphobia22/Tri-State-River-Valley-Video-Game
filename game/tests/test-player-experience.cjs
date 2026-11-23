@@ -26,6 +26,10 @@ test('standard controllers expose normalized analog movement with deadzone and s
  assert.ok(s.z<-.5&&s.z>-.7);
  assert.equal(s.jump,true);assert.equal(s.interact,true);
  assert.equal(s.sprint,true);assert.equal(s.pause,true);
+ pad.axes[2]=.6;pad.axes[3]=-.4;pad.buttons[4].pressed=true;
+ const rightStick=UX.sampleGamepad(()=>[pad]);
+ assert.ok(rightStick.lookX>.3&&rightStick.lookY<-.2);
+ assert.equal(rightStick.aimLeft,true);assert.equal(rightStick.aimRight,false);
  pad.axes[0]=.08;pad.axes[1]=-.03;
  assert.equal(UX.sampleGamepad(()=>[pad]).x,0);
  pad.buttons[14].pressed=true;
