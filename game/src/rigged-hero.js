@@ -125,6 +125,25 @@ function extractEmbeddedImage(parsed,textureIndex){
  if(image.mimeType==='image/png'&&(bytes[0]!==137||bytes[1]!==80||bytes[2]!==78||bytes[3]!==71))throw Error('Invalid embedded PNG signature');
  return {bytes,mimeType:image.mimeType,source:'GLB_BIN',name:image.name||''};
 }
+// glTF 2.0 requires Base Color in sRGB; normal/ORM are data textures.
+// The packed ORM red channel is AO, green roughness, blue metallic.
+function planMaterialTextureSlots(spec){
+ const pbr=spec?.pbrMetallicRoughness||{},slots=[];
+ function add(info,property,colorSpace){
+  if(info==null)return;
+  if(!Number.isInteger(info.index)||info.index<0)throw Error('Invalid glTF texture index');
+  if(info.texCoord!=null&&info.texCoord!==0)throw Error('Unsupported glTF TEXCOORD_1: requires a matching UV atlas');
+  const scale=property==='normalMap'?(info.scale??1):property==='aoMap'?(info.strength??1):1;
+  if(!Number.isFinite(scale)||scale<0||scale>4)throw Error('Invalid glTF texture scale');
+  slots.push({property,index:info.index,colorSpace,scale});
+ }
+ add(pbr.baseColorTexture,'map','srgb');
+ add(pbr.metallicRoughnessTexture,'roughnessMap','linear');
+ add(pbr.metallicRoughnessTexture,'metalnessMap','linear');
+ add(spec?.normalTexture,'normalMap','linear');
+ add(spec?.occlusionTexture,'aoMap','linear');
+ return slots;
+}
 function create(THREE,{seated=false,samplePose,lod='LOD0'}={}){
  if(!THREE?.SkinnedMesh||!THREE?.Bone||!THREE?.Skeleton||typeof samplePose!=='function')throw Error('Skinned Three.js and pose sampler required');
  const global=typeof globalThis!=='undefined'?globalThis:{};
@@ -154,46 +173,78 @@ function create(THREE,{seated=false,samplePose,lod='LOD0'}={}){
  const embeddedTextureState={expected:0,loaded:0,failed:0};
  const pendingBlobUrls=new Set(),gpuTextureMaps=new Set();
  const browserImageSupport=typeof document!=='undefined'&&typeof Blob==='function'&&typeof URL!=='undefined'&&typeof URL.createObjectURL==='function'&&typeof THREE.TextureLoader==='function';
+ // Deduplicate texture uploads and object URLs across repeated ORM material slots.
+ // No fetch()/data-URI loading: image bufferViews are already in the decoded GLB.
+ const textureCache=new Map();
+ function loadEmbeddedSlot(slot,material){
+  const key=slot.index+'/'+slot.colorSpace;
+  let entry=textureCache.get(key);
+  if(!entry){
+   const image=extractEmbeddedImage(parsed,slot.index);
+   const url=URL.createObjectURL(new Blob([image.bytes],{type:image.mimeType}));
+   const record={uses:[],url};
+   textureCache.set(key,record);
+   pendingBlobUrls.add(url);embeddedTextureState.expected++;
+   const texture=new THREE.TextureLoader().load(url,loaded=>{
+    URL.revokeObjectURL(url);pendingBlobUrls.delete(url);
+    if(scene.userData.disposed)return;
+    loaded.userData.riverEmbeddedSource='GLB_BIN';embeddedTextureState.loaded++;
+   },undefined,error=>{
+    URL.revokeObjectURL(url);pendingBlobUrls.delete(url);
+    if(scene.userData.disposed)return;
+    embeddedTextureState.failed++;
+    for(const use of record.uses){
+     // A broken user-supplied ORM or normal image is never silently treated as valid PBR.
+     if(use.property==='map'){
+      use.material.map=/\\bskin\\b/.test(use.material.name)?skinTexture(THREE):weaveTexture(THREE,use.material.name);
+     }else use.material[use.property]=null;
+     use.material.needsUpdate=true;
+    }
+    console.warn('Embedded GLB texture unavailable; verified procedural compatibility fallback:',String(error));
+   });
+   texture.colorSpace=slot.colorSpace==='srgb'?THREE.SRGBColorSpace:THREE.NoColorSpace;
+   texture.flipY=false; // glTF UV coordinates are not the default HTML-image orientation.
+   texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
+   texture.minFilter=THREE.LinearMipmapLinearFilter;texture.anisotropy=2;
+   texture.userData.riverEmbeddedSource='GLB_BIN';
+   gpuTextureMaps.add(texture);record.texture=texture;
+   entry=record;
+  }
+  entry.uses.push({material,property:slot.property});
+  material[slot.property]=entry.texture;
+  material.userData.riverEmbeddedTextureSlots ||= {};
+  material.userData.riverEmbeddedTextureSlots[slot.property]=slot.index;
+  material.needsUpdate=true;
+ }
  for(const spec of doc.materials||[]){
   const pbr=spec.pbrMetallicRoughness||{},c=pbr.baseColorFactor||[.5,.5,.5,1];
   const bumpMap=weaveBumpTexture(THREE,spec.name);
   const material=new THREE.MeshStandardMaterial({name:spec.name,
    color:new THREE.Color().setRGB(c[0],c[1],c[2],THREE.LinearSRGBColorSpace),
    metalness:pbr.metallicFactor??0,roughness:pbr.roughnessFactor??.9,
-   bumpMap,bumpScale:/\bskin\b/.test(spec.name)?.006:/\bboots\b/.test(spec.name)?.023:.013,
+   bumpMap,bumpScale:/\\bskin\\b/.test(spec.name)?.006:/\\bboots\\b/.test(spec.name)?.023:.013,
    transparent:spec.alphaMode==='BLEND',opacity:c[3],
    side:spec.doubleSided?THREE.DoubleSide:THREE.FrontSide,depthWrite:spec.alphaMode!=='BLEND'});
   materials.push(material);
-  const index=pbr.baseColorTexture?.index;
-  if(Number.isInteger(index)&&browserImageSupport){
-   try{
-    const image=extractEmbeddedImage(parsed,index),url=URL.createObjectURL(new Blob([image.bytes],{type:image.mimeType}));
-    pendingBlobUrls.add(url);embeddedTextureState.expected++;
-    const texture=new THREE.TextureLoader().load(url,loaded=>{
-     URL.revokeObjectURL(url);pendingBlobUrls.delete(url);
-     if(!scene.userData.disposed){loaded.userData.riverEmbeddedSource='GLB_BIN';embeddedTextureState.loaded++;}
-    },undefined,err=>{
-     URL.revokeObjectURL(url);pendingBlobUrls.delete(url);
-     if(scene.userData.disposed)return;
-     embeddedTextureState.failed++;
-     material.map=/\bskin\b/.test(spec.name)?skinTexture(THREE):weaveTexture(THREE,spec.name);
-     material.needsUpdate=true;
-     console.warn('Embedded River GLB texture fell back to local procedural fabric:',spec.name,String(err));
-    });
-    texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
-    texture.minFilter=THREE.LinearMipmapLinearFilter;texture.anisotropy=2;
-    texture.userData.riverEmbeddedSource='GLB_BIN';
-    gpuTextureMaps.add(texture);material.map=texture;
-    material.userData.riverEmbeddedTextureIndex=index;material.needsUpdate=true;
-   }catch(err){
-    embeddedTextureState.failed++;
-    material.map=/\bskin\b/.test(spec.name)?skinTexture(THREE):weaveTexture(THREE,spec.name);
-    material.needsUpdate=true;
-    console.warn('River GLB embedded texture cannot be used:',spec.name,String(err));
+  const slots=planMaterialTextureSlots(spec);
+  for(const slot of slots){
+   if(slot.property==='normalMap'){
+    // Prefer baked tangent normal maps; the generated bump is a fallback only.
+    material.bumpMap?.dispose();material.bumpMap=null;
+    material.normalScale=new THREE.Vector2(slot.scale,slot.scale);
    }
-  }else if(Number.isInteger(index)){
-   // Headless Node or older browsers keep a local procedural compatibility fallback.
-   material.map=/\bskin\b/.test(spec.name)?skinTexture(THREE):weaveTexture(THREE,spec.name);
+   if(slot.property==='aoMap')material.aoMapIntensity=slot.scale;
+   if(!browserImageSupport)continue;
+   try{loadEmbeddedSlot(slot,material);}
+   catch(error){
+    embeddedTextureState.failed++;
+    console.warn('GLB texture slot could not be decoded:',material.name,slot.property,String(error));
+   }
+  }
+  // Headless/offline browser compatibility for Base Color only. Other PBR
+  // channels must remain unassigned when an embedded texture fails validation.
+  if(slots.some(slot=>slot.property==='map')&&!material.map){
+   material.map=/\\bskin\\b/.test(spec.name)?skinTexture(THREE):weaveTexture(THREE,spec.name);
   }
  }
  for(const prim of meshDoc.primitives){
@@ -207,6 +258,10 @@ function create(THREE,{seated=false,samplePose,lod='LOD0'}={}){
    if(uv.channels!==2||uv.count!==pos.count)throw Error('Invalid cloth UV0 accessor');
    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv.values,2));
   }
+  if(materials[prim.material]&&(materials[prim.material].map||materials[prim.material].normalMap||materials[prim.material].roughnessMap||materials[prim.material].aoMap)&&!geo.attributes.uv){
+   throw Error('Textured GLB primitive missing TEXCOORD_0');
+  }
+  if(geo.attributes.uv && materials[prim.material]?.aoMap)geo.setAttribute('uv2',geo.attributes.uv);
   geo.setIndex(idx.values);geo.computeBoundingSphere();
   if(Number.isInteger(prim.attributes.COLOR_0)){
    const colors=source.dataAccessor(parsed,prim.attributes.COLOR_0);
@@ -245,6 +300,18 @@ function create(THREE,{seated=false,samplePose,lod='LOD0'}={}){
  const metal=materials.find(m=>m.name==='River metal')||new THREE.MeshStandardMaterial({color:0x65706b,metalness:.7});
  const dark=materials.find(m=>m.name==='River gaiter')||propMat;
  const props={};const propsGeo=[];
+ const externalAttachments=new Set();
+ function attachPropToBone(boneName,prop,{position=[0,0,0],rotation=[0,0,0]}={}){
+  const target=joints[boneName];
+  if(!target)throw Error('Unknown character bone: '+boneName);
+  if(!prop?.isObject3D||!prop.position?.set||!prop.rotation?.set)throw TypeError('Attachment must be a Three.js Object3D');
+  if(!Array.isArray(position)||position.length!==3||!position.every(Number.isFinite)||
+     !Array.isArray(rotation)||rotation.length!==3||!rotation.every(Number.isFinite))
+   throw TypeError('Attachment offsets must be finite XYZ triples');
+  target.add(prop);prop.position.set(...position);prop.rotation.set(...rotation);
+  externalAttachments.add(prop);
+  return prop;
+ }
  function group(name){const g=new THREE.Group();g.name='Hand attachment/'+name;joints.RightHand.add(g);g.position.set(.25,-.1,-.22);g.visible=false;return g;}
  function attach(g,geo,mat,pos,rot){const m=new THREE.Mesh(geo,mat);m.position.set(...pos);if(rot)m.rotation.set(...rot);g.add(m);propsGeo.push(geo);return m;}
  props.rod=group('rod');attach(props.rod,new THREE.CylinderGeometry(.07,.13,7.8,8),propMat,[0,0,-3.85],[Math.PI/2,0,0]);attach(props.rod,new THREE.TorusGeometry(.39,.13,7,18),metal,[0,-.18,-1.28],[Math.PI/2,0,0]);
@@ -337,8 +404,8 @@ function create(THREE,{seated=false,samplePose,lod='LOD0'}={}){
   currentState=pose.state;lastPose=pose;return {state:currentState,pose};
  }
  if(seated)update({state:'drive',stamp:100,dt:.5});
- function dispose(){scene.userData.disposed=true;for(const url of pendingBlobUrls)URL.revokeObjectURL(url);pendingBlobUrls.clear();if(mixer)mixer.stopAllAction();footContacts.reset();if(gaiterPrint){gaiterPrint.geometry.dispose();gaiterPrint.material.map?.dispose();gaiterPrint.material.dispose();gaiterPrint.parent?.remove(gaiterPrint);}for(const m of meshes){m.geometry.dispose();m.parent?.remove(m)}for(const g of propsGeo)g.dispose();for(const m of materials){m.map?.dispose();m.bumpMap?.dispose();m.dispose();}for(const texture of gpuTextureMaps)texture.dispose();gpuTextureMaps.clear();for(const p of Object.values(props))p.parent?.remove(p);scene.clear();}
- return {root:scene,joints,props,meshes,skinned:true,lod:actualLOD,gaiterDecalReady:!!gaiterPrint,get activeClip(){return activeClipName},get clipMixerReady(){return !!mixer&&clipActions.size>=9},get embeddedTextures(){return {...embeddedTextureState}},get footContacts(){return footContacts.snapshot()},clips:(doc.animations||[]).map(a=>a.name),update,dispose,features:['curly-hair','glasses','skull-gaiter','black-shirt','gold-chain','cargo-pants','adventure-boots','backpack'],get state(){return currentState},get pose(){return lastPose}};
+ function dispose(){scene.userData.disposed=true;for(const p of externalAttachments)p.parent?.remove(p);externalAttachments.clear();for(const url of pendingBlobUrls)URL.revokeObjectURL(url);pendingBlobUrls.clear();if(mixer)mixer.stopAllAction();footContacts.reset();if(gaiterPrint){gaiterPrint.geometry.dispose();gaiterPrint.material.map?.dispose();gaiterPrint.material.dispose();gaiterPrint.parent?.remove(gaiterPrint);}for(const m of meshes){m.geometry.dispose();m.parent?.remove(m)}for(const g of propsGeo)g.dispose();for(const m of materials){if(m.map&&!gpuTextureMaps.has(m.map))m.map.dispose();m.bumpMap?.dispose();m.dispose();}for(const texture of gpuTextureMaps)texture.dispose();gpuTextureMaps.clear();for(const p of Object.values(props))p.parent?.remove(p);scene.clear();}
+ return {root:scene,joints,props,meshes,attachPropToBone,skinned:true,lod:actualLOD,gaiterDecalReady:!!gaiterPrint,get activeClip(){return activeClipName},get clipMixerReady(){return !!mixer&&clipActions.size>=9},get embeddedTextures(){return {...embeddedTextureState}},get footContacts(){return footContacts.snapshot()},clips:(doc.animations||[]).map(a=>a.name),update,dispose,features:['curly-hair','glasses','skull-gaiter','black-shirt','gold-chain','cargo-pants','adventure-boots','backpack'],get state(){return currentState},get pose(){return lastPose}};
 }
-return Object.freeze({create,extractEmbeddedImage});
+return Object.freeze({create,extractEmbeddedImage,planMaterialTextureSlots});
 });
