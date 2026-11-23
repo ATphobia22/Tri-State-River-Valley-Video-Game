@@ -1,0 +1,113 @@
+{
+  "auditedUTC": "2026-11-23T05:55:00Z",
+  "inputOrigin": "user-provided ChatGPT file library exports / rig prototype pack",
+  "scope": "actual glTF 2.0 GLB metadata and resource inspection, not visual geometry QA",
+  "candidates": [
+    {
+      "file": "river_explorer_hero_v2.glb",
+      "sha256": "d65c283981568a290820f7e1ccce183fe2330db06da22887630da3a98af50950",
+      "bytes": 15412,
+      "skins": 1,
+      "joints": 17,
+      "clips": [
+        "Idle_Breathing"
+      ],
+      "uv0": true,
+      "embeddedImages": 0,
+      "materials": 7,
+      "decision": "REJECT_REPLACEMENT_REQUIRES_FULL_27_BONE_RETARGET_13_ACTION_CLIPS_TEXTURES"
+    },
+    {
+      "file": "river_valley_characters_master_rigged_v2.glb",
+      "sha256": "d65c283981568a290820f7e1ccce183fe2330db06da22887630da3a98af50950",
+      "bytes": 15412,
+      "skins": 1,
+      "joints": 17,
+      "clips": [
+        "Idle_Breathing"
+      ],
+      "uv0": true,
+      "embeddedImages": 0,
+      "materials": 7,
+      "decision": "IDENTICAL_BYTES_TO_HERO_V2_DO_NOT_ASSUME_DISTINCT_SOURCE"
+    },
+    {
+      "file": "river_explorer_autoskin27.glb",
+      "sha256": "29f67edac5aedd378e522d378a498d051c37fa114dccd90ea7796cbd30797861",
+      "bytes": 255628,
+      "skins": 1,
+      "joints": 27,
+      "clips": [
+        "Idle",
+        "Walk",
+        "Run",
+        "Sprint",
+        "FishingCast",
+        "Cook",
+        "Track",
+        "Drive",
+        "Interact",
+        "Jump",
+        "Land",
+        "Farm",
+        "Wave"
+      ],
+      "uv0": false,
+      "embeddedImages": 0,
+      "materials": 1,
+      "decision": "PROTOTYPE_RETARGETED_SKIN_DOES_NOT_MEET_TEXTURED_PBR_OR_MANUAL_DEFORMATION_ACCEPTANCE"
+    },
+    {
+      "file": "river_valley_characters_master_turnaround.glb",
+      "sha256": "7d702aaf820e36afd441ce2f536e77fffd4ef0ad5876f616e46d65fa48e8d086",
+      "bytes": 197232,
+      "skins": 0,
+      "joints": 0,
+      "clips": [],
+      "uv0": false,
+      "embeddedImages": 0,
+      "materials": 0,
+      "decision": "STATIC_REFERENCE_NOT_SKINNED"
+    },
+    {
+      "file": "scout_companion_dog.glb",
+      "sha256": "4cf3200520ba3e11dcaae57ea6b23e690545bc42999b6f3eb1a5bcb3b660fe40",
+      "bytes": 19524,
+      "skins": 0,
+      "joints": 0,
+      "clips": [],
+      "uv0": false,
+      "embeddedImages": 0,
+      "materials": 0,
+      "decision": "STATIC_DOG_REFERENCE_NO_DEFORMATION_RIG"
+    },
+    {
+      "file": "river_explorer_hero.glb",
+      "sha256": "e4ea5eed06c34358b25bdfb3ee390fd7f3e0e3869dcc8dd567fae40e1f16ad3a",
+      "bytes": 145096,
+      "skins": 0,
+      "joints": 0,
+      "clips": [],
+      "uv0": false,
+      "embeddedImages": 0,
+      "materials": 0,
+      "decision": "STATIC_REFERENCE_NOT_GAMEPLAY_REPLACEMENT"
+    }
+  ],
+  "baseline": {
+    "gameAsset": "game/assets/models/river_explorer_rigged.glb",
+    "gameManifest": "game/assets/models/river_explorer_manifest.json",
+    "expectedJoints": 27,
+    "expectedClips": 13,
+    "gameplayPolicy": "PRESERVE_EXISTING_RIG_UNTIL_FULL_PRODUCTION_ACCEPTANCE"
+  },
+  "userBinaryImportedToGitHub": false,
+  "reason": "Submitted Library binary sources do not meet production visual and compatibility gates; preserve as separately inspected candidates; no false GLB deployment.",
+  "nextRequirements": [
+    "source Blender master",
+    "actual retargeted 27 joint weights with complete controller clips",
+    "UV unwrap, normal/roughness/albedo atlas",
+    "character LOD budget and actual pose stress tests",
+    "rendered headed browser plus physical iPhone"
+  ]
+}
