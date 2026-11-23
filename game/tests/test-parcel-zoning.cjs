@@ -21,7 +21,8 @@ test('downtown base has exactly 210 unique official-source polygons and no asser
   assert.equal(f.properties.zone_source,'INFERRED_GAME_ONLY');
   assert.equal(f.properties.flood_status,'UNKNOWN');
   assert.equal(f.properties.levee_protection,'NOT_VERIFIED');
-  assert.ok(f.geometry.coordinates[0].length>=4);
+  const rings=f.geometry.type==='Polygon'?f.geometry.coordinates:f.geometry.coordinates.flat(1);
+  assert.ok(rings.length>0&&rings.every(r=>r.length>=4));
  }
 });
 test('player paint and bulldozing respect parcel identity, zone age and local diff-only save',()=>{
