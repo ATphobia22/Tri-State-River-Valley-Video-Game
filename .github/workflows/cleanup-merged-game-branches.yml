@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/cleanup-merged-game-branches.yml'
+      - 'game/tools/reconcile_merged_branches.py'
+      - 'game/tests/test_branch_reconcile.py'
   workflow_dispatch:
     inputs:
       dry_run:
