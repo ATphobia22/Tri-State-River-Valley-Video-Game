@@ -5,6 +5,8 @@ on:
       - feat/mount-vernon-3dep-open-world-20261123
     paths:
       - .github/workflows/mount-vernon-3dep.yml
+      - game/tools/acquire_3dep_terrain.py
+      - game/tests/test_3dep_terrain_python.py
   workflow_dispatch:
 
 permissions:
