@@ -1,6 +1,6 @@
 # River Valley — A Family Adventure
 
-**A free, offline-first, family-friendly 3D exploration game** set in a stylized Ohio–Wabash River Valley inspired by Mount Vernon and Posey County, Indiana. Explore on foot or by car, fish, track wildlife, grow crops, cook by the campfire, discover regional destinations, and adventure with Scout the dog. Game progress lives in **three local browser save slots**; no sign-in or gameplay server is required.
+**A free family-friendly 3D exploration game with a downloadable offline edition** set in a stylized Ohio–Wabash River Valley inspired by Mount Vernon and Posey County, Indiana. Explore on foot or by car, fish, track wildlife, grow crops, cook by the campfire, discover regional destinations, and adventure with Scout the dog. Game progress lives in **three local browser save slots**; no sign-in or gameplay server is required.
 
 **Current playable release: v1.13.0** · Three.js / WebGL · Browser and downloadable offline HTML · Windows and iPhone browser controls
 
@@ -38,11 +38,11 @@
 
 **Windows / desktop:** Open the downloadable [`River_Valley_Family_Adventure_OFFLINE.html`](game/River_Valley_Family_Adventure_OFFLINE.html) in a supported browser such as Chrome or Edge. It is a self-contained browser game, **not** a native Windows executable.
 
-**iPhone / iPad:** Open the [HTTPS game](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) in Safari while online, load it successfully once, then use Safari's Share → **Add to Home Screen** if you want an app-like shortcut. The versioned service worker caches the playable HTML for later offline use where supported; browser storage and private browsing policies can affect offline availability and saves. It is **not** a native iOS IPA.
+**iPhone / iPad:** Open the [HTTPS game](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) in Safari while online, load it successfully once, then use Safari's Share → **Add to Home Screen** if you want an app-like shortcut. The hosted website no longer installs a service worker or caches HTML for offline use. Home Screen shortcuts require connectivity; for genuinely offline play use the downloadable standalone HTML on a supported desktop browser. Local save availability depends on browser storage policies. It is **not** a native iOS IPA.
 
 **Local progress:** Choose one of three save slots and use **Save** or **Resume**. Clearing the browser's site storage may remove local saves. Saves are not synchronized across devices.
 
-**Automated offline proof:** In Chromium CI, the hosted game and the Pages-root build are loaded online, the network is disabled, and the game reloads with previously saved New Harmony exploration and Scout bonding intact. Physical-device iOS airplane-mode testing is a separate validation requirement.
+**Automated browser proof:** Chromium CI now verifies that the hosted and Pages-root game register no service workers, have no game-prefixed CacheStorage entries, and preserve New Harmony and Scout progress across an online page reload. The separately downloaded standalone HTML remains the offline play format; physical-device acceptance is separate.
 
 ## Geographic truth versus game art
 
@@ -82,19 +82,19 @@ For full browser acceptance, additionally install **Playwright Chromium** and ru
 python -m pip install "playwright>=1.50,<2"
 python -m playwright install chromium
 python game/tests/browser_hero_smoke.py
-python game/tests/offline_pwa_smoke.py --site-dir game --entry game.html
-python game/tests/offline_pwa_smoke.py --site-dir _site --entry index.html
+python game/tests/service_worker_disabled_smoke.py --site-dir game --entry game.html
+python game/tests/service_worker_disabled_smoke.py --site-dir _site --entry index.html
 ```
 
-The build produces **`game/River_Valley_Family_Adventure_OFFLINE.html`**, **`game/game.html`** and an optional deployable **`_site/`** with scoped service worker and local PWA icons. These commands do not require a remote gameplay server. GitHub Actions builds and validates the release before deployment.
+The build produces **`game/River_Valley_Family_Adventure_OFFLINE.html`**, **`game/game.html`** and an optional deployable **`_site/`** with retired-worker cleanup files and local manifest icons. These commands do not require a remote gameplay server. GitHub Actions builds and validates the release before deployment.
 
 | Continuous verification | Workflow |
 | --- | --- |
-| Node, source provenance, runtime graph, desktop/mobile viewport WebGL and offline replay | [Game CI](.github/workflows/game-ci.yml) |
+| Node, source provenance, runtime graph, desktop/mobile viewport WebGL and no-service-worker browser smoke | [Game CI](.github/workflows/game-ci.yml) |
 | Generated offline/hosted release synchronization | [Release sync](.github/workflows/commit-browser-build.yml) |
 | Pages packaging, Chromium, network-disabled replay and deployment | [GitHub Pages](.github/workflows/deploy-pages.yml) |
 
-The v1.10.0 gameplay release and the later **offline-replay gate hardening (PR #11)** were independently verified on `main` with successful CI, asset synchronization and Pages deployment on **November 22, 2026**. The local-browser test proves the tested Chromium build, **not** real iPhone or Windows hardware performance.
+The v1.10.0 gameplay release and earlier **offline-replay gate hardening (PR #11)** passed on `main` on **November 22, 2026**. The hosted offline-replay behavior is intentionally retired by this later service-worker change and must not be described as a current capability. The local-browser test proves the tested Chromium build, **not** real iPhone or Windows hardware performance.
 
 ## Project layout
 
