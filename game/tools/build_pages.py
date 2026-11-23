@@ -25,7 +25,7 @@ def build(game_root: Path, destination: Path) -> None:
     if "serviceWorker.register('./game-sw.js'" not in html:
         raise ValueError("Hosted game lacks its relative-scope offline registration")
 
-    atlas_anchor = '<div id="countyRegionList"'
+    atlas_anchor = '<div class="countyList" id="countyRegionList"'
     if atlas_anchor not in html:
         raise ValueError("County atlas entry is missing")
     html = html.replace(atlas_anchor, '<p><a style="color:inherit" href="./valley-scene/">Explore Mount Vernon in 3D with River, Bill and Scout</a></p>' + atlas_anchor, 1)
