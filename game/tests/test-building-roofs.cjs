@@ -16,6 +16,6 @@ test('mid distance mesh is gabled, not a cone-shaped roof proxy',()=>{
  assert.ok(pos.count>=18);assert.ok(pos.array.some((n,i)=>i%3===1&&n===1));
  const game=fs.readFileSync(path.join(ROOT,'src/game.js'),'utf8');
  assert.match(game,/ROOFS\.makeUnitGable\(G\)/);
- assert.match(game,/ROOFS\.quadRoofVertices/);
+ assert.match(game,/ROOFS\?\.quadRoofVertices/);
  assert.doesNotMatch(game,/new G\.ConeGeometry\(\.74,1,4\)/);
 });
