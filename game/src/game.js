@@ -49,7 +49,7 @@ let currentTravelSpeed=0;
 const G=window.THREE;
 const POLISH=window.ValleyVisualPolish,BIOME=window.ValleyBiomeStreamer,LODPLAN=window.ValleyLODTransition,GRAPHICS=window.ValleyGraphicsQuality,ASSET_CODEC=window.ValleyCompressedAssets;
 const RIVER_WATER=window.ValleyRiverWater,ROOFS=window.ValleyBuildingRoofs,LANDMARKS=window.ValleyLandmarkAnchors;
-const CINEMATIC=window.ValleyCinematicLighting,DRESS=window.ValleyCinematicSetDressing,SKILLS=window.ValleyGameplaySkills;
+const CINEMATIC=window.ValleyCinematicLighting,DRESS=window.ValleyCinematicSetDressing,SKILLS=window.ValleyGameplaySkills,CREATURES=window.ValleyCreatures;
 const ACCESS=window.ValleyLandmarkAccess;
 const CUSTOM_HERO=window.ValleyCustomHero,CAST_WARDROBE=window.ValleyCastWardrobe;
 const UX=window.ValleyPlayerExperience;
@@ -157,7 +157,7 @@ function tryRenderer(){
   if(DRESS)cinematicDressing=DRESS.create(G,scene,height,{mobile:innerWidth<781});
   if(COUNTY_SCENES&&COUNTY){countyVignettes=COUNTY_SCENES.create(G,scene,height,COUNTY);
     collisionWorld=COLLISION.create([...buildingItems,...countyVignettes.colliders],{radius:1.7,stepHeight:2.8});}
-  if(WORLD)worldGame=WORLD.sceneWorld(G,scene,height);if(ATM)atmosphere=ATM.create(G,scene,height,LIMIT);if(DIR)director3D=DIR.makeWorldFX(G,scene,height,LIMIT);
+  if(WORLD)worldGame=WORLD.sceneWorld(G,scene,height,{enhancedCreatures:!!CREATURES&&innerWidth>=781&&visualEffects!=='lite'});if(ATM)atmosphere=ATM.create(G,scene,height,LIMIT);if(DIR)director3D=DIR.makeWorldFX(G,scene,height,LIMIT);
   return true;
  }catch(err){console.warn('WebGL unavailable; 2D atlas gameplay remains active.',err.message); if(renderer){try{renderer.dispose();}catch(_){}}renderer=null;scene=null;return false;}
 }
@@ -642,6 +642,15 @@ function buildPlayer(){
  const tail=new G.Group();tail.position.set(0,4.5,3.5);dog.add(tail);
  const tailMesh=new G.Mesh(new G.ConeGeometry(.75,4,7),fur);tailMesh.position.z=1.8;tailMesh.rotation.x=Math.PI/2;tail.add(tailMesh);
  dogParts={legs,head,tail};scene.add(dog);
+ // Art-directed Scout is the local desktop default; user's verified custom GLB
+ // still takes precedence and can be restored from existing offline saves.
+ if(CREATURES&&innerWidth>=781&&visualEffects!=='lite'){
+  try{
+   const detailed=CREATURES.create(G,'scout');
+   for(const child of dog.children)child.visible=false;
+   dog.add(detailed);dog.userData.cinematicScout=detailed;
+  }catch(error){console.warn('Retaining legacy Scout model:',error);}
+ }
 }
 let scoutImportGeneration=0;
 const SCOUT_GLB_KEY='river-valley-custom-scout-v1';
@@ -681,7 +690,7 @@ function clearStaticScout(){
   disposeScoutVisual(custom);
   dog.userData.customScout=null;
  }
- for(const child of dog.children)child.visible=true;
+ for(const child of dog.children)child.visible=!dog.userData.cinematicScout||child===dog.userData.cinematicScout;
 }
 function disposeScoutVisual(visual){
  const resources=new Set();
@@ -873,6 +882,11 @@ function updateVisuals(dt,stamp){
      anim.active=clip;
     }
     anim.mixer.update(dt);
+   }
+   const enhanced=dog.userData.cinematicScout;
+   if(enhanced&&!dog.userData.customScout){
+    enhanced.userData.animate?.(dt,{phase:state.phase*2,moving:state.pace>1,action:state.action,lookYaw:0});
+    enhanced.userData.setLod?.(visualEffects==='lite'?2:0);
    }
    if(dogParts){dogParts.tail.rotation.y=state.tailWag;
      dogParts.head.rotation.x=state.action==='sit'?.16:Math.sin(stamp*.001)*.055;
