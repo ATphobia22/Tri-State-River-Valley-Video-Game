@@ -71,7 +71,7 @@ def sparse_quality(model, total, min_fraction=0.75, max_error_px=2.0):
         pose = [float(x) for x in tokens[1:8]]
         if iid <= 0 or cid <= 0 or not all(math.isfinite(x) for x in pose):
             raise ValueError("Invalid COLMAP pose")
-        registered.append(tokens[9])
+        registered.append(" ".join(tokens[9:]))
     if len(set(registered)) != len(registered) or len(registered) > total:
         raise ValueError("Duplicate or excessive camera registrations")
     errors = []
@@ -96,8 +96,8 @@ def rotation(q):
     import numpy as np
     w,x,y,z = q
     norm = math.sqrt(sum(v*v for v in q))
-    if norm < 1.e-9:
-        raise ValueError("Degenerate camera quaternion")
+    if not math.isfinite(norm) or norm < 1.e-9:
+        raise ValueError("Degenerate or nonfinite camera quaternion")
     w,x,y,z = [v/norm for v in q]
     return np.array([[1-2*y*y-2*z*z,2*x*y-2*w*z,2*x*z+2*w*y],
                      [2*x*y+2*w*z,1-2*x*x-2*z*z,2*y*z-2*w*x],
@@ -119,6 +119,8 @@ def nerfstudio_dataset(model, images, destination):
             fx=fy=focal
         else:
             raise ValueError("Undistort cameras before Nerfstudio export: "+kind)
+        if width <= 0 or height <= 0 or not all(map(math.isfinite,(fx,fy,cx,cy))) or fx <= 0 or fy <= 0:
+            raise ValueError("Invalid camera intrinsics")
         cameras[cid] = dict(fl_x=fx,fl_y=fy,cx=cx,cy=cy,w=width,h=height)
     raw=[x.strip() for x in (model/"images.txt").read_text().splitlines()
          if not x.lstrip().startswith("#")]
@@ -133,6 +135,8 @@ def nerfstudio_dataset(model, images, destination):
             raise ValueError("Unsafe or missing undistorted photograph: "+name)
         quat=[float(x) for x in tokens[1:5]]
         trans=np.array([float(x) for x in tokens[5:8]])
+        if not np.isfinite(trans).all():
+            raise ValueError("Invalid camera translation")
         rot=rotation(quat).T
         pose=np.eye(4)
         pose[:3,:3] = rot@np.diag([1,-1,-1])
@@ -161,6 +165,15 @@ def inspect_glb(path):
     if tag!=b"JSON" or 20+size>len(payload):
         raise ValueError("Missing GLB JSON chunk")
     document=json.loads(payload[20:20+size])
+    if document.get("asset",{}).get("version")!="2.0":
+        raise ValueError("Invalid GLB asset version")
+    if document.get("extensionsRequired"):
+        raise ValueError("Unsupported required GLB extensions")
+    if any("uri" in item for item in document.get("buffers",[])):
+        raise ValueError("External mesh buffers are not allowed in a self-contained GLB")
+    if any("bufferView" not in item and not str(item.get("uri","")).startswith("data:")
+           for item in document.get("images",[])):
+        raise ValueError("External image resources are not allowed in a self-contained GLB")
     if not document.get("meshes"):
         raise ValueError("GLB has no mesh")
     embedded=any("bufferView" in image or str(image.get("uri","")).startswith("data:")
