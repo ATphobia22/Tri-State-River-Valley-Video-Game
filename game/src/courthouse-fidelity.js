@@ -49,9 +49,11 @@ function create(G,geo,terrainHeight){
  };
  const batches={};for(const key of Object.keys(materials))batches[key]=[];
  function box(type,x,y,z,sx,sy,sz){batches[type].push({x,y,z,sx,sy,sz});}
+ const cylinderBatches=new Map();
  function cylinder(type,r0,r1,h,x,y,z,sides=12){
-  const mesh=new G.Mesh(new G.CylinderGeometry(r0,r1,h,sides),materials[type]);
-  mesh.position.set(x,y,z);mesh.userData.kind=type;group.add(mesh);
+  const key=[type,r0,r1,h,sides].join(':');
+  if(!cylinderBatches.has(key))cylinderBatches.set(key,{type,r0,r1,h,sides,positions:[]});
+  cylinderBatches.get(key).positions.push([x,y,z]);
  }
  function face(type,coordinates){
   const geometry=new G.BufferGeometry(),n=[];
@@ -144,6 +146,16 @@ function create(G,geo,terrainHeight){
    identity.updateMatrix();mesh.setMatrixAt(i,identity.matrix);
   }
   mesh.instanceMatrix.needsUpdate=true;mesh.frustumCulled=false;mesh.userData.kind=kind;group.add(mesh);
+ }
+ for(const b of cylinderBatches.values()){
+  const geoC=new G.CylinderGeometry(b.r0,b.r1,b.h,b.sides);
+  const mesh=new G.InstancedMesh(geoC,materials[b.type],b.positions.length);
+  for(let i=0;i<b.positions.length;i++){
+   const p=b.positions[i];identity.position.set(...p);identity.scale.set(1,1,1);
+   identity.updateMatrix();mesh.setMatrixAt(i,identity.matrix);
+  }
+  mesh.instanceMatrix.needsUpdate=true;mesh.frustumCulled=false;mesh.userData.kind=b.type;
+  group.add(mesh);
  }
  const corners=[
   [-w/2,-d/2],[-w/2,d/2],[w/2,-d/2],[w/2,d/2],[0,0]
