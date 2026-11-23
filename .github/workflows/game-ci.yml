@@ -38,6 +38,10 @@ jobs:
         run: npm --prefix game run build
       - name: Validate gameplay, terrain, models and offline cache
         run: npm --prefix game test
+      - name: Verify game character GLB contract and known BIA repair regression
+        run: |
+          python -m unittest discover -s game/tests -p test_character_contract_python.py -v
+          python -m unittest discover -s game/tests -p test_glb_repair_python.py -v
       - name: Verify official Indiana GIS provenance, counts and coordinate tests
         run: |
           set -euo pipefail
