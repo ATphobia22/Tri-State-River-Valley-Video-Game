@@ -67,6 +67,18 @@ test('an UNKNOWN flood or utility state never authorizes growth except in explic
  assert.equal(mock.get('a').built,true);
  assert.equal(mock.snapshot().scenarioMode,true);
 });
+test('restoring sparse game diffs preserves households in newly grown lots without saving personal records',()=>{
+ const f=parcel('new-1');
+ const sim=Z.create({features:[f]});
+ for(let week=1;week<=4;week++)sim.tick({week,demand:{residential:100}});
+ assert.equal(sim.get('new-1').households,1);
+ const saved=sim.exportDiffs();
+ assert.deepEqual(Object.keys(saved.parcels['new-1']).sort(),['abandoned','building_level','built','zone']);
+ const restored=Z.create({features:[f]});
+ restored.importDiffs(saved);
+ assert.equal(restored.get('new-1').built,true);
+ assert.equal(restored.get('new-1').households,1);
+});
 test('low desirability causes deterministic abandonment; high sustained scores level up',()=>{
  const a=Z.create({features:[parcel('a',{built:true})]});
  for(let week=1;week<=5;week++)a.tick({week,demand:{residential:-100},scoreOverride:()=>10});
