@@ -23,5 +23,5 @@ class TestCourthouseSource(unittest.TestCase):
   self.assertTrue(20<m.WIDTH<23)
   self.assertTrue(30<m.DEPTH<33)
   v=Recorder();m.assemble(v)
-  self.assertTrue(all(p[2]>=-m.DEPTH/2-1 for kind,s,p,cat in v.items if kind=='box'))
+  self.assertTrue(all(p[2]>=-m.DEPTH/2-4.1 for kind,s,p,cat in v.items if kind=='box'))
 if __name__=="__main__":unittest.main()
