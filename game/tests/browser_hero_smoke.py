@@ -176,6 +176,27 @@ def inspect(page, *, mobile: bool):
     assert state()["heroSkinned"] is True, "Restoring the built-in game rig failed"
     page.locator("#heroStudioClose").click(timeout=10_000)
     assert state()["heroInspection"] is False
+    # User-supplied collectible references have eight original wardrobe prototypes,
+    # but family/memorial sets never masquerade as playable character models.
+    page.locator("#familyCastOpen").click(timeout=12_000)
+    assert page.locator("#familyCastPanel").is_visible()
+    assert page.locator("#familyCastGrid .familyCastCard").count() == 10
+    assert page.locator("#familyCastGrid .castPrototypeSelect").count() == 8
+    page.locator("#familyCastGrid .castPrototypeSelect").first.click(timeout=12_000)
+    page.wait_for_function(
+        "() => window.RiverValleyDebug.getState().castPrototypeId === 'pete-yeida'",
+        timeout=20_000,
+    )
+    assert state()["heroSkinned"] is True, "Family prototype destroyed the animation rig"
+    assert state()["heroBoneCount"] == 27
+    page.screenshot(path=str(OUT / f"{prefix}-pete-yeida-prototype-selection.png"))
+    page.locator("#familyCastOriginal").click(timeout=12_000)
+    page.wait_for_function(
+        "() => window.RiverValleyDebug.getState().castPrototypeId === null",
+        timeout=20_000,
+    )
+    page.locator("#familyCastClose").click(timeout=12_000)
+    assert page.locator("#familyCastPanel").is_hidden()
     # County guide is a real source-backed map over the same playable engine.
     assert state()["countyBoundaryVertices"] >= 150
     page.locator("#countyBtn").click(timeout=12_000)
