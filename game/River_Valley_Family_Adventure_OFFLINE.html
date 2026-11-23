@@ -56,9 +56,44 @@
 .familyCastPortrait img{width:100%;height:100%;object-fit:contain}
 .familyCastPlaceholder{font-size:70px;line-height:1}
 @media(max-width:500px){#familyCastPanel{top:env(safe-area-inset-top,8px);height:calc(100dvh - env(safe-area-inset-top,8px) - 8px);padding:12px 9px}#familyCastGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.familyCastCard{padding:8px}.familyCastCard h3{font-size:17px}.familyCastPortrait{height:145px}}
+
+/* Player experience 2026: clear pause state, adaptable readability and thumb-reachable controls. */
+#pauseToggle{pointer-events:auto;min-width:48px;min-height:48px;padding:9px 14px;color:#fff7e6;background:#174039;border:1px solid #e2c4879c;border-radius:13px;font-weight:800;flex-shrink:0}
+#pauseToggle:focus-visible,#pauseOverlay :focus-visible,#panel :focus-visible{outline:3px solid #ffdc83;outline-offset:3px}
+#pauseOverlay[hidden]{display:none!important}
+#pauseOverlay{position:fixed;inset:0;z-index:160;display:grid;place-items:center;padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:rgba(3,17,22,.84);backdrop-filter:blur(9px)}
+#pauseOverlay .pauseCard{width:min(620px,100%);max-height:min(90dvh,750px);overflow-y:auto;overscroll-behavior:contain;padding:clamp(18px,4vw,30px);background:#10352f;border:2px solid #d8b778;border-radius:23px;box-shadow:0 20px 65px #000c;color:#fff6e5}
+#pauseOverlay .eyebrow{color:#baf0ca;font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase}
+#pauseOverlay h2{font:750 clamp(26px,4vw,38px)/1.12 Georgia,serif;margin:7px 0 8px}
+#pauseOverlay p{line-height:1.55;margin:0 0 16px;color:#e6f4e7}
+#pauseOverlay .pauseActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:13px 0}
+#pauseOverlay button{min-height:48px;padding:10px 15px;border-radius:12px;border:1px solid #8bbaac;background:#204942;color:#fff;font-weight:800}
+#pauseOverlay #pauseResume{background:#efbd71;color:#1b2b2a;border-color:#ffe4a4}
+#pauseOverlay fieldset{border:1px solid #9ab9a775;padding:12px;border-radius:13px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;margin:12px 0}
+#pauseOverlay legend{font-weight:850;color:#ffdf9f;padding:0 5px}
+#pauseOverlay label{display:flex;align-items:center;gap:10px;padding:5px 0;min-height:44px;font-size:14px}
+#pauseOverlay input[type=checkbox]{width:20px;height:20px;accent-color:#f5c177;flex:none}
+#pauseOverlay .pauseControls{font-size:13px;color:#d9e9e2;line-height:1.6}
+#pauseOverlay .pauseNotice{font-size:12px;color:#c5ddcc;margin-top:12px}
+body.ux-large-text{font-size:17px}
+body.ux-large-text .hud,body.ux-large-text #panel,body.ux-large-text #pauseOverlay{font-size:16px}
+body.ux-large-text #controlsHelp,body.ux-large-text .field label{font-size:14px}
+body.ux-high-contrast{--glass:rgba(2,12,14,.97);--muted:#fff5d8;--line:rgba(255,255,255,.8);--mint:#baffd4}
+body.ux-high-contrast button{border-width:2px}
+body.ux-compact-hud #missions,body.ux-compact-hud #controlsHelp{display:none!important}
+body:not(.ux-show-hints) #controlsHelp{display:none!important}
+body.ux-left-handed #touchControls{flex-direction:row-reverse}
+body.ux-reduced-motion #rain,body.ux-reduced-motion #vignette{display:none!important}
+body.ux-reduced-motion *,body.ux-reduced-motion *::before,body.ux-reduced-motion *::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}
+@media (prefers-reduced-motion: reduce){#rain{animation:none}*,*::before,*::after{scroll-behavior:auto!important}}
+#touchControls{left:max(14px,env(safe-area-inset-left));right:max(14px,env(safe-area-inset-right))}
+#touchControls .dpad{grid-template-columns:repeat(3,52px);grid-template-rows:repeat(2,52px)}
+#touchControls .dpad button{min-width:52px;min-height:52px}
+#touchControls .touchAction{min-width:60px;min-height:56px}
+@media(max-width:780px){#pauseToggle{position:fixed;top:max(8px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));z-index:22;padding:7px 11px;min-height:44px}#pauseOverlay fieldset{grid-template-columns:minmax(0,1fr)}#pauseOverlay .pauseCard{max-height:calc(100dvh - 16px)}#controlsHelp{display:none}}
 </style></head><body>
-<canvas aria-label="Interactive 3D family adventure game" id="world"></canvas><canvas aria-label="Interactive illustrated 2D family adventure map" id="atlas"></canvas><div id="vignette"></div><canvas aria-hidden="true" id="cinemaFX"></canvas><div id="rain"></div>
-<div class="hud" id="top"><div class="brand glass"><span class="sig">🏞️</span><div><small>FAMILY EDITION</small><b>River Valley Adventure</b></div></div><div class="glass" id="hudStats"><span>⭐ <b id="level">1</b></span><span class="gold">🪙 <b id="coins">0</b></span><span>🧭 <b id="stamps">0/6</b></span><span class="hideMobile" id="pantrySummary">🌽 0 · 🐟 0 · 🦌 0 · 🍲 0</span><span class="hideMobile">🕔 <b id="clock">5:30 PM</b></span><span class="hideMobile" id="weatherBadge">☀️ Clear</span></div></div>
+<canvas aria-label="Interactive 3D family adventure game" id="world" tabindex="-1"></canvas><canvas aria-label="Interactive illustrated 2D family adventure map" id="atlas"></canvas><div id="vignette"></div><canvas aria-hidden="true" id="cinemaFX"></canvas><div id="rain"></div>
+<div class="hud" id="top"><div class="brand glass"><span class="sig">🏞️</span><div><small>FAMILY EDITION</small><b>River Valley Adventure</b></div></div><div class="glass" id="hudStats"><span>⭐ <b id="level">1</b></span><span class="gold">🪙 <b id="coins">0</b></span><span>🧭 <b id="stamps">0/6</b></span><span class="hideMobile" id="pantrySummary">🌽 0 · 🐟 0 · 🦌 0 · 🍲 0</span><span class="hideMobile">🕔 <b id="clock">5:30 PM</b></span><span class="hideMobile" id="weatherBadge">☀️ Clear</span></div><button aria-controls="pauseOverlay" aria-expanded="false" aria-label="Pause game" id="pauseToggle" type="button">Ⅱ Pause</button></div>
 <section class="hud glass" id="missions"><div id="missionsHead"><div><div class="eyebrow">THE ADVENTURE BOOK</div><h2>Family discovery trail</h2></div><button aria-label="Toggle quests" class="closeX" id="toggleMissions" title="Collapse quests">−</button></div><div id="missionList"></div><div id="questSummary" style="font-size:11px;color:var(--mint);padding:6px 8px 0">Choose a place to begin exploring.</div></section>
 <section class="hud glass" id="minimapPane"><div id="miniTitle"><b>🗺 WORLD MAP</b><span id="mapMode">N ↑</span></div><canvas aria-label="Area minimap" height="360" id="minimap" width="360"></canvas><div id="miniLegend"><span id="lodLabel">Terrain LOD: Auto · 3D when supported</span><br/>● Explorer   ◆ Discovery stop</div></section>
 <div aria-live="off" class="hud" id="perfHUD" role="status"></div><div class="hud" id="controlsHelp">WASD / arrows move · Shift sprint · J jump · E act · Drag to orbit · Scroll to zoom · H hunt · F fish · G farm · K cook · M map · Esc menu</div>
@@ -87,6 +122,31 @@
 </section>
 <section aria-label="Cinematic director" aria-modal="false" class="hud glass" id="cinemaPanel" role="dialog"><div class="cinemaHeading"><div><small class="eyebrow">VFX SUPERVISOR DESK</small><h2>Cinematic Director</h2></div><button aria-label="Close cinematic director" class="closeX" id="closeCinema">×</button></div><p>Choose a lighting look, layer atmospheric effects, and balance the device's performance.</p><div class="field"><label for="cineLook">Virtual environment / lighting look</label><select id="cineLook"><option value="natural">Natural Countryside</option><option value="golden">Golden Hour Riverfront</option><option value="blue">Blue Hour Reflections</option><option value="storm">Stormfront Over the Ohio</option><option value="lantern">Lanterns &amp; Fireflies</option></select></div><div class="field"><label for="cineQuality">Cinematic effect budget</label><select id="cineQuality"><option value="lite">Battery Saver · 16 effects</option><option value="balanced">Balanced · 55 effects</option><option value="cinematic">Showcase · 110 effects</option></select></div><div class="field"><label for="cineStrength">Atmosphere intensity <b id="cineStrengthLabel">72%</b></label><input id="cineStrength" max="100" min="0" step="1" type="range" value="72"/></div><div class="cinemaChecks"><label><input id="cineGrain" type="checkbox"/> Fine film grain (showcase)</label><label><input id="cineStats" type="checkbox"/> Live FPS and draw calls</label></div><div class="cinemaButtons"><button id="cineGolden">🌅 Sunset shot</button><button id="cineNight">✨ Night shot</button><button id="cineReset">↻ Reset grade</button><button id="openStage">🌄 Open scenic backdrop studio</button></div><p class="cinemaNote">Effects run in 2D even when 3D GPU graphics are unavailable. No cloud rendering or personal data is uploaded.</p></section>
 <section aria-label="Game settings" class="hud glass" id="panel"><div style="display:flex;align-items:center;justify-content:space-between"><h2>Adventure settings</h2><button class="closeX" id="closePanel">×</button></div><div class="field"><label for="weather">Weather</label><select id="weather"><option value="clear">☀️ Clear skies</option><option value="rain">🌧️ Summer rain</option><option value="mist">🌫️ River mist</option></select></div><div class="field"><label for="season">Season</label><select id="season"><option value="spring">🌷 Spring</option><option value="summer">🌾 Summer</option><option value="autumn">🍂 Autumn</option><option value="winter">❄️ Winter</option></select></div><div class="field"><label for="time">Time of day <span id="timeLabel">5:30 PM</span></label><input id="time" max="24" min="0" step="0.25" type="range" value="17.5"/></div><div class="field"><label for="quality">World view</label><select id="quality"><option value="3d">3D countryside</option><option value="2d">2D illustrated atlas</option></select></div><div class="field"><label for="referenceOverlay">Real Mount Vernon overhead reference</label><label style="display:flex;align-items:center;gap:10px"><input id="referenceOverlay" style="width:auto" type="checkbox"/> IGIO aerial + digitized roads (reference only)</label><small id="referenceStatus" style="display:block;color:var(--muted);margin-top:5px">Reference imagery loads when available; heights remain unverified.</small><p id="locationCode"></p></div><div class="field"><label for="terrainDetail">Terrain detail / LOD</label><select id="terrainDetail"><option value="auto">Adaptive · quadtree screen error</option><option value="high">High · detailed quadtree</option><option value="medium">Medium · balanced quadtree</option><option value="low">Low · performance quadtree</option></select></div><div class="field"><label for="visualEffects">World graphics quality</label><select id="visualEffects"><option value="lite">Battery Saver · fewer trees, no meadow</option><option value="full">Balanced · instanced meadow</option><option value="cinematic">Showcase · denser scenery</option></select><small id="graphicsQualityStatus" role="status">Offline instanced foliage · no extra model downloads</small></div><div class="field"><label for="slot">Family save slot</label><select id="slot"><option value="0">Adventure 1</option><option value="1">Adventure 2</option><option value="2">Adventure 3</option></select></div><div class="row"><button id="petBtn">🐕 Scout: ON</button><button id="soundBtn">🔊 Sound</button><button id="exportPerf">📊 Export iPhone FPS</button></div><div class="row" style="margin-top:9px"><button class="pill" id="installOfflineBtn">📲 Install / Offline help</button><small id="offlineStatus">Your game runs on this device · saves are local</small><button id="saveBtn">💾 Save</button><button id="newBtn">↻ New game</button></div><div class="row" style="margin-top:9px"><button id="heroStudioOpen">👤 Inspect the Explorer</button><button id="openCinema">🎥 Open Cinematic Director</button></div><small aria-live="polite" id="heroRuntimeStatus" role="status" style="display:block;margin-top:7px;color:var(--muted)">Checking 3D character availability…</small><div class="row" style="margin-top:9px"><button id="returnBtn">🏠 Title screen</button></div><p style="font-size:10px;margin:12px 0 0">Saves live only in this browser on this device. The countryside is inspired by real places; this preview is a game, not a surveyed or navigational map.</p></section>
+<section aria-label="Game paused and player settings" aria-modal="true" hidden="" id="pauseOverlay" role="dialog">
+<div class="pauseCard">
+<div class="eyebrow">River Valley · your adventure</div>
+<h2>Game paused</h2>
+<p>Your exploration is frozen. Resume to return to the same place, or adjust how the game looks and feels. Your save slots stay on this device.</p>
+<div class="pauseActions">
+<button id="pauseResume" type="button">▶ Resume adventure</button>
+<button id="pauseSave" type="button">💾 Save current progress</button>
+</div>
+<fieldset><legend>Display and accessibility</legend>
+<label><input data-player-pref="largeText" type="checkbox"/> Large menu text</label>
+<label><input data-player-pref="highContrast" type="checkbox"/> High contrast</label>
+<label><input data-player-pref="reducedMotion" type="checkbox"/> Reduce decorative motion</label>
+<label><input data-player-pref="compactHud" type="checkbox"/> Simplified HUD</label>
+<label><input data-player-pref="leftHandedTouch" type="checkbox"/> Left-hand touch layout</label>
+<label><input data-player-pref="showHints" type="checkbox"/> Show keyboard help</label>
+<label><input data-player-pref="gamepadEnabled" type="checkbox"/> Enable standard gamepad</label>
+</fieldset>
+<p class="pauseControls"><strong>Keyboard:</strong> WASD/Arrows move, Shift sprint, J jump, E interact, M map, Esc pause/resume.
+  <strong>Gamepad:</strong> left stick or D-pad move, A jump, X interact, Y map, triggers sprint, Start pause, B resume.
+  <strong>Touch:</strong> D-pad move, Jump and Action; reverse reach with Left-hand layout.</p>
+<div class="pauseNotice" id="gamepadStatus" role="status">No standard gamepad detected.</div>
+<div class="pauseNotice" id="playerPrefStatus" role="status">Preferences stay on this device.</div>
+</div>
+</section>
 <div id="touchControls"><div class="dpad"><span class="blank"></span><button data-key="up">↑</button><span class="blank"></span><button data-key="left">←</button><button data-key="down">↓</button><button data-key="right">→</button></div><button aria-label="Jump" class="touchAction" data-key="j" id="touchJump">JUMP ↗</button><button class="touchAction" id="touchInteract">ACTION ✨</button></div>
 <section aria-label="Cinematic backdrops studio" aria-modal="true" id="stagePanel" role="dialog"><div id="stageToolbar"><strong>🌄 Virtual Backdrops · Original River Valley Scenes</strong><label for="stageScene">Location</label><select id="stageScene"><option value="riverfront">Ohio Riverfront</option><option value="farm">Family Farm</option><option value="woods">Oak Grove Woods</option></select><button aria-label="Previous cinematic shot" id="stagePrev">◀ Previous</button><button id="stageTour">▶ Play scenic tour</button><button aria-label="Next cinematic shot" id="stageNext">Next ▶</button><button id="stageCapture">📷 Save postcard</button><button id="stageBoard">🎞 Export shot board</button><button id="closeStage">✕ Return to game</button></div><div aria-live="polite" id="stageShotInfo"><b id="stageShotLabel">01 · Ohio River · Arrival</b> <span id="stageShotCount">1 / 5</span></div><canvas aria-label="Original animated 2D virtual scene; selectable riverfront, farm and woods" height="720" id="stageCanvas" width="1280"></canvas><p>Animated 2D virtual background · included offline · not a surveyed or 3D-engine render.</p></section><div aria-live="polite" id="toast" role="status"></div>
 <section aria-label="Live three-dimensional activity" aria-live="polite" class="hud glass" hidden="" id="worldActivityHud" role="region"><div class="worldTitleRow"><div><small class="eyebrow">REAL-TIME WORLD ACTIVITY · 3D</small><h2 id="worldActivityTitle">River Valley Adventure</h2></div><button aria-label="Return to exploration" id="worldClose">✕</button></div><p id="worldActivityText"></p><div id="worldActivityMeter" role="status"></div><label for="worldAim" hidden="" id="worldAimLabel">Track your target <input aria-label="Move in-world target marker" id="worldAim" max="100" min="0" step="1" type="range" value="50"/></label><div id="worldActionButtons"></div><small class="worldHint">Explore freely while playing. Use the buttons or press E to act. No separate minigame scene.</small></section>
@@ -8860,7 +8920,92 @@ function decorate(THREE,hero,id){
  return Object.freeze({id,accessories,isPrototype:true});
 }
 return Object.freeze({STYLE,KEY,selection,saveSelection,decorate});
-});</script><script>/* River Valley Family Adventure: self-contained local-only browser game.
+});</script><script>/* Offline-only player experience preferences and standard gamepad input.
+ * No external requests, device identifiers, analytics or game-engine dependencies.
+ */
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.ValleyPlayerExperience=api;})(typeof globalThis==='object'?globalThis:this,function(){
+'use strict';
+const STORAGE_KEY='river-valley-player-experience-v1';
+const DEFAULTS=Object.freeze({
+ largeText:false,highContrast:false,reducedMotion:false,compactHud:false,
+ leftHandedTouch:false,showHints:true,gamepadEnabled:true
+});
+const CLASSES=Object.freeze({
+ largeText:'ux-large-text',highContrast:'ux-high-contrast',reducedMotion:'ux-reduced-motion',
+ compactHud:'ux-compact-hud',leftHandedTouch:'ux-left-handed',showHints:'ux-show-hints'
+});
+function normalize(input){
+ const output={};
+ for(const [key,fallback] of Object.entries(DEFAULTS))
+  output[key]=input&&typeof input[key]==='boolean'?input[key]:fallback;
+ return output;
+}
+function load(storage){
+ try{return normalize(JSON.parse(storage?.getItem(STORAGE_KEY)||'null'));}
+ catch(_){return normalize(null);}
+}
+function store(storage,prefs){
+ try{storage?.setItem(STORAGE_KEY,JSON.stringify(normalize(prefs)));return true;}
+ catch(_){return false;}
+}
+function apply(document,prefs){
+ const body=document?.body;
+ if(!body?.classList)return;
+ for(const [key,className] of Object.entries(CLASSES))
+  body.classList.toggle(className,key==='showHints'?Boolean(prefs[key]):Boolean(prefs[key]));
+}
+function createPreferences({storage,document}={}){
+ let value=load(storage);
+ function sync(){
+  apply(document,value);
+  for(const el of document?.querySelectorAll?.('[data-player-pref]')||[]){
+   const key=el.getAttribute('data-player-pref');
+   if(Object.prototype.hasOwnProperty.call(value,key)&&el.type==='checkbox')el.checked=value[key];
+  }
+  const feedback=document?.getElementById?.('playerPrefStatus');
+  if(feedback)feedback.textContent='Player display and control preferences stay on this device.';
+ }
+ function set(key,enabled){
+  if(!Object.prototype.hasOwnProperty.call(DEFAULTS,key))throw new RangeError('Unknown player preference');
+  value={...value,[key]:Boolean(enabled)};
+  store(storage,value);
+  sync();
+  return value[key];
+ }
+ function bind(){
+  sync();
+  for(const el of document?.querySelectorAll?.('[data-player-pref]')||[]){
+   if(el.type!=='checkbox')continue;
+   const key=el.getAttribute('data-player-pref');
+   if(!Object.prototype.hasOwnProperty.call(DEFAULTS,key))continue;
+   el.addEventListener('change',()=>set(key,el.checked));
+  }
+ }
+ return Object.freeze({get:key=>value[key],snapshot:()=>({...value}),set,bind});
+}
+function axis(value,deadzone=.18){
+ if(!Number.isFinite(value))return 0;
+ const n=Math.max(-1,Math.min(1,value));
+ if(Math.abs(n)<=deadzone)return 0;
+ return Math.sign(n)*(Math.abs(n)-deadzone)/(1-deadzone);
+}
+function sampleGamepad(getGamepads,enabled=true){
+ const none={connected:false,x:0,z:0,sprint:false,jump:false,interact:false,map:false,pause:false,back:false};
+ if(!enabled||typeof getGamepads!=='function')return none;
+ let pads;
+ try{pads=getGamepads();}catch(_){return none;}
+ const pad=Array.from(pads||[]).find(p=>p&&p.connected&&p.mapping==='standard');
+ if(!pad)return none; // Do not guess proprietary/nonstandard face-button mappings.
+ const pressed=i=>Boolean(pad.buttons?.[i]?.pressed);
+ let x=axis(pad.axes?.[0]),z=axis(pad.axes?.[1]);
+ if(pressed(14))x=-1;else if(pressed(15))x=1;
+ if(pressed(12))z=-1;else if(pressed(13))z=1;
+ return {connected:true,x,z,sprint:pressed(7)||pressed(6),jump:pressed(0),
+  interact:pressed(2),map:pressed(3),pause:pressed(9),back:pressed(1)};
+}
+return Object.freeze({STORAGE_KEY,DEFAULTS,normalize,load,store,apply,createPreferences,axis,sampleGamepad});
+});
+</script><script>/* River Valley Family Adventure: self-contained local-only browser game.
    No network endpoints, no trackers, no external audio, and no repository integration. */
 (function(){
 'use strict';
@@ -8913,6 +9058,9 @@ const POLISH=window.ValleyVisualPolish,BIOME=window.ValleyBiomeStreamer,LODPLAN=
 const RIVER_WATER=window.ValleyRiverWater,ROOFS=window.ValleyBuildingRoofs,LANDMARKS=window.ValleyLandmarkAnchors;
 const ACCESS=window.ValleyLandmarkAccess;
 const CUSTOM_HERO=window.ValleyCustomHero,CAST_WARDROBE=window.ValleyCastWardrobe;
+const UX=window.ValleyPlayerExperience;
+let playerPreferences=null,paused=false,pauseReturnFocus=null,accumulatedPauseMs=0,pauseBeganAt=0;
+let gamepadInput={connected:false,x:0,z:0,sprint:false,jump:false,interact:false,map:false,pause:false,back:false};
 const HERO=window.ValleyHero;let heroController=null,driverController=null,heroOneShot=null,heroOneShotUntil=0,heroState='idle';const STAGE=window.ValleyHeroStage;let heroPreviewStage=null;let heroInspection=false,heroPreviewPose='idle',previousHeroCamera=null;
 let facadePalette=null,biomeStreamer=null,grassLayer=null,groundPlacementDirty=false,lastVegetationTime=0,terrainTransition=null,retiringTerrain=null;
 
@@ -9841,7 +9989,48 @@ function audioChime(){if(save.muted)return;try{
 function persist(){save.position={x:player.x,z:player.z};save.time=time;save.weather=weather;save.season=season;try{localStorage.setItem(nameKey(slot),JSON.stringify(save));return true;}catch(_){return false;}}
 function readSlot(idx){try{const t=localStorage.getItem(nameKey(idx));return t?C.validateSave(JSON.parse(t)):null;}catch(_){return null;}}
 function applyState(s){save=C.validateSave(s);countySelected=save.countyRegion;scout?.reset();player=ACCESS?.safeResume({...save.position},LANDMARKS?.courthouse)||{...save.position};save.position={...player};suspension.reset();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;time=save.time;weather=save.weather;season=save.season;document.body.classList.toggle('rainy',weather==='rain');document.body.classList.toggle('misty',weather==='mist');$('playerName').value=save.name;needsMap=true;updateHUD();}
-function play(resume){soundscape.unlock();frameProbe.reset();lastGpuTune=0;soundscape.setMuted(save.muted);slot=Number($('startSlot').value)||0;$('slot').value=String(slot);const loaded=resume?readSlot(slot):null;
+function setPaused(next){
+ if(!started)return false;
+ const target=Boolean(next);
+ if(target===paused)return paused;
+ paused=target;
+ const overlay=$('pauseOverlay');
+ overlay.hidden=!paused;
+ $('pauseToggle').setAttribute('aria-expanded',String(paused));
+ document.body.classList.toggle('ux-game-paused',paused);
+ keys.clear();motion.reset({facing:playerHeading});motionState=motion.snapshot();
+ heroHeightOffset=0;currentTravelSpeed=0;
+ if(paused){
+  pauseBeganAt=performance.now();pauseReturnFocus=document.activeElement;
+  $('panel').classList.remove('open');$('pauseResume').focus({preventScroll:true});
+ }else{
+  accumulatedPauseMs+=Math.max(0,performance.now()-pauseBeganAt);pauseBeganAt=0;
+  const el=pauseReturnFocus&&pauseReturnFocus.isConnected?pauseReturnFocus:canvas;
+  el?.focus?.({preventScroll:true});pauseReturnFocus=null;
+ }
+ return paused;
+}
+function pollGamepad(){
+ if(!UX)return;
+ const prior=gamepadInput;
+ gamepadInput=UX.sampleGamepad(()=>navigator.getGamepads?.(),playerPreferences?.get('gamepadEnabled')!==false);
+ const status=$('gamepadStatus');
+ if(status){
+  const value=gamepadInput.connected?'Standard gamepad detected · Start pause, B resume.':'No standard gamepad detected. Keyboard and touch remain available.';
+  if(status.textContent!==value)status.textContent=value;
+ }
+ const rising=key=>gamepadInput[key]&&!prior[key];
+ if(!started)return;
+ if(rising('pause')){setPaused(!paused);return;}
+ if(paused){if(rising('back'))setPaused(false);return;}
+ if(heroInspection||activity)return;
+ if(rising('interact')&&!worldPrimaryAction())interact();
+ if(rising('map')&&!backdropOpen)toggleMap();
+}
+function play(resume){paused=false;accumulatedPauseMs=0;pauseBeganAt=0;
+ $('pauseOverlay').hidden=true;$('pauseToggle').setAttribute('aria-expanded','false');
+ document.body.classList.remove('ux-game-paused');
+ soundscape.unlock();frameProbe.reset();lastGpuTune=0;soundscape.setMuted(save.muted);slot=Number($('startSlot').value)||0;$('slot').value=String(slot);const loaded=resume?readSlot(slot):null;
  applyState(loaded||C.freshSave($('playerName').value));soundscape.setMuted(save.muted);started=true;$('start').classList.add('hidden');
  if(!renderer){view='2d';$('quality').value='2d';toast('2D Atlas adventure loaded. 3D requires WebGL support.');}
  else{view='3d';$('quality').value='3d';}
@@ -10030,7 +10219,7 @@ function stepTour(dt){if(!touring)return;
  if(t>=1){tourAt++;tourTimer=0;tourFrom={...player};if(tourAt>=C.STOPS.length){stopTour();toast('🎬 Scenic tour completed.');}}
 }
 function update(dt,stamp){
- if(!started)return;
+ if(!started||paused)return;
  if(heroInspection||activity){motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;currentTravelSpeed=0;return;}
  currentTravelSpeed=0;
  if(touring){motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;stepTour(dt);}else{
@@ -10039,7 +10228,9 @@ function update(dt,stamp){
   if(keys.has('s')||keys.has('arrowdown')||keys.has('down'))z+=1;
   if(keys.has('a')||keys.has('arrowleft')||keys.has('left'))x-=1;
   if(keys.has('d')||keys.has('arrowright')||keys.has('right'))x+=1;
-  motionState=motion.step({dt,position:player,inputX:x,inputZ:z,cameraYaw,sprint:keys.has('shift'),drive:save.mode==='drive',jump:keys.has('j')&&save.mode==='walk'&&!worldActive});
+  // Preserve keyboard priority while held; standard gamepad axes remain analog.
+  if(x===0&&z===0&&gamepadInput.connected){x=gamepadInput.x;z=gamepadInput.z;}
+  motionState=motion.step({dt,position:player,inputX:x,inputZ:z,cameraYaw,sprint:keys.has('shift')||gamepadInput.sprint,drive:save.mode==='drive',jump:(keys.has('j')||gamepadInput.jump)&&save.mode==='walk'&&!worldActive});
   const resolved=collisionWorld.move(player,{x:motionState.x,z:motionState.z},{groundAt:height,airborne:motionState.airborne,drive:save.mode==='drive'});
   lastCollision=resolved;
   player.x=resolved.x;player.z=resolved.z;playerHeading=motionState.heading;
@@ -10100,9 +10291,12 @@ function renderMinigameScene(stamp){
  const aim=$('aimSlider')?Number($('aimSlider').value)/100:.5;
  VFX.render($('activityScene'),activity,stamp,{aim,target:huntRound?.target,kind:huntRound?.kind,biting:!!(fishRound&&Date.now()>=fishRound.biteAt&&Date.now()<=fishRound.biteAt+1100)});
 }
-function loop(stamp){
- const rawFrameMs=lastFrame?stamp-lastFrame:16;
- const dt=Math.min(.065,Math.max(.001,(stamp-lastFrame)/1000||.016));lastFrame=stamp;
+function loop(wallStamp){
+ const stamp=wallStamp-accumulatedPauseMs;
+ const rawFrameMs=lastFrame?wallStamp-lastFrame:16;
+ const dt=Math.min(.065,Math.max(.001,(wallStamp-lastFrame)/1000||.016));lastFrame=wallStamp;
+ pollGamepad();
+ if(paused){requestAnimationFrame(loop);return;}
  if(started){update(dt,stamp);if(renderer&&view==='3d')updateVisuals(dt,stamp);else update2d();}
  else if(renderer&&view!=='2d'){updateVisuals(dt,stamp);}
  if(started&&view==='3d'){
@@ -10116,7 +10310,7 @@ function loop(stamp){
      nearest.id==='oak'||nearest.id==='trail'?'woods':'downtown';
    }
   }
-  frameProbe.observe(rawFrameMs,{stamp,drawCalls:renderer?.info?.render?.calls||0,
+  frameProbe.observe(rawFrameMs,{stamp:wallStamp,drawCalls:renderer?.info?.render?.calls||0,
    triangles:renderer?.info?.render?.triangles||0,x:player.x,z:player.z,scene:probeScene,mode:save.mode,
    quality:visualEffects,terrainTiles:terrainStats.tiles,terrainQueued:terrainTransition?.status().queued||0});
   if(renderer&&stamp-lastGpuTune>4000&&frameProbe.summary().samples>90){
@@ -10178,6 +10372,9 @@ async function importRiggedHero(file){
  }
 }
 function bindUI(){
+ $('pauseToggle').addEventListener('click',()=>setPaused(!paused));
+ $('pauseResume').addEventListener('click',()=>setPaused(false));
+ $('pauseSave').addEventListener('click',()=>{if(started){persist();toast('Progress saved on this device.');}});
  $('customHeroFile').addEventListener('change',e=>{const file=e.target.files?.[0];if(file)void importRiggedHero(file);});
  $('customScoutFile').addEventListener('change',e=>{const file=e.target.files?.[0];if(file)void importStaticScout(file);});
  $('clearCustomScout').addEventListener('click',()=>{clearStaticScout();try{localStorage.removeItem(SCOUT_GLB_KEY);}catch(_){}$('customScoutFile').value='';$('customScoutStatus').textContent='Animated built-in Scout restored.';});
@@ -10265,15 +10462,29 @@ function bindUI(){
  $('missionList').addEventListener('click',e=>{const b=e.target.closest('button[data-stop]');if(!b)return;const id=b.dataset.stop,fast=selected===id;selectStop(id,fast);});
  mapCanvas.addEventListener('click',e=>{const rect=mapCanvas.getBoundingClientRect(),x=(e.clientX-rect.left)/rect.width*TWO-LIMIT,z=(e.clientY-rect.top)/rect.height*TWO-LIMIT;const dst=C.STOPS.find(s=>Math.hypot(s.x-x,s.z-z)<180);if(dst)selectStop(dst.id,true);});
  document.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(paused){
+   if(k==='escape'){setPaused(false);return;}
+   if(k==='tab'){
+    const targets=[...$('pauseOverlay').querySelectorAll('button:not([disabled]),input:not([disabled])')];
+    if(targets.length){
+     const first=targets[0],last=targets[targets.length-1];
+     if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+     else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+    }
+   }
+   return; // Keyboard controls cannot reach gameplay through a modal.
+  }
   if(e.target.matches('input,select,textarea'))return;
-  const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();keys.add(k);
+  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();keys.add(k);
   if(!started)return;
   if(k==='v'){heroInspection?closeHeroStudio():openHeroStudio();return;}
   if(heroInspection){if(k==='escape')closeHeroStudio();return;}
   if(k==='e'||k===' '){if(!activity&&!worldPrimaryAction())interact();}
   // J / mobile JUMP is sampled in the kinematic step and never auto-repeats.
- if(k==='b')openScout();if(k==='n')openCounty();if(k==='h')openWorldActivity('hunt');if(k==='f')openWorldActivity('fish');if(k==='g')openWorldActivity('farm');if(k==='k')openWorldActivity('cook');if(k==='m'&&!activity&&!backdropOpen)toggleMap();if(k==='p')screenshot();if(k==='c'&&!activity){$('cinemaPanel').classList.contains('open')?closeCinema():openCinema();}if(k==='escape'){if(!$('countyPanel').hidden){closeCounty();return;}if(!$('scoutPanel').hidden){$('scoutPanel').hidden=true;return;}if(worldActive)closeWorldActivity();else if(backdropOpen)closeBackdrop();else if(activity)closeActivity();else if($('cinemaPanel').classList.contains('open'))closeCinema();else $('panel').classList.toggle('open');}
+ if(k==='b')openScout();if(k==='n')openCounty();if(k==='h')openWorldActivity('hunt');if(k==='f')openWorldActivity('fish');if(k==='g')openWorldActivity('farm');if(k==='k')openWorldActivity('cook');if(k==='m'&&!activity&&!backdropOpen)toggleMap();if(k==='p')screenshot();if(k==='c'&&!activity){$('cinemaPanel').classList.contains('open')?closeCinema():openCinema();}if(k==='escape'){if(!$('countyPanel').hidden){closeCounty();return;}if(!$('scoutPanel').hidden){$('scoutPanel').hidden=true;return;}if(worldActive)closeWorldActivity();else if(backdropOpen)closeBackdrop();else if(activity)closeActivity();else if($('cinemaPanel').classList.contains('open'))closeCinema();else if($('panel').classList.contains('open'))$('panel').classList.remove('open');else setPaused(true);}
  });document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();motion.reset({facing:playerHeading});motionState=motion.snapshot();heroHeightOffset=0;});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&started&&!paused)setPaused(true);});
  canvas.addEventListener('pointerdown',e=>{pointerDown=true;pointerX=e.clientX;pointerY=e.clientY;});
  window.addEventListener('pointerup',()=>pointerDown=false);
  canvas.addEventListener('pointermove',e=>{if(!pointerDown||!renderer||view==='2d')return;cameraYaw+=(e.clientX-pointerX)*.005;cameraDist=C.clamp(cameraDist+(e.clientY-pointerY)*.2,42,310);pointerX=e.clientX;pointerY=e.clientY;});
@@ -10290,7 +10501,13 @@ function bindUI(){
  window.addEventListener('resize',resize);
 }
 function init(){
- bindUI();loadCinemaPrefs();setupReferenceImage();
+ bindUI();
+ if(UX){
+  let localStore=null;try{localStore=localStorage;}catch(_){}
+  playerPreferences=UX.createPreferences({storage:localStore,document});
+  playerPreferences.bind();
+ }
+ loadCinemaPrefs();setupReferenceImage();
  const review=window.ValleyCharacterReview;
  if(review)window.ValleyRiggedHeroOverrideData=review.river;
  else restoreLocalCustomHero();
@@ -10309,7 +10526,7 @@ function init(){
  }
  resize();updateHUD();mapDraw(mapCtx,mapCanvas.width,mapCanvas.height,false);
  requestAnimationFrame(loop);
- window.RiverValleyDebug={getState:()=>({scoutRigAction:dog?.userData.customScout?.userData.active||null,scoutRigReady:!!dog?.userData.customScout?.userData.mixer,worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,heroPreviewReady:!!heroPreviewStage,heroInspection,heroPreviewPose,heroPreviewFocus:heroPreviewStage?.focus||null,heroPreviewAngle:heroPreviewStage?.angle||null,heroState,heroModel:!!heroController,heroProfile:HERO?.PROFILE?.id||null,heroSkinned:!!heroController?.skinned,heroLOD:heroController?.lod||'FALLBACK',heroCustomGLB:heroController?.lod==='CUSTOM',castPrototypeId:heroController?.castId||null,castPrototypeSelected:CAST_WARDROBE?.selection?.()||null,heroAssetFallback:!!heroController?.root?.userData?.fallback,heroRigLoadError:window.ValleyHeroRigFailure||null,scout:scout?.snapshot()||null,scoutCustomMesh:!!dog?.userData?.customScout,scoutBond:save.scoutBond,countyRegion:save.countyRegion,countyVisited:[...save.countyVisited],countyBoundaryVertices:COUNTY_DATA?.boundary?.length||0,countyVignettes:countyVignettes?.counts||null,collision:collisionWorld.snapshot(),vehicleSuspension:suspension.snapshot(),worldPaint:terrainDecor?.counts||null,lastCollision,audio:soundscape.snapshot(),performance:frameProbe.summary(),performanceScenes:frameProbe.cohorts(),terrainTransition:terrainTransition?.status()||null,roadRefreshQueued,pixelRatio:activePixelRatio,heroHeightOffset,groundShadowReady:!!groundShadow,motionState:motion.snapshot(),heroTexturedMeshes:heroController?.meshes?.filter(m=>!!m.material?.map).length||0,heroEmbeddedTextures:heroController?.embeddedTextures||null,heroStudioEmbeddedTextures:heroPreviewStage?.hero?.embeddedTextures||null,heroRigOverlay:heroPreviewStage?.skeletonVisible||false,heroStudioSkeletonBones:heroPreviewStage?.skeletonBoneCount||0,heroActiveClip:heroController?.activeClip||null,heroGaiterPrintReady:!!heroController?.gaiterDecalReady,heroFootContacts:heroController?.footContacts||null,heroBoneCount:heroController?.skinned?Object.keys(heroController.joints).length:0,heroClipCount:heroController?.clips?.length||0,heroParts:heroController?Object.keys(heroController.joints).length:0,terrainTransition:terrainTransition?.status()||null,vegetation:biomeStreamer?.snapshot()||null,meadow:grassLayer?.snapshot()||null,graphicsQuality:visualEffects,optionalGzipSupport:!!(ASSET_CODEC&&typeof DecompressionStream==='function'),facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,courthouseAnchor:LANDMARKS?.courthouse?.gamePosition||null,courthouseFootprintIndex,courthouseRoofStatus:LANDMARKS?.courthouse?.roofHeightStatus||'UNVERIFIED',imageryYear:leafonImage&&LEAFON?'2025-partial / 2023-fallback':REF?.metadata?.downtownTileYear||null,leafOn2025:{bundled:!!LEAFON,ready:!!leafonImage,draped:!!leafonDrape,coverage:LEAFON?.metadata?.validPixelCoverageFraction||0,sourceSHA256:LEAFON?.metadata?.overlaySHA256||null}},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),resetPerformance:()=>frameProbe.reset(),capturePerformance:()=>frameProbe.report({renderer:'WebGL',viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio||1},mode:save.mode,quality:visualEffects,userAgent:navigator.userAgent}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
+ window.RiverValleyDebug={getState:()=>({paused,gamepadConnected:!!gamepadInput.connected,playerExperience:playerPreferences?.snapshot()||null,scoutRigAction:dog?.userData.customScout?.userData.active||null,scoutRigReady:!!dog?.userData.customScout?.userData.mixer,worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,heroPreviewReady:!!heroPreviewStage,heroInspection,heroPreviewPose,heroPreviewFocus:heroPreviewStage?.focus||null,heroPreviewAngle:heroPreviewStage?.angle||null,heroState,heroModel:!!heroController,heroProfile:HERO?.PROFILE?.id||null,heroSkinned:!!heroController?.skinned,heroLOD:heroController?.lod||'FALLBACK',heroCustomGLB:heroController?.lod==='CUSTOM',castPrototypeId:heroController?.castId||null,castPrototypeSelected:CAST_WARDROBE?.selection?.()||null,heroAssetFallback:!!heroController?.root?.userData?.fallback,heroRigLoadError:window.ValleyHeroRigFailure||null,scout:scout?.snapshot()||null,scoutCustomMesh:!!dog?.userData?.customScout,scoutBond:save.scoutBond,countyRegion:save.countyRegion,countyVisited:[...save.countyVisited],countyBoundaryVertices:COUNTY_DATA?.boundary?.length||0,countyVignettes:countyVignettes?.counts||null,collision:collisionWorld.snapshot(),vehicleSuspension:suspension.snapshot(),worldPaint:terrainDecor?.counts||null,lastCollision,audio:soundscape.snapshot(),performance:frameProbe.summary(),performanceScenes:frameProbe.cohorts(),terrainTransition:terrainTransition?.status()||null,roadRefreshQueued,pixelRatio:activePixelRatio,heroHeightOffset,groundShadowReady:!!groundShadow,motionState:motion.snapshot(),heroTexturedMeshes:heroController?.meshes?.filter(m=>!!m.material?.map).length||0,heroEmbeddedTextures:heroController?.embeddedTextures||null,heroStudioEmbeddedTextures:heroPreviewStage?.hero?.embeddedTextures||null,heroRigOverlay:heroPreviewStage?.skeletonVisible||false,heroStudioSkeletonBones:heroPreviewStage?.skeletonBoneCount||0,heroActiveClip:heroController?.activeClip||null,heroGaiterPrintReady:!!heroController?.gaiterDecalReady,heroFootContacts:heroController?.footContacts||null,heroBoneCount:heroController?.skinned?Object.keys(heroController.joints).length:0,heroClipCount:heroController?.clips?.length||0,heroParts:heroController?Object.keys(heroController.joints).length:0,terrainTransition:terrainTransition?.status()||null,vegetation:biomeStreamer?.snapshot()||null,meadow:grassLayer?.snapshot()||null,graphicsQuality:visualEffects,optionalGzipSupport:!!(ASSET_CODEC&&typeof DecompressionStream==='function'),facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,courthouseAnchor:LANDMARKS?.courthouse?.gamePosition||null,courthouseFootprintIndex,courthouseRoofStatus:LANDMARKS?.courthouse?.roofHeightStatus||'UNVERIFIED',imageryYear:leafonImage&&LEAFON?'2025-partial / 2023-fallback':REF?.metadata?.downtownTileYear||null,leafOn2025:{bundled:!!LEAFON,ready:!!leafonImage,draped:!!leafonDrape,coverage:LEAFON?.metadata?.validPixelCoverageFraction||0,sourceSHA256:LEAFON?.metadata?.overlaySHA256||null}},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),resetPerformance:()=>frameProbe.reset(),capturePerformance:()=>frameProbe.report({renderer:'WebGL',viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio||1},mode:save.mode,quality:visualEffects,userAgent:navigator.userAgent}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
 }
 window.ValleyCastBridge=Object.freeze({applySelection:()=>{
  updateHeroGeometryQuality(true);
