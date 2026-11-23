@@ -20,6 +20,24 @@ function huntTargetAt(round,now){
 function closestSite(p,radius=130){let match=null,d=Infinity;for(const [id,s] of Object.entries(SITES)){const ds=Math.hypot(p.x-s.x,p.z-s.z);if(ds<radius&&ds<d){d=ds;match=id;}}return match;}
 function approachSite(id,yaw=0,distance=34){const site=SITES[id];if(!site)return null;const a=Number.isFinite(yaw)?yaw:0,d=Number.isFinite(distance)?Math.max(0,Math.min(distance,100)):34;return {x:site.x+Math.sin(a)*d,z:site.z+Math.cos(a)*d};}
 function farmPick(save,now){const a=save.farmPlots||[],ready=a.findIndex(t=>t>0&&t<=now);if(ready>=0)return {index:ready,action:'harvest'};const empty=a.findIndex(t=>t===0);if(empty>=0)return {index:empty,action:'plant'};return {index:0,action:'growing'};}
+function alignStaticSite(group,site,ground,excluded=new Set()){
+ // One-time offset from actual local terrain, preserving native site and child axes.
+ // Never modify the animation-driven wildlife, crops or river bobber.
+ const baseline=ground(site.x,site.z);
+ if(!Number.isFinite(baseline))throw new RangeError('Site terrain source unavailable');
+ let aligned=0,skipped=0;
+ for(const child of group.children){
+  if(excluded.has(child)){skipped++;continue;}
+  const xx=child.position?.x,zz=child.position?.z;
+  if(!Number.isFinite(xx)||!Number.isFinite(zz)){skipped++;continue;}
+  const elevation=ground(site.x+xx,site.z+zz);
+  const delta=elevation-baseline;
+  if(!Number.isFinite(delta)||Math.abs(delta)>40){skipped++;continue;}
+  child.position.y+=delta;
+  aligned++;
+ }
+ return Object.freeze({aligned,skipped,siteX:site.x,siteZ:site.z,source:'GAME_LOCAL_TERRAIN_NOT_SURVEYED'});
+}
 function sceneWorld(T,scene,ground){
  const root=new T.Group();root.name='River Valley in-world activities';scene.add(root);
  const texture=(base,kind)=>{
@@ -158,7 +176,12 @@ function sceneWorld(T,scene,ground){
  cube(kitchen,mats.woodLight,-29,4.3,23,20,1,10);
  for(const x of [-38,-20])cyl(kitchen,mats.wood,x,1,23,1,1,6,7);
  const campLight=new T.PointLight(0xffb066,.64,160,2);campLight.position.set(0,16,0);kitchen.add(campLight);
- const world={root,groups,deer,wildlife,fishModel,aimRing,float,line,ripple,patches,crops,flames,smoke,food,campLight,counts:{activitySites:4,animalModels:3,fieldPlots:9,animatedSmokePuffs:8,barnModels:1,grainSilos:1},
+ const terrainAlignment={
+  hunt:alignStaticSite(groups.hunt,SITES.hunt,ground,new Set([deer,turkey,rabbit,aimRing])),
+  farm:alignStaticSite(groups.farm,SITES.farm,ground,new Set(patches)),
+  cook:alignStaticSite(groups.cook,SITES.cook,ground,new Set(smoke))
+ };
+ const world={root,groups,deer,wildlife,fishModel,aimRing,float,line,ripple,patches,crops,flames,smoke,food,campLight,counts:{activitySites:4,animalModels:3,fieldPlots:9,animatedSmokePuffs:8,barnModels:1,grainSilos:1,terrainAlignment},
   update({stamp=0,save,activity,huntRound,fishRound,aim=.5,weather='clear',player=null,now=Date.now()}){
    const tick=stamp*.001;
    // Local animation is deterministic and tied to game clock, not browser FPS.
@@ -200,5 +223,5 @@ function sceneWorld(T,scene,ground){
  };
  return world;
 }
-return {SITES,closestSite,approachSite,farmPick,huntTargetAt,sceneWorld};
+return {SITES,closestSite,approachSite,farmPick,huntTargetAt,alignStaticSite,sceneWorld};
 });
