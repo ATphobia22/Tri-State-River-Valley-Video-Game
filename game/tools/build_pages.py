@@ -30,11 +30,24 @@ def build(game_root: Path, destination: Path) -> None:
     atlas_anchor = '<div class="countyList" id="countyRegionList"'
     if atlas_anchor not in html:
         raise ValueError("County atlas entry is missing")
-    html = html.replace(atlas_anchor, '<p><a style="color:inherit" href="./valley-scene/">Explore Mount Vernon in 3D with River, Bill and Scout</a></p>' + atlas_anchor, 1)
+    html = html.replace(
+        atlas_anchor,
+        '<p><a style="color:inherit" href="./valley-scene/">Explore Mount Vernon in 3D with River, Bill and Scout</a></p>'
+        '<p><a style="color:inherit" href="./courthouse-review.html">Review experimental courthouse GLB (local file only)</a></p>' + atlas_anchor,
+        1,
+    )
     destination.mkdir(parents=True, exist_ok=True)
     for name in ("index.html", "game.html"):
         (destination / name).write_text(html, encoding="utf-8")
     shutil.copyfile(offline, destination / "offline.html")
+
+    # Explicit local-only review surface. The live game never loads candidate GLBs.
+    shutil.copyfile(game_root / "courthouse-review.html", destination / "courthouse-review.html")
+    vendor_destination = destination / "vendor"
+    vendor_destination.mkdir(parents=True, exist_ok=True)
+    for vendor in ("three.js", "gltf-loader.js"):
+        shutil.copyfile(game_root / "vendor" / vendor, vendor_destination / vendor)
+
 
     # Candidate art is an explicitly opt-in page, never the default game.
     import subprocess
