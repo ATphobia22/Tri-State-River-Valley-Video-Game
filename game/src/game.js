@@ -43,7 +43,7 @@ let currentTravelSpeed=0;
 const G=window.THREE;
 const POLISH=window.ValleyVisualPolish,BIOME=window.ValleyBiomeStreamer,LODPLAN=window.ValleyLODTransition,GRAPHICS=window.ValleyGraphicsQuality,ASSET_CODEC=window.ValleyCompressedAssets;
 const RIVER_WATER=window.ValleyRiverWater;
-const CUSTOM_HERO=window.ValleyCustomHero;
+const CUSTOM_HERO=window.ValleyCustomHero,CAST_WARDROBE=window.ValleyCastWardrobe;
 const HERO=window.ValleyHero;let heroController=null,driverController=null,heroOneShot=null,heroOneShotUntil=0,heroState='idle';const STAGE=window.ValleyHeroStage;let heroPreviewStage=null;let heroInspection=false,heroPreviewPose='idle',previousHeroCamera=null;
 let facadePalette=null,biomeStreamer=null,grassLayer=null,groundPlacementDirty=false,lastVegetationTime=0,terrainTransition=null,retiringTerrain=null;
 
@@ -481,6 +481,12 @@ function buildBeacons(){
  }
 }
 
+function applyFamilyWardrobe(model){
+ if(!CAST_WARDROBE?.decorate||!model?.skinned||model.lod==='CUSTOM')return model;
+ const id=CAST_WARDROBE.selection();
+ if(id)CAST_WARDROBE.decorate(G,model,id);
+ return model;
+}
 function heroLODForQuality(){
  if(visualEffects==='cinematic')return 'LOD0';
  if(visualEffects==='lite')return 'LOD2';
@@ -491,15 +497,15 @@ function showHeroModelStatus(model){
  box.hidden=!!model?.skinned;
  if(!model?.skinned)box.textContent='Character asset warning: the detailed rig could not load. The simplified compatibility model is showing. '+(window.ValleyHeroRigFailure||'Missing embedded GLB');
 }
-function updateHeroGeometryQuality(){
+function updateHeroGeometryQuality(force=false){
  if(!G||!scene||!renderer||!heroController)return;
  const requestedLOD=window.ValleyRiggedHeroOverrideData?'CUSTOM':heroLODForQuality();
  for(const name of ['heroController','driverController']){
   const current=name==='heroController'?heroController:driverController;
-  if(!current||current.lod===requestedLOD)continue;
+  if(!current||(!force&&current.lod===requestedLOD&&(current.castId||null)===(CAST_WARDROBE?.selection?.()||null)))continue;
   let next=null;
   try{
-   next=HERO.create(G,{seated:name==='driverController',lod:requestedLOD});
+   next=HERO.create(G,{seated:name==='driverController',lod:requestedLOD});applyFamilyWardrobe(next);
    if(!next?.skinned)throw Error(window.ValleyHeroRigFailure||'Skinned model unavailable');
    next.root.position.copy(current.root.position);
    next.root.rotation.copy(current.root.rotation);
@@ -522,7 +528,7 @@ function buildPlayer(){
  // The studio reference sheets define the character; geometry and animations are
  // original local procedural meshes, with no external asset fetch or online rig.
  if(!HERO)throw new Error('Hero character module must load before the world');
- heroController=HERO.create(G,{lod:heroLODForQuality()});showHeroModelStatus(heroController);
+ heroController=HERO.create(G,{lod:heroLODForQuality()});applyFamilyWardrobe(heroController);showHeroModelStatus(heroController);
  groundShadow=MOTION.createContactShadow(G);if(groundShadow)scene.add(groundShadow);
  avatar=heroController.root;
  avatar.name='Playable River Explorer';
@@ -543,7 +549,7 @@ function buildPlayer(){
  for(const side of [-1,1])for(const dz of [-8,8]){
   const w=wheels.clone();w.rotation.z=Math.PI/2;w.position.set(side*7.5,2.2,dz);car.add(w);
  }
- driverController=HERO.create(G,{seated:true,lod:heroLODForQuality()});
+ driverController=HERO.create(G,{seated:true,lod:heroLODForQuality()});applyFamilyWardrobe(driverController);
  driverController.root.name='Explorer driving';
  driverController.root.scale.setScalar(.53);
  driverController.root.position.set(-2.45,1.5,-1.0);
@@ -991,7 +997,7 @@ function openHeroStudio(){
  if(!renderer||view==='2d'){toast('Character Studio requires 3D WebGL. Use the illustrated view on this device.');return;}
  if(heroInspection)return;
  if(!STAGE)throw new Error('Character Studio preview module is missing');
- if(!heroPreviewStage)heroPreviewStage=STAGE.create(G,HERO);
+ if(!heroPreviewStage){heroPreviewStage=STAGE.create(G,HERO);applyFamilyWardrobe(heroPreviewStage.hero);}
  if(worldActive)closeWorldActivity();
  if(touring)stopTour();
  if(activity)closeActivity();
@@ -1136,7 +1142,7 @@ function loop(stamp){
 function refreshImportedHeroStudio(){
  if(heroPreviewStage){heroPreviewStage.dispose();heroPreviewStage=null;}
  if(heroInspection&&renderer&&STAGE){
-  heroPreviewStage=STAGE.create(G,HERO);
+  heroPreviewStage=STAGE.create(G,HERO);applyFamilyWardrobe(heroPreviewStage.hero);
   heroPreviewStage.setSkeletonVisible($('heroShowSkeleton').checked);
  }
 }
@@ -1299,7 +1305,11 @@ function init(){
  if(!tryRenderer()){view='2d';$('quality').value='2d';}else {view='3d';restoreStaticScout();}
  resize();updateHUD();mapDraw(mapCtx,mapCanvas.width,mapCanvas.height,false);
  requestAnimationFrame(loop);
- window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,heroPreviewReady:!!heroPreviewStage,heroInspection,heroPreviewPose,heroPreviewFocus:heroPreviewStage?.focus||null,heroPreviewAngle:heroPreviewStage?.angle||null,heroState,heroModel:!!heroController,heroProfile:HERO?.PROFILE?.id||null,heroSkinned:!!heroController?.skinned,heroLOD:heroController?.lod||'FALLBACK',heroCustomGLB:heroController?.lod==='CUSTOM',heroAssetFallback:!!heroController?.root?.userData?.fallback,heroRigLoadError:window.ValleyHeroRigFailure||null,scout:scout?.snapshot()||null,scoutCustomMesh:!!dog?.userData?.customScout,scoutBond:save.scoutBond,countyRegion:save.countyRegion,countyVisited:[...save.countyVisited],countyBoundaryVertices:COUNTY_DATA?.boundary?.length||0,countyVignettes:countyVignettes?.counts||null,collision:collisionWorld.snapshot(),vehicleSuspension:suspension.snapshot(),worldPaint:terrainDecor?.counts||null,lastCollision,audio:soundscape.snapshot(),performance:frameProbe.summary(),performanceScenes:frameProbe.cohorts(),terrainTransition:terrainTransition?.status()||null,roadRefreshQueued,pixelRatio:activePixelRatio,heroHeightOffset,groundShadowReady:!!groundShadow,motionState:motion.snapshot(),heroTexturedMeshes:heroController?.meshes?.filter(m=>!!m.material?.map).length||0,heroEmbeddedTextures:heroController?.embeddedTextures||null,heroStudioEmbeddedTextures:heroPreviewStage?.hero?.embeddedTextures||null,heroRigOverlay:heroPreviewStage?.skeletonVisible||false,heroStudioSkeletonBones:heroPreviewStage?.skeletonBoneCount||0,heroActiveClip:heroController?.activeClip||null,heroGaiterPrintReady:!!heroController?.gaiterDecalReady,heroFootContacts:heroController?.footContacts||null,heroBoneCount:heroController?.skinned?Object.keys(heroController.joints).length:0,heroClipCount:heroController?.clips?.length||0,heroParts:heroController?Object.keys(heroController.joints).length:0,terrainTransition:terrainTransition?.status()||null,vegetation:biomeStreamer?.snapshot()||null,meadow:grassLayer?.snapshot()||null,graphicsQuality:visualEffects,optionalGzipSupport:!!(ASSET_CODEC&&typeof DecompressionStream==='function'),facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,imageryYear:REF?.metadata?.downtownTileYear||null},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),resetPerformance:()=>frameProbe.reset(),capturePerformance:()=>frameProbe.report({renderer:'WebGL',viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio||1},mode:save.mode,quality:visualEffects,userAgent:navigator.userAgent}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
+ window.RiverValleyDebug={getState:()=>({worldActivity:worldActive,worldSites:worldGame?.counts?.activitySites||0,world3D:!!worldGame,worldHunt:!!worldHuntRound,worldFish:!!worldFishRound,worldAim,worldHuntTarget:worldHuntRound?.target??null,worldFishBiteAt:worldFishRound?.biteAt??null,playerHeading,terrainLOD:activeTerrainSegments,terrainSetting:terrainDetail,terrainTiles:terrainStats.tiles,heroPreviewReady:!!heroPreviewStage,heroInspection,heroPreviewPose,heroPreviewFocus:heroPreviewStage?.focus||null,heroPreviewAngle:heroPreviewStage?.angle||null,heroState,heroModel:!!heroController,heroProfile:HERO?.PROFILE?.id||null,heroSkinned:!!heroController?.skinned,heroLOD:heroController?.lod||'FALLBACK',heroCustomGLB:heroController?.lod==='CUSTOM',castPrototypeId:heroController?.castId||null,castPrototypeSelected:CAST_WARDROBE?.selection?.()||null,heroAssetFallback:!!heroController?.root?.userData?.fallback,heroRigLoadError:window.ValleyHeroRigFailure||null,scout:scout?.snapshot()||null,scoutCustomMesh:!!dog?.userData?.customScout,scoutBond:save.scoutBond,countyRegion:save.countyRegion,countyVisited:[...save.countyVisited],countyBoundaryVertices:COUNTY_DATA?.boundary?.length||0,countyVignettes:countyVignettes?.counts||null,collision:collisionWorld.snapshot(),vehicleSuspension:suspension.snapshot(),worldPaint:terrainDecor?.counts||null,lastCollision,audio:soundscape.snapshot(),performance:frameProbe.summary(),performanceScenes:frameProbe.cohorts(),terrainTransition:terrainTransition?.status()||null,roadRefreshQueued,pixelRatio:activePixelRatio,heroHeightOffset,groundShadowReady:!!groundShadow,motionState:motion.snapshot(),heroTexturedMeshes:heroController?.meshes?.filter(m=>!!m.material?.map).length||0,heroEmbeddedTextures:heroController?.embeddedTextures||null,heroStudioEmbeddedTextures:heroPreviewStage?.hero?.embeddedTextures||null,heroRigOverlay:heroPreviewStage?.skeletonVisible||false,heroStudioSkeletonBones:heroPreviewStage?.skeletonBoneCount||0,heroActiveClip:heroController?.activeClip||null,heroGaiterPrintReady:!!heroController?.gaiterDecalReady,heroFootContacts:heroController?.footContacts||null,heroBoneCount:heroController?.skinned?Object.keys(heroController.joints).length:0,heroClipCount:heroController?.clips?.length||0,heroParts:heroController?Object.keys(heroController.joints).length:0,terrainTransition:terrainTransition?.status()||null,vegetation:biomeStreamer?.snapshot()||null,meadow:grassLayer?.snapshot()||null,graphicsQuality:visualEffects,optionalGzipSupport:!!(ASSET_CODEC&&typeof DecompressionStream==='function'),facadeMaterials:facadePalette?.wallCount||0,streaming:streamingGovernor?.snapshot()||null,terrainTriangles:terrainStats.triangles,terrainLevels:terrainStats.levels,modelCount:gameModels.length,atmosphere:atmosphere?.counts||null,director3D:director3D?.counts||null,cinema:{...cinemaPrefs},fps:perfFPS,backdropOpen,backdropLocation,shotPlaying,shotIndex,shotCount:SHOTS.length,roadSections:roadMesh?roadMesh.geometry.attributes.position.count/6:0,buildingDetailCount:detailBuildings.size,sourceHeightDatum:'UNVERIFIED',georeference:{enabled:referenceEnabled,ready:!!referenceImage,roadParts:activeRoads.length,buildings:activeBuildings.length,imageryYear:REF?.metadata?.downtownTileYear||null},started,mode:save.mode,stamps:save.completed.length,coins:save.coins,homestead:save.homestead,inventory:{...save.inventory},activity,x:player.x,z:player.z,renderMode:renderer&&view==='3d'?'webgl':'2d'}),resetPerformance:()=>frameProbe.reset(),capturePerformance:()=>frameProbe.report({renderer:'WebGL',viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio||1},mode:save.mode,quality:visualEffects,userAgent:navigator.userAgent}),teleport,complete:interact,openActivity,chooseCinemaLook,openCinema,openBackdrop,forceLOD:(lod)=>{terrainDetail=lod;$('terrainDetail').value=lod;applyTerrainLOD(true,true);},sampleAligned:(x,z)=>height(x,z),openWorldActivity,worldAction,closeWorldActivity};
 }
+window.ValleyCastBridge=Object.freeze({applySelection:()=>{
+ updateHeroGeometryQuality(true);
+ if(heroPreviewStage)refreshImportedHeroStudio();
+}});
 init();
 })();
