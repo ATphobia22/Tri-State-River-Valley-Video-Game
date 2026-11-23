@@ -48,7 +48,7 @@ The county navigator embeds the **official Posey County boundary (FIPS 18129, EP
 
 The optional Mount Vernon visual-reference snapshot contains **709 Indiana GIO road features**, **4,819 building footprints** and a central downtown aerial tile identified as **2023**. Elevation, building heights, stopping locations and regional vignettes are art-directed and not approved for navigation, property decisions, flood studies or engineering use.
 
-[Posey County source and accuracy notes](game/docs/POSEY_COUNTY_EXPANSION_v1.10.md) · [Mount Vernon reference provenance](game/docs/MOUNT_VERNON_GEOREFERENCE_V1_8.md)
+[Posey County source and accuracy notes](game/docs/POSEY_COUNTY_EXPANSION_v1.10.md) · [Mount Vernon reference provenance](game/docs/MOUNT_VERNON_GEOREFERENCE_V1_8.md) · [**Mount Vernon 47620 — map links and licensing**](game/docs/MOUNT_VERNON_47620_MAP_LINKS.md)
 
 ## Build, test and deploy
 
