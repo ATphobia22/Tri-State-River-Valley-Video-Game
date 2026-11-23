@@ -116,6 +116,8 @@ jobs:
           npm --prefix game/valley-scene run build
       - name: Verify streamed region and standalone WebGL scene offline
         run: python game/valley-scene/tools/browser_scene.py
+      - name: Exercise building and foliage workers in hosted and offline WebGL
+        run: python game/tests/browser_render_workers.py
       - name: Test playable 3D hero on desktop and phone-sized Chromium
         run: python game/tests/browser_hero_smoke.py
       - name: Verify pause and accessibility UX in actual desktop and mobile Chromium

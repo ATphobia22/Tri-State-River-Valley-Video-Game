@@ -38,6 +38,7 @@ with tempfile.TemporaryDirectory() as folder, sync_playwright() as pw:
             return page.evaluate('ValleyScene.diagnostics()')
         d = diag()
         assert sorted(a['bones'] for a in d['actors']) == [16,27,27], d
+        assert d['parcelProjectionMode'] == 'worker', d
         assert len(d['landmarks']) == 2 and d['drawCalls'] > 0 and not d['streamError'], d
         output = Path(os.getenv('SCENE_EVIDENCE','/tmp/river-hero-visual-qa'))
         output.mkdir(parents=True,exist_ok=True)

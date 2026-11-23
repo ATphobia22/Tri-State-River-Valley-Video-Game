@@ -6,7 +6,7 @@
  const api=factory();
  if(typeof module==='object'&&module.exports)module.exports=api;
  else root.ValleyBiomeStreamer=api;
-})(typeof globalThis==='object'?globalThis:this,function(){
+})(typeof globalThis==='object'?globalThis:this,function biomeFactory(){
  'use strict';
  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
  function hash(a,b,seed=47620){
@@ -91,5 +91,5 @@
   spring:[0x4b7d4b,0x6d995c,0x3f7050],summer:[0x326441,0x54834b,0x31573f],
   autumn:[0xa46b38,0xd39a4b,0x718050],winter:[0x7f9290,0x879b99,0x496b68]
  });
- return Object.freeze({hash,biome,inRiver,makeCell,create,seasonPalette});
+ return Object.freeze({biomeFactory,hash,biome,inRiver,makeCell,create,seasonPalette});
 });

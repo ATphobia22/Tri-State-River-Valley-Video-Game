@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {prepareParcels} from './parcel-projection.mjs';
 import ZONING from './zoning-sim.cjs';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -29,6 +30,7 @@ const load=async file=>loader.parseAsync(await bytes(file),'');
 const root=new THREE.Group(),scene=new THREE.Scene(),origin=new THREE.Vector3();
 const camera=new THREE.PerspectiveCamera(47,1,.12,160000);
 let renderer,controls,manifest,ground,terrain,Aerial,parcelMap;
+let parcelProjectionMode=null;
 let zoneSim=null,zoneData=null,zoneSelected=null,zonePaint=false,zoneSaveKey='';
 const zoneLines=new Map(),zoneBaseBuilt=new Set(),zoneGroup=new THREE.Group(),zoneBuildingGroup=new THREE.Group();
 const zoneColors={R1:0x8fb8e6,R2:0xb4a0e0,R3:0xd695cf,C:0xf2cb88,I:0xd68e79,AG:0x93c485,NONE:0xc5d1cd};
@@ -51,11 +53,6 @@ function worldFromGeo(lon,lat){
   return [(lon-manifest.origin[0])*manifest.metresPerDegree[0],(manifest.origin[1]-lat)*manifest.metresPerDegree[1]];
 }
 
-function zonePoly(feature){
- const geom=feature.geometry;
- const ps=geom.type==='Polygon'?[geom.coordinates]:geom.type==='MultiPolygon'?geom.coordinates:[];
- return ps.map(poly=>poly.map(ring=>ring.map(([lon,lat])=>worldFromGeo(lon,lat))));
-}
 function zoneContains(point,ring){
  let inside=false;
  for(let i=0,j=ring.length-1;i<ring.length;j=i++){
@@ -111,13 +108,14 @@ function zoneAdvance(){
  return e;
 }
 async function setupZoning(){
- const base=await jsonFile('mount_vernon_zoned.geojson');
+ const {base,polygons,mode}=await prepareParcels({buffer:await bytes('mount_vernon_zoned.geojson'),origin:manifest.origin,scales:manifest.metresPerDegree});
+ parcelProjectionMode=mode;
  if(base.type!=='FeatureCollection'||base.features?.length!==manifest.parcels)throw Error('Invalid parcel layer; zoning disabled');
  zoneData=base;zoneSim=ZONING.create({features:base.features});
  zoneSaveKey='rva-parcel-game-zoning-v1-'+base.properties.parcelGitBlob;
  try{const saved=localStorage.getItem(zoneSaveKey);if(saved)zoneSim.importDiffs(JSON.parse(saved));}catch(e){console.warn('Zoning local save rejected',e);}
- for(const feature of base.features){
-  const id=String(feature.id),polys=zonePoly(feature),lines=[];
+ for(const [index,feature] of base.features.entries()){
+  const id=String(feature.id),polys=polygons[index],lines=[];
   if(feature.properties.built)zoneBaseBuilt.add(id);
   for(const poly of polys)for(const ring of poly){
    if(ring.length<4)continue;
@@ -260,7 +258,7 @@ function diagnostics(){
     actors:actorStates.map(a=>({name:a.file,clip:a.current,bones:a.model.getObjectByProperty('isSkinnedMesh',true)?.skeleton.bones.length})),
     drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,
     fineTiles:tiles.filter(t=>t.detail).length,proxyInstances:tiles.reduce((s,t)=>s+(t.proxies.visible?t.proxies.count:0),0),
-    streamError,parcelCount:manifest.parcels,zoning:zoneSim?.snapshot()||null,selectedParcel:zoneSelected,frames:frameTimes.length};
+    streamError,parcelProjectionMode,parcelCount:manifest.parcels,zoning:zoneSim?.snapshot()||null,selectedParcel:zoneSelected,frames:frameTimes.length};
 }
 function tick(now){
   const delta=lastTime?(now-lastTime)/1000:0;lastTime=now;

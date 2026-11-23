@@ -97,7 +97,7 @@ test('the intro visibly carries the shipped graphics version',()=>{
 
 test('user quality modes and offline caches preserve full standalone delivery',()=>{
  const html=get('index.html'),cache=get('sw.js'),game=get('src/game.js');
- const scripts=['src/visual-polish.js','src/biome-streamer.js','src/lod-transition.js','src/streaming-policy.js'];
+ const scripts=['src/visual-polish.js','src/render-workers.js','src/biome-streamer.js','src/lod-transition.js','src/streaming-policy.js'];
  scripts.forEach(s=>{
   assert.ok(html.includes('src="'+s+'"'),s);
   assert.ok(cache.includes('"./'+s+'"'),s);
@@ -106,7 +106,7 @@ test('user quality modes and offline caches preserve full standalone delivery',(
  assert.match(game,/terrainTransition\.pump\(/);
  assert.match(game,/fadeRetiringTerrain\(stamp\)/);
  assert.match(game,/refreshVegetation\(true\)/);
- assert.match(game,/BIOME\.create/);
+ assert.match(game,/renderWorkers\.foliagePlanner,config,applyVegetation,BIOME\.biomeFactory/);
  assert.match(game,/applyTerrainLOD\(true,true\)/);
 });
 

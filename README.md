@@ -130,3 +130,9 @@ The existing skinned 27-joint River Explorer now excludes generated zero-area tr
 For engineering details, visit the [game guide](game/README.md), [November 22 repository reconciliation audit](game/docs/REPOSITORY_RECONCILIATION_2026-11-22.md) and [open gameplay roadmap](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/issues/6). Unmerged legacy **PTDT EnKF/Bishop Evidence Graph** draft work in [PR #2](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/pull/2) is intentionally separate from the playable game.
 
 **License notice:** The game package currently identifies its project license as `UNLICENSED`. Public visibility is not permission to reuse its code or original assets. Third-party reference tools are not automatically installed or license-admitted.
+
+### Browser rendering workers
+
+The family game prepares building visibility and foliage in dedicated local workers. The building worker measures two equivalent nearest-building searches and selects the faster observed strategy for each detail budget. The regional viewer uses a one-shot worker to project all 210 parcel outlines, including interior rings. Three.js applies the results to the scene. Both downloadable HTML editions embed their worker code.
+
+Inspect `RiverValleyDebug.getState().renderWorkers` for the family game's worker modes, completed jobs, and current building strategy. The regional scene exposes `ValleyScene.diagnostics().parcelProjectionMode`. The family game's worker acceptance test exercises hosted WebGL, offline WebGL, and offline execution with workers disabled.
