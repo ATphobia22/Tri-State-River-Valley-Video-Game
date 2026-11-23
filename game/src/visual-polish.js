@@ -129,17 +129,23 @@
    return {family,wall,roof:roofs[rec.i%roofs.length],glass,trim};
   }
   let previousWeather=null;
-  function setWeather(weather){
+  function setWeather(weather,liveRoad=null){
    const key=weather==='rain'?'rain':weather==='mist'?'mist':'clear';
-   if(key===previousWeather)return false;
-   previousWeather=key;
-   // Real PBR wetness response, not a screen-space filter or reflective planar RTT.
-   const wet=key==='rain',damp=key==='mist';
-   road.roughness=wet?.42:damp?.75:.94;
-   road.metalness=wet?.06:.02;
-   for(const roof of roofs)roof.roughness=wet?.52:damp?.79:.94;
-   glass.roughness=wet?.085:.19;
-   return true;
+   const changed=key!==previousWeather;
+   if(changed){
+    previousWeather=key;
+    // PBR wetness: road palette and existing geometry material are separate clones.
+    const wet=key==='rain',damp=key==='mist';
+    road.roughness=wet?.42:damp?.75:.94;
+    road.metalness=wet?.06:.02;
+    for(const roof of roofs)roof.roughness=wet?.52:damp?.79:.94;
+    glass.roughness=wet?.085:.19;
+   }
+   if(liveRoad&&liveRoad!==road){
+    liveRoad.roughness=road.roughness;
+    liveRoad.metalness=road.metalness;
+   }
+   return changed;
   }
   function dispose(){
    [...walls,...roofs,road,glass,trim].forEach(m=>{if(m.map)m.map.dispose();m.dispose();});terrainMap?.dispose();
