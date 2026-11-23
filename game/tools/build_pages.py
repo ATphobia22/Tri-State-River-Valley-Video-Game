@@ -22,8 +22,10 @@ def build(game_root: Path, destination: Path) -> None:
     html = hosted.read_text(encoding="utf-8")
     if "window.ValleyReference=" not in html or len(html) < 2_000_000:
         raise ValueError("Refusing incomplete or non-georeferenced HTML build")
-    if "serviceWorker.register('./game-sw.js'" not in html:
-        raise ValueError("Hosted game lacks its relative-scope offline registration")
+    if "serviceWorker.register(" in html:
+        raise ValueError("Hosted game must not register a service worker")
+    if "serviceWorker.getRegistrations()" not in html:
+        raise ValueError("Hosted game lacks legacy service-worker cleanup")
 
     atlas_anchor = '<div class="countyList" id="countyRegionList"'
     if atlas_anchor not in html:
@@ -43,25 +45,10 @@ def build(game_root: Path, destination: Path) -> None:
     subprocess.run([sys.executable, str(game_root / "valley-scene/tools/package_scene.py"),
                     str(destination / "valley-scene")], check=True)
 
-    # Keep the service worker confined to this GitHub Pages project subpath,
-    # while ensuring both /repo/ and /repo/index.html are usable offline.
+    # Publish the retired worker at the same URL to clean up old installations.
     sw = (game_root / "game-sw.js").read_text(encoding="utf-8")
-    anchor = "const GAME_PATHS=new Set([SHELL,ALIAS]);"
-    if anchor not in sw:
-        raise ValueError("Game service-worker contract changed; review caching logic")
-    sw = sw.replace(
-        anchor,
-        "const INDEX=new URL('index.html',ROOT).pathname;\n"
-        "const ROOT_PATH=ROOT.pathname;\n"
-        "const GAME_PATHS=new Set([SHELL,ALIAS,INDEX,ROOT_PATH]);",
-    )
-    old = "await Promise.all([c.put(SHELL,response.clone()),c.put(ALIAS,response.clone())]);"
-    new = ("await Promise.all([c.put(SHELL,response.clone()),c.put(ALIAS,response.clone()),"
-           "c.put(INDEX,response.clone()),c.put(ROOT_PATH,response.clone())]);")
-    if old not in sw:
-        raise ValueError("Service-worker precache contract changed")
-    sw = sw.replace(old, new)
-    sw = "// Includes the regional scene link in the county atlas.\n" + sw
+    if "registration.unregister()" not in sw or "addEventListener('fetch'" in sw:
+        raise ValueError("Legacy service worker must unregister and never intercept fetch")
     (destination / "game-sw.js").write_text(sw, encoding="utf-8")
 
     # The hosted-site manifest formerly referenced images on a different host.
