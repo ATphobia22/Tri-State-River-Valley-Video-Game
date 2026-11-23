@@ -35,13 +35,33 @@ function isSourceBuilding(f,a){
  if(!f||!a)return false;
  return Math.hypot(f.x-a.x,f.z-a.z)<7&&f.dx>=21&&f.dx<40&&f.dz>=28&&f.dz<46;
 }
+function originalSurfaceTexture(G,kind){
+ const size=64,data=new Uint8Array(size*size*4);
+ for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+  const noise=((Math.imul(x+17,73856093)^Math.imul(y+13,19349663))>>>0)%19-9;
+  let c;
+  if(kind==='brick'){
+   const course=Math.floor(y/8),joint=(x+(course%2)*12)%24;
+   c=(y%8<=1||joint<=1)?[194,180,159]:[159+noise,78+noise,62+noise];
+  }else{
+   const course=Math.floor(y/12),joint=(x+(course%2)*16)%32;
+   c=(y%12===0||joint===0)?[93,100,104]:[71+noise,82+noise,89+noise];
+  }
+  const i=(y*size+x)*4;data[i]=c[0];data[i+1]=c[1];data[i+2]=c[2];data[i+3]=255;
+ }
+ const t=new G.DataTexture(data,size,size,G.RGBAFormat);
+ t.wrapS=G.RepeatWrapping;t.wrapT=G.RepeatWrapping;
+ t.repeat.set(kind==='brick'?4:2,kind==='brick'?5:4);
+ t.colorSpace=G.SRGBColorSpace;t.generateMipmaps=true;t.needsUpdate=true;
+ return t;
+}
 function create(G,geo,terrainHeight){
  if(!G?.InstancedMesh||typeof terrainHeight!=='function')throw Error('Three.js and shared terrain sampler required');
  const a=anchor(geo),w=a.width,d=a.depth,group=new G.Group();
  const materials={
-  brick:new G.MeshStandardMaterial({color:0x934e38,roughness:.94,metalness:0}),
+  brick:new G.MeshStandardMaterial({color:0xffffff,map:originalSurfaceTexture(G,'brick'),roughness:.94,metalness:0}),
   limestone:new G.MeshStandardMaterial({color:0xd5c7ac,roughness:.91,metalness:0}),
-  slate:new G.MeshStandardMaterial({color:0x45515b,roughness:.88,metalness:.03,side:G.DoubleSide}),
+  slate:new G.MeshStandardMaterial({color:0xffffff,map:originalSurfaceTexture(G,'slate'),roughness:.88,metalness:.03,side:G.DoubleSide}),
   glass:new G.MeshStandardMaterial({color:0x597887,roughness:.25,metalness:.12}),
   white:new G.MeshStandardMaterial({color:0xe4decf,roughness:.76,metalness:0}),
   bronze:new G.MeshStandardMaterial({color:0x997c40,roughness:.48,metalness:.64}),
