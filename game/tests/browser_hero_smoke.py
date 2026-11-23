@@ -44,7 +44,20 @@ def inspect(page, *, mobile: bool):
     except Exception:
         snapshot=page.evaluate("window.RiverValleyDebug?.getState?.() || null")
         print("AERIAL_DRAPE_TIMEOUT_DEBUG",json.dumps({
-            "mobile":mobile,"issues":issues,"state":{
+            "mobile":mobile,"issues":issues,
+            "inlineSource":page.evaluate("""() => ({
+                type: typeof window.ValleyLeafOn2025,
+                year: window.ValleyLeafOn2025?.metadata?.year,
+                publisher: window.ValleyLeafOn2025?.metadata?.publisher,
+                license: window.ValleyLeafOn2025?.metadata?.license,
+                coverage: window.ValleyLeafOn2025?.metadata?.validPixelCoverageFraction,
+                imageLength: window.ValleyLeafOn2025?.imageDataUrl?.length,
+                scriptAssignments: [...document.scripts].filter(s => s.textContent.includes('window.ValleyLeafOn2025=')).length,
+                georefSource: typeof window.ValleyGeoReference,
+                roofFidelitySource: typeof window.ValleyRoofFidelity,
+                gameScriptCount: document.scripts.length
+            })"""),
+            "state":{
                 "renderMode":snapshot.get("renderMode") if snapshot else None,
                 "georeference":snapshot.get("georeference") if snapshot else None,
                 "courthouseFidelity":snapshot.get("courthouseFidelity") if snapshot else None,
