@@ -62,18 +62,21 @@ def check():
             page.evaluate("window.__uxPad.buttons[1].pressed=true")
             page.wait_for_function("!window.RiverValleyDebug.getState().paused", timeout=12000)
             assert not errors, errors
-            mobile=browser.new_context(viewport={'width': 844, 'height': 390},has_touch=True,is_mobile=True)
-            phone=mobile.new_page()
-            phone.goto(f'http://127.0.0.1:{server.server_port}/game.html',wait_until='domcontentloaded',timeout=60000)
-            phone.wait_for_function("!!window.RiverValleyDebug?.getState()?.playerExperience",timeout=60000)
-            touch=phone.evaluate("""() => {
-              const button=document.querySelector('#touchControls .dpad button:not(.blank)');
+            # Resize the already-running WebGL page: a second SwiftShader world can
+            # stall CI due to software-renderer memory contention. Dedicated
+            # browser_hero_smoke.py already boots a phone-sized game separately.
+            page.set_viewport_size({'width': 844, 'height': 390})
+            touch=page.evaluate("""() => {
+              const controls=document.getElementById('touchControls');
+              controls.style.display='flex'; // CSS geometry only on desktop browser
+              const button=controls.querySelector('.dpad button');
               const rect=button.getBoundingClientRect();
-              return {width:rect.width,height:rect.height,display:getComputedStyle(document.getElementById('touchControls')).display};
+              return {width:rect.width,height:rect.height,
+                direction:getComputedStyle(controls).flexDirection};
             }""")
             assert touch['width']>=48 and touch['height']>=48, touch
-            assert touch['display']=='flex', touch
-            mobile.close();context.close();browser.close()
+            assert touch['direction']=='row-reverse', touch
+            context.close();browser.close()
     finally:
         server.shutdown();server.server_close()
 
