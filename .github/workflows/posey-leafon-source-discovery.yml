@@ -1,0 +1,32 @@
+name: Discover Indiana 2025 official leaf-on raster sources
+on:
+  push:
+    branches:
+      - feat/posey-leafon-2025-orthophoto
+    paths:
+      - .github/workflows/posey-leafon-source-discovery.yml
+      - game/tools/discover_2025_leafon.py
+      - game/tests/test_leafon_discovery_python.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  read-official-catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate parsers on fixtures
+        run: python -m unittest discover -s game/tests -p test_leafon_discovery_python.py -v
+      - name: Inventory official 2025 map and anonymous S3 prefixes
+        run: python game/tools/discover_2025_leafon.py --output /tmp/leafon2025-sources.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: indiana-2025-leafon-source-discovery
+          path: /tmp/leafon2025-sources.json
+          retention-days: 7
