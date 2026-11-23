@@ -36,6 +36,21 @@ jobs:
         run: python -m unittest discover -s game/unreal-starter/tests -p 'test_*.py' -v
       - name: Rebuild independent offline and hosted game
         run: npm --prefix game run build
+      - name: Rebuild verified-shape parcel zoning snapshot with Python regression gates
+        run: |
+          python -m unittest discover -s game/tests -p test_zoning_rebuild_python.py -v
+          python game/valley-scene/tools/rebuild_zoning.py --output /tmp/mount_vernon_zoned_rebuild.geojson
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          value=json.loads(Path('/tmp/mount_vernon_zoned_rebuild.geojson').read_text())
+          features=value['features']
+          assert len(features)==210 and len({f['id'] for f in features})==210
+          assert sum(f['properties']['built'] for f in features)>=90
+          assert all(f['properties']['flood_status']=='UNKNOWN' for f in features)
+          assert all(f['properties']['zone_source']=='INFERRED_GAME_ONLY' for f in features)
+          print('PASS: 210 official-shape GAME parcels, conservative safety status and deterministic joins')
+          PY
       - name: Validate gameplay, terrain, models and offline cache
         run: npm --prefix game test
       - name: Verify game character GLB contract and known BIA repair regression
