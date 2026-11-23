@@ -7172,17 +7172,23 @@ return Object.freeze({create});
    return {family,wall,roof:roofs[rec.i%roofs.length],glass,trim};
   }
   let previousWeather=null;
-  function setWeather(weather){
+  function setWeather(weather,liveRoad=null){
    const key=weather==='rain'?'rain':weather==='mist'?'mist':'clear';
-   if(key===previousWeather)return false;
-   previousWeather=key;
-   // Real PBR wetness response, not a screen-space filter or reflective planar RTT.
-   const wet=key==='rain',damp=key==='mist';
-   road.roughness=wet?.42:damp?.75:.94;
-   road.metalness=wet?.06:.02;
-   for(const roof of roofs)roof.roughness=wet?.52:damp?.79:.94;
-   glass.roughness=wet?.085:.19;
-   return true;
+   const changed=key!==previousWeather;
+   if(changed){
+    previousWeather=key;
+    // PBR wetness: road palette and existing geometry material are separate clones.
+    const wet=key==='rain',damp=key==='mist';
+    road.roughness=wet?.42:damp?.75:.94;
+    road.metalness=wet?.06:.02;
+    for(const roof of roofs)roof.roughness=wet?.52:damp?.79:.94;
+    glass.roughness=wet?.085:.19;
+   }
+   if(liveRoad&&liveRoad!==road){
+    liveRoad.roughness=road.roughness;
+    liveRoad.metalness=road.metalness;
+   }
+   return changed;
   }
   function dispose(){
    [...walls,...roofs,road,glass,trim].forEach(m=>{if(m.map)m.map.dispose();m.dispose();});terrainMap?.dispose();
@@ -7203,18 +7209,24 @@ return Object.freeze({create});
  'use strict';
  const VS=`
  varying vec3 vWorld;
+ varying float vShoreDistance;
  void main(){
    vec4 world=modelMatrix*vec4(position,1.0);
    vWorld=world.xyz;
+   // Compute bank alignment only per vertex, not per shaded river pixel.
+   float bankZ=1200.0+125.0*sin(world.x / 550.0)+65.0*cos(world.x / 175.0);
+   vShoreDistance=max(0.0,world.z-bankZ);
    gl_Position=projectionMatrix*viewMatrix*world;
  }`;
  const FS=`
  precision highp float;
  varying vec3 vWorld;
+ varying float vShoreDistance;
  uniform float uTime;
  uniform float uDetail;
  uniform float uSunHeight;
  uniform float uStorm;
+ uniform float uWind;
  uniform vec3 uSunDirection;
  uniform vec3 uShallow;
  uniform vec3 uDeep;
@@ -7224,9 +7236,11 @@ return Object.freeze({create});
  }
  void main(){
    vec2 p=vWorld.xz;
-   float a=wave(p*.12, .72,1.10,.76);
-   float b=wave(p*.16,-.53,-.75,1.17);
-   float c=wave(p*.43, 1.23,.53,-1.24);
+   float wind=clamp(uWind,0.0,1.5);
+   float a=wave(p*.12, .72+wind*.14,1.10,.76);
+   float b=wave(p*.16,-.53-wind*.13,-.75,1.17);
+   float c=wave(p*.43, 1.23+wind*.18,.53,-1.24);
+   float shore=1.0-smoothstep(2.0,26.0,vShoreDistance);
    vec3 n=normalize(vec3(
      (a*.16+b*.13+c*.045*uDetail),
      1.0,
@@ -7244,11 +7258,21 @@ return Object.freeze({create});
    vec3 col=mix(base,reflected,clamp(.10+fresnel*.70,0.0,.87));
    col+=vec3(1.0,.78,.45)*glint*(1.6-uStorm*.72)*max(.1,uSunHeight);
    col+=vec3(.82,.92,1.0)*smallGlint*.16*uDetail;
+   float foamWave=clamp(.5+.5*(a*.6+b*.4),0.0,1.0);
+   float foam=shore*shore*(.3+.5*foamWave)*uDetail*(1.0-uStorm*.34);
+   col=mix(col,vec3(.9,.94,.97),clamp(foam*.58,0.0,.4));
    col=mix(col,vec3(.16,.22,.25),uStorm*.25);
    gl_FragColor=vec4(col,.89);
    #include <tonemapping_fragment>
    #include <colorspace_fragment>
  }`;
+ function shorelineZ(x){return 1200+125*Math.sin(x/550)+65*Math.cos(x/175);}
+ function foamMask(x,z,quality){
+   if(!Number.isFinite(x)||!Number.isFinite(z))return 0;
+   const d=Math.max(0,z-shorelineZ(x));
+   const t=Math.max(0,Math.min(1,(d-2)/24));
+   return (1-t*t*(3-2*t))*qualityDetail(quality);
+ }
  function qualityDetail(quality){
    return quality==='lite'||quality==='low'?0:quality==='medium'?.55:1;
  }
@@ -7256,7 +7280,8 @@ return Object.freeze({create});
    const hour=Number.isFinite(time)?time:15;
    const daylight=Math.max(0,Math.sin((hour-6)*Math.PI/12));
    return {storm:weather==='rain'?1:weather==='mist'?.45:0,
-     daylight,detail:qualityDetail(quality)};
+     daylight,detail:qualityDetail(quality),
+     wind:qualityDetail(quality)*(weather==='rain'?1.2:weather==='mist'?.14:.4)};
  }
  function create(THREE,geometry,options={}){
    if(!THREE||typeof THREE.ShaderMaterial!=='function')throw new TypeError('THREE.ShaderMaterial required');
@@ -7265,7 +7290,7 @@ return Object.freeze({create});
      side:THREE.DoubleSide,toneMapped:true,
      uniforms:{
        uTime:{value:0},uDetail:{value:qualityDetail(options.quality)},
-       uStorm:{value:0},uSunHeight:{value:.7},
+       uStorm:{value:0},uWind:{value:.4},uSunHeight:{value:.7},
        uSunDirection:{value:new THREE.Vector3(-.45,.7,-.2).normalize()},
        uShallow:{value:new THREE.Color('#378b98')},
        uDeep:{value:new THREE.Color('#144b60')},
@@ -7281,11 +7306,12 @@ return Object.freeze({create});
    material.uniforms.uTime.value=Math.max(0,Number.isFinite(stamp)?stamp:0)*.001;
    material.uniforms.uDetail.value=p.detail;
    material.uniforms.uStorm.value=p.storm;
+   if(material.uniforms.uWind)material.uniforms.uWind.value=p.wind;
    material.uniforms.uSunHeight.value=p.daylight;
    const angle=(time-6)*Math.PI/12;
    material.uniforms.uSunDirection.value.set(Math.cos(angle),Math.max(.08,Math.sin(angle)),-.16).normalize();
  }
- return Object.freeze({create,update,parameters,qualityDetail,vertexShader:VS,fragmentShader:FS});
+ return Object.freeze({create,update,parameters,qualityDetail,shorelineZ,foamMask,vertexShader:VS,fragmentShader:FS});
 });
 </script>
 <script>/* River Valley cinematic daylight and atmosphere, real WebGL scene parameters.
@@ -7746,10 +7772,51 @@ function makeGrassGeometry(T){
  ],3));
  g.setIndex([0,1,2,1,3,2,4,5,6,5,7,6]);g.computeVertexNormals();return g;
 }
+function windStrength(quality,weather){
+ const base=normalize(quality)==='lite'?0:normalize(quality)==='cinematic'?.86:.49;
+ // Stormier weather flexes meadow blades, but mist should remain nearly still.
+ return base*(weather==='rain'?1.35:weather==='mist'?.5:1);
+}
+function attachWindSway(material){
+ if(!material)return material;
+ material.userData=material.userData||{};
+ if(material.userData.riverWindAttached)return material;
+ material.userData.riverWindAttached=true;
+ material.userData.uWindTime={value:0};
+ material.userData.uWindStrength={value:0};
+ const original=material.onBeforeCompile;
+ material.onBeforeCompile=function(shader,...args){
+  if(typeof original==='function')original.call(this,shader,...args);
+  shader.uniforms.uWindTime=material.userData.uWindTime;
+  shader.uniforms.uWindStrength=material.userData.uWindStrength;
+  shader.vertexShader=shader.vertexShader
+    .replace('#include <common>','#include <common>\nuniform float uWindTime;\nuniform float uWindStrength;')
+    .replace('#include <begin_vertex>',[
+      '#include <begin_vertex>',
+      'vec2 windOrigin = vec2(0.0);',
+      '#ifdef USE_INSTANCING',
+      'windOrigin = instanceMatrix[3].xz;',
+      '#endif',
+      'float windHeight = max(0.0, transformed.y);',
+      'float windPhase = uWindTime*1.63 + windOrigin.x*0.009 + windOrigin.y*0.013;',
+      'transformed.x += sin(windPhase)*uWindStrength*windHeight*0.13;',
+      'transformed.z += cos(windPhase*0.83)*uWindStrength*windHeight*0.08;'
+    ].join('\n'));
+ };
+ material.needsUpdate=true;
+ return material;
+}
+function animateWind(material,stamp,quality,weather){
+ if(!material?.userData?.riverWindAttached)return false;
+ material.userData.uWindTime.value=Math.max(0,Number.isFinite(stamp)?stamp:0)/1000;
+ material.userData.uWindStrength.value=windStrength(quality,weather);
+ return true;
+}
 function create(T,scene,ground,{limit=2400,stops=[],inRiver=()=>false,mobile=false}={}){
  if(!T||!scene||typeof ground!=='function')throw Error('Three.js scene and terrain sampler required');
  const capacity=budget('cinematic',mobile).grass,geom=makeGrassGeometry(T);
  const material=new T.MeshLambertMaterial({color:0xffffff,side:T.DoubleSide,roughness:1});
+ attachWindSway(material);
  const mesh=new T.InstancedMesh(geom,material,capacity);mesh.count=0;mesh.name='River/budgeted-instanced-meadow';scene.add(mesh);
  const dummy=new T.Object3D(),color=new T.Color();
  let state={x:Infinity,z:Infinity,quality:'',season:'',count:0},rebuilds=0;
@@ -7767,11 +7834,12 @@ function create(T,scene,ground,{limit=2400,stops=[],inRiver=()=>false,mobile=fal
   mesh.count=count;if(count){mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;mesh.computeBoundingSphere();}
   state={x,z,quality,season,count};rebuilds++;return count;
  }
- function snapshot(){return {instances:state.count,capacity,quality:state.quality,rebuilds};}
+ function tick(stamp,quality='full',weather='clear'){return animateWind(material,stamp,quality,weather);}
+ function snapshot(){return {instances:state.count,capacity,quality:state.quality,rebuilds,wind:material.userData.uWindStrength.value};}
  function dispose(){scene.remove(mesh);geom.dispose();material.dispose();}
- return Object.freeze({mesh,update,snapshot,dispose});
+ return Object.freeze({mesh,update,tick,snapshot,dispose});
 }
-return Object.freeze({PRESETS,normalize,budget,hash,grassDescriptors,makeGrassGeometry,create});
+return Object.freeze({PRESETS,normalize,budget,hash,grassDescriptors,makeGrassGeometry,windStrength,attachWindSway,animateWind,create});
 });</script><script>/* Optional offline GLB gzip transport, not a Draco/Meshopt decoder.
  * The existing authored River Explorer is always retained as the raw fallback.
  */
@@ -10396,6 +10464,7 @@ function updateVisuals(dt,stamp){
   sunLight.position.set(-200,Math.max(30,380*light),180);
   renderer.toneMappingExposure=.75+light*.62;
  }
+ if(grassLayer?.tick)grassLayer.tick(stamp,visualEffects,weather);
  avatar.position.set(player.x,height(player.x,player.z)+heroHeightOffset,player.z);
  vehicleState=suspension.update({x:player.x,z:player.z,yaw:playerHeading,groundAt:height,dt:save.mode==='drive'?dt:0});
  car.position.set(player.x,height(player.x,player.z)+vehicleState.bodyHeight,player.z);
@@ -10430,7 +10499,7 @@ function updateVisuals(dt,stamp){
  if(beaconGroup)beaconGroup.children.forEach((g,i)=>{g.rotation.y+=dt*.5;g.position.y=height(g.position.x,g.position.z)+8+Math.sin(stamp/450+i)*2;g.visible=!save.completed.includes(g.userData.id);});
  if(house)house.visible=save.homestead;
  if(waterMesh){if(RIVER_WATER&&waterMesh.material.uniforms)RIVER_WATER.update(waterMesh.material,stamp,weather,time,visualEffects);else waterMesh.material.opacity=.82+Math.sin(stamp/900)*.045;}
- if(facadePalette?.setWeather)facadePalette.setWeather(weather);
+ if(facadePalette?.setWeather)facadePalette.setWeather(weather,roadMesh?.material);
  if(roadMesh?.material){roadMesh.material.color.setHex(weather==='rain'?0x3b464b:0x62686a);
   roadMesh.material.needsUpdate=false;}
  if(worldGame)worldGame.update({stamp,save,activity:worldActive,huntRound:worldHuntRound,fishRound:worldFishRound,aim:worldAim,weather,player,now:Date.now()});
