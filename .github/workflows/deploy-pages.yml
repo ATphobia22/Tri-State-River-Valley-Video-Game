@@ -40,7 +40,7 @@ jobs:
         run: |
           python game/tools/audit_runtime_graph.py
           python -m unittest discover -s game/tests -p test_runtime_graph.py -v
-      - name: Test Pages-root and subpath-capable offline packaging
+      - name: Test Pages-root packaging, offline download and disabled workers
         run: python -m unittest discover -s game/tests -p test_pages_build.py -v
       - name: Package playable game at website root
         run: python game/tools/build_pages.py --output _site
@@ -54,13 +54,15 @@ jobs:
           html=(p/'index.html').read_text()
           assert len(html)>2_000_000
           assert 'window.ValleyReference=' in html
-          assert 'serviceWorker.register(\'./game-sw.js\'' in html
+          assert 'serviceWorker.register(' not in html
+          assert 'serviceWorker.getRegistrations()' in html
+          assert 'registration.unregister()' in (p/'game-sw.js').read_text()
           assert (p/'game.html').read_bytes() == (p/'index.html').read_bytes()
           assert (p/'offline.html').stat().st_size>2_000_000
           manifest=json.loads((p/'game.webmanifest').read_text())
           assert manifest['start_url']=='./'
           assert all(not a['src'].startswith('http') for a in manifest['icons'])
-          print('PASS: playable root, offline bundle, local assets and correct Pages base paths')
+          print('PASS: playable root, standalone offline download, no service worker and local assets')
           PY
       - name: Install Chromium for real WebGL character tests
         run: |
@@ -68,8 +70,8 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Test playable 3D hero on desktop and phone-sized Chromium
         run: python game/tests/browser_hero_smoke.py
-      - name: Prove Pages-root game works offline with county and Scout progress
-        run: python game/tests/offline_pwa_smoke.py --site-dir _site --entry index.html
+      - name: Verify Pages game has no worker and preserves local saves on online reload
+        run: python game/tests/service_worker_disabled_smoke.py --site-dir _site --entry index.html
       - name: Preserve real browser screenshots and pose-inspection evidence
         if: always()
         uses: actions/upload-artifact@v4
