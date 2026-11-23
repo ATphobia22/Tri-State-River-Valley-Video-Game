@@ -1,19 +1,22 @@
-const {test}=require('node:test');
-const assert=require('node:assert/strict');
-const fs=require('node:fs');
-const path=require('node:path');
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..');
-const get=f=>fs.readFileSync(path.join(root,f),'utf8');
-test('offline release uses a v1.12 service-worker cache and generated host tracks that cache',()=>{
- const worker=get('game-sw.js');
- const version=worker.match(/const CACHE='([^']+)'/)[1];
- assert.equal(version,'rva-game-1.13.0');
- assert.match(get('game.html'),new RegExp(version.replaceAll('.','\\.')));
+const get=file=>fs.readFileSync(path.join(root,file),'utf8');
+test('both legacy workers retire and never handle network requests',()=>{
+ for(const name of ['sw.js','game-sw.js']){
+  const source=get(name);
+  assert.match(source,/registration\.unregister\(\)/);
+  assert.match(source,/skipWaiting\(\)/);
+  assert.doesNotMatch(source,/addEventListener\(['"]fetch['"]/);
+  assert.doesNotMatch(source,/caches\.open\(/);
+ }
 });
-test('hosted PWA uses relative URLs compatible with GitHub Pages subpaths',()=>{
- const html=get('game.html');
- const worker=get('game-sw.js');
- assert.match(html,/href="\.\/game\.webmanifest"/);
- assert.match(html,/register\('\.\/game-sw\.js'/);
- assert.match(worker,/new URL\('\.\/',\s*self\.location\.href\)/);
+test('hosted and source games do not install service workers',()=>{
+ for(const html of [get('game.html'),get('index.html')]){
+  assert.doesNotMatch(html,/serviceWorker\.register\(/);
+  assert.match(html,/serviceWorker\.getRegistrations\(\)/);
+ }
+ assert.doesNotMatch(get('build_hosted.py'),/serviceWorker\.register\(/);
+ assert.match(get('game.html'),/href="\.\/game\.webmanifest"/);
 });
