@@ -68,10 +68,13 @@ def validate_bounds(bounds: tuple[float, float, float, float]) -> None:
     target = requested_bounds()
     if not all(math.isfinite(v) for v in bounds):
         raise ValueError("Invalid spatial bounds")
-    if not (w < e and s < n and abs(w - target[0]) < .002 and
-            abs(s - target[1]) < .002 and abs(e - target[2]) < .002 and
-            abs(n - target[3]) < .002):
-        raise ValueError("Export spatial extent moved away from Mount Vernon game domain")
+    # ArcGIS can expand the actual export bounds to preserve pixel aspect ratio.
+    # Trust the TIFF transform, but only if it still covers the full game domain
+    # without moving farther than approximately 2 km beyond our AOI.
+    if not (w < e and s < n and w <= target[0] + 1e-4 and
+            s <= target[1] + 1e-4 and e >= target[2] - 1e-4 and
+            n >= target[3] - 1e-4 and max(abs(a - b) for a, b in zip(bounds, target)) < .02):
+        raise ValueError(f"USGS raster extent is not a complete Mount Vernon AOI cover: actual={bounds}, requested={target}")
 
 
 def encode_samples(values: list[float], width: int, height: int,
