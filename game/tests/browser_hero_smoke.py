@@ -43,6 +43,11 @@ def inspect(page, *, mobile: bool):
     assert state()["georeference"]["leafOn2025"]["coverage"] > 0.98
     assert state()["georeference"]["imageryYear"] == "2025-partial / 2023-fallback"
 
+    assert state()["courthouseFidelity"]["ready"], "Detailed GIS-aligned courthouse is not in playable WebGL scene"
+    assert state()["courthouseFidelity"]["sourceObjectId"] == 741267
+    assert state()["courthouseFidelity"]["roofHeightStatus"] == "DESIGN_ESTIMATE_NOT_LIDAR"
+    assert state()["roofGeometry"]["heightStatus"] == "ARTISTIC_NOT_SURVEYED"
+
     assert state()["heroParts"] >= 10
     assert state()["heroSkinned"] is True, "Rigged GLB did not instantiate: procedural fallback used"
     assert state()["heroBoneCount"] >= 27
