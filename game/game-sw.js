@@ -1,4 +1,4 @@
-/* USGS 3DEP world release (2026-11-23): byte change triggers re-install and refresh of locally cached game HTML.\n * River Valley family game: relative-scope offline cache for the hosted PWA.
+/* 2025 IGIO leaf-on world release (2026-11-23): byte change triggers re-install and refresh of locally cached game HTML.\n * River Valley family game: relative-scope offline cache for the hosted PWA.
    Works at origin root and project subpaths (e.g. /RepoName/game/). */
 const CACHE='rva-game-1.13.0';
 const ROOT=new URL('./',self.location.href);
