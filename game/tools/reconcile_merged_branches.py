@@ -68,6 +68,18 @@ def reconcile(api, apply=False, max_delete=100):
         if pr.get("head", {}).get("repo", {}).get("full_name") == api.repository:
             reserved.add(pr["head"].get("ref"))
         reserved.add(pr.get("base", {}).get("ref"))
+    # A successful squash merge leaves the old branch with unique commit SHAs.
+    # Treat it as merged only when the *exact* branch HEAD is the source HEAD
+    # of a merged PR whose merge commit remains an ancestor of current main.
+    merged_prs = {}
+    for pr in paged(api, "/pulls?state=closed"):
+        head, base = pr.get("head") or {}, pr.get("base") or {}
+        if (pr.get("merged_at") and pr.get("merge_commit_sha")
+                and head.get("repo") and head["repo"].get("full_name") == api.repository
+                and base.get("ref") == "main" and head.get("ref") and head.get("sha")):
+            merged_prs.setdefault(head["ref"], []).append(
+                {"head_sha": head["sha"], "merge_sha": pr["merge_commit_sha"],
+                 "number": pr.get("number")})
     branches = paged(api, "/branches")
     results, deleted = [], 0
     for branch in branches:
@@ -87,6 +99,33 @@ def reconcile(api, apply=False, max_delete=100):
                     row["status"] = "COMPARE_UNAVAILABLE"
                 elif row["ahead_by"] != 0:
                     row["status"] = "UNMERGED_UNIQUE_COMMITS"
+                    # Squash merges change commit ancestry. Confirm both
+                    # the PR HEAD lease and the merge commit's main ancestry.
+                    for pr in merged_prs.get(name, []):
+                        if pr["head_sha"] != row["branch_sha"]:
+                            continue
+                        merge = api.get("/compare/" + quote(pr["merge_sha"], safe="") + "...main")
+                        if (merge.get("behind_by") != 0 or
+                                merge.get("status") not in ("ahead", "identical")):
+                            continue
+                        row["merged_pr"] = pr["number"]
+                        row["merge_commit_sha"] = pr["merge_sha"]
+                        current = api.get("/branches/" + quote(name, safe=""))
+                        if current.get("commit", {}).get("sha") != row["branch_sha"]:
+                            row["status"] = "BRANCH_MOVED"
+                        elif current.get("protected"):
+                            row["status"] = "BECAME_PROTECTED"
+                        elif api.get("/branches/main")["commit"]["sha"] != main_sha:
+                            row["status"] = "MAIN_MOVED"
+                        elif deleted >= max_delete:
+                            row["status"] = "DELETE_LIMIT"
+                        elif not apply:
+                            row["status"] = "SAFE_SQUASH_MERGE_DRY_RUN"
+                        else:
+                            api.delete("/git/refs/heads/" + quote(name, safe="/"))
+                            row["status"] = "DELETED_VERIFIED_SQUASH_MERGE"
+                            deleted += 1
+                        break
                 elif compare.get("base_commit", {}).get("sha") != main_sha:
                     row["status"] = "MAIN_MOVED"
                 else:
@@ -113,6 +152,7 @@ def reconcile(api, apply=False, max_delete=100):
         "inspected": len(results), "deleted": deleted,
         "error_count": sum(r["status"] == "API_ERROR" for r in results),
         "retained_unmerged": sum(r["status"] == "UNMERGED_UNIQUE_COMMITS" for r in results),
+        "verified_squash_merges": sum(r["status"] in ("SAFE_SQUASH_MERGE_DRY_RUN", "DELETED_VERIFIED_SQUASH_MERGE") for r in results),
         "branches": results,
     }
 
