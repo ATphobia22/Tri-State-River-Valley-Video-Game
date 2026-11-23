@@ -26,7 +26,8 @@ class PagesBuildTests(unittest.TestCase):
         html = (self.out / 'index.html').read_text()
         self.assertGreater(len(html), 2_000_000)
         self.assertIn('window.ValleyReference=', html)
-        self.assertIn("serviceWorker.register('./game-sw.js'", html)
+        self.assertNotIn('serviceWorker.register(', html)
+        self.assertIn('serviceWorker.getRegistrations()', html)
         self.assertNotIn('http-equiv="refresh"', html)
         self.assertEqual((self.out / 'game.html').read_bytes(), (self.out / 'index.html').read_bytes())
 
@@ -40,7 +41,7 @@ class PagesBuildTests(unittest.TestCase):
         self.assertIn('scoutHash', review)
         self.assertEqual(review.count('window.ValleyCharacterReview='), 1)
 
-    def test_subpath_pwa_offline_root_and_local_icons(self):
+    def test_subpath_offline_download_and_retired_worker(self):
         self.build()
         m = json.loads((self.out / 'game.webmanifest').read_text())
         self.assertEqual(m['start_url'], './')
@@ -49,9 +50,8 @@ class PagesBuildTests(unittest.TestCase):
         for icon in m['icons']:
             self.assertTrue((self.out / icon['src']).is_file())
         sw = (self.out / 'game-sw.js').read_text()
-        self.assertIn('ROOT_PATH', sw)
-        self.assertIn('INDEX', sw)
-        self.assertIn('GAME_PATHS', sw)
+        self.assertIn('registration.unregister()', sw)
+        self.assertNotIn("addEventListener('fetch'", sw)
         self.assertTrue((self.out / 'offline.html').stat().st_size > 2_000_000)
         self.assertTrue((self.out / '.nojekyll').is_file())
 

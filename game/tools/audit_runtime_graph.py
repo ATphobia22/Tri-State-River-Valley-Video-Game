@@ -42,9 +42,11 @@ def audit(root: Path) -> dict:
     if len(sources) != len(set(sources)):
         errors.append("Duplicate script reference in index.html")
 
-    # This relative, static dependency graph must be available offline in
-    # exactly the same order as during normal HTTPS game loading.
+    # This static dependency inventory is for validation only. The worker
+    # no longer caches files or intercepts network requests.
     cache = service_worker.read_text(encoding="utf-8")
+    if "registration.unregister()" not in cache or "addEventListener('fetch'" in cache:
+        errors.append("Legacy service worker must unregister without fetch interception")
     cached_paths = set(re.findall(r'"(\./(?:src|vendor|data)/[^"]+)"', cache))
     for src in sources:
         rel = Path(src)
@@ -55,7 +57,7 @@ def audit(root: Path) -> dict:
         if not (root / rel).is_file():
             errors.append(f"Missing runtime dependency: {src}")
         if "./" + src not in cached_paths:
-            errors.append(f"Missing offline precache entry: {src}")
+            errors.append(f"Missing source asset inventory entry: {src}")
     if "src/game.js" not in sources:
         errors.append("Missing game runtime entry point")
     elif "src/streaming-policy.js" not in sources or sources.index("src/streaming-policy.js") >= sources.index("src/game.js"):
@@ -78,8 +80,8 @@ def audit(root: Path) -> dict:
                 raise ValueError("Invalid GLB header, version or byte length")
         except (OSError, ValueError) as exc:
             errors.append(f"{p.name}: {exc}")
-    return {"ok": not errors, "errors": errors, "scripts": len(sources), "cached_runtime_paths": len(cached_paths),
-            "models": len(models), "release_gate": "runtime-assets-and-offline-caching"}
+    return {"ok": not errors, "errors": errors, "scripts": len(sources), "asset_inventory_paths": len(cached_paths),
+            "models": len(models), "release_gate": "runtime-assets-and-disabled-worker"}
 
 
 def main() -> int:

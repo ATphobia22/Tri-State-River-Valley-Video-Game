@@ -15,9 +15,10 @@ for tag in soup.find_all('script',src=True):
 for tag in soup.find_all('link'):
     if tag.get('rel') and ('manifest' in tag['rel'] or 'apple-touch-icon' in tag['rel']):
         tag.decompose()
-for script in soup.find_all('script'):
-    if script.string and "navigator.serviceWorker.register('./sw.js')" in str(script.string):
-        script.decompose()
+# The source HTML contains cleanup, not a worker registration.
+# Preserve that cleanup in the self-contained download as well.
+if 'serviceWorker.register(' in str(soup):
+    raise RuntimeError('Service-worker registration is disabled in offline builds')
 html='<!doctype html>\n'+str(soup).replace('<!DOCTYPE html>','')
 target=ROOT/'River_Valley_Family_Adventure_OFFLINE.html'
 target.write_text(html,encoding='utf-8')
