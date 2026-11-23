@@ -12,7 +12,7 @@ test('player preferences use a versioned local-only allowlist and reject bad dat
  assert.equal(UX.load(storage).leftHandedTouch,true);
  assert.equal(UX.load(storage).highContrast,true);
  assert.throws(()=>prefs.set('__proto__',true),/Unknown/);
- storage.set(UX.STORAGE_KEY,'{bad');assert.deepEqual(UX.load(storage),UX.DEFAULTS);
+ store.set(UX.STORAGE_KEY,'{bad');assert.deepEqual(UX.load(storage),UX.DEFAULTS);
  assert.deepEqual(UX.load({getItem(){throw Error('blocked');}}),UX.DEFAULTS);
  assert.equal(UX.store({setItem(){throw Error('quota');}},UX.DEFAULTS),false);
 });
