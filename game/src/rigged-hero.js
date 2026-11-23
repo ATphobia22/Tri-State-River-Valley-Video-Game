@@ -196,7 +196,7 @@ function create(THREE,{seated=false,samplePose,lod='LOD0'}={}){
     for(const use of record.uses){
      // A broken user-supplied ORM or normal image is never silently treated as valid PBR.
      if(use.property==='map'){
-      use.material.map=/\\bskin\\b/.test(use.material.name)?skinTexture(THREE):weaveTexture(THREE,use.material.name);
+      use.material.map=/\bskin\b/.test(use.material.name)?skinTexture(THREE):weaveTexture(THREE,use.material.name);
      }else use.material[use.property]=null;
      use.material.needsUpdate=true;
     }
@@ -222,7 +222,7 @@ function create(THREE,{seated=false,samplePose,lod='LOD0'}={}){
   const material=new THREE.MeshStandardMaterial({name:spec.name,
    color:new THREE.Color().setRGB(c[0],c[1],c[2],THREE.LinearSRGBColorSpace),
    metalness:pbr.metallicFactor??0,roughness:pbr.roughnessFactor??.9,
-   bumpMap,bumpScale:/\\bskin\\b/.test(spec.name)?.006:/\\bboots\\b/.test(spec.name)?.023:.013,
+   bumpMap,bumpScale:/\bskin\b/.test(spec.name)?.006:/\bboots\b/.test(spec.name)?.023:.013,
    transparent:spec.alphaMode==='BLEND',opacity:c[3],
    side:spec.doubleSided?THREE.DoubleSide:THREE.FrontSide,depthWrite:spec.alphaMode!=='BLEND'});
   materials.push(material);
@@ -244,7 +244,7 @@ function create(THREE,{seated=false,samplePose,lod='LOD0'}={}){
   // Headless/offline browser compatibility for Base Color only. Other PBR
   // channels must remain unassigned when an embedded texture fails validation.
   if(slots.some(slot=>slot.property==='map')&&!material.map){
-   material.map=/\\bskin\\b/.test(spec.name)?skinTexture(THREE):weaveTexture(THREE,spec.name);
+   material.map=/\bskin\b/.test(spec.name)?skinTexture(THREE):weaveTexture(THREE,spec.name);
   }
  }
  for(const prim of meshDoc.primitives){
