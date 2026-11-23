@@ -7,7 +7,7 @@ test('courthouse geolocation is traceable to actual 2020 state lidar footprint, 
  const anchor=COURT.anchor(GEO);
  assert.equal(anchor.sourceObjectId,741267);
  assert.equal(anchor.collectionYear,'2020');
- assert.deepEqual(anchor.exterior,source.geometry.coordinates[0][0]);
+ assert.deepEqual(anchor.exterior,source.geometry.coordinates[0]);
  assert.ok(anchor.width>20&&anchor.width<23,'footprint width in metres');
  assert.ok(anchor.depth>30&&anchor.depth<34,'footprint length in metres');
  assert.ok(Math.hypot(anchor.x-16,anchor.z-504)<5,'landmark centroid near courthouse stop');
