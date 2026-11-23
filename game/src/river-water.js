@@ -10,14 +10,19 @@
  'use strict';
  const VS=`
  varying vec3 vWorld;
+ varying float vShoreDistance;
  void main(){
    vec4 world=modelMatrix*vec4(position,1.0);
    vWorld=world.xyz;
+   // Compute bank alignment only per vertex, not per shaded river pixel.
+   float bankZ=1200.0+125.0*sin(world.x / 550.0)+65.0*cos(world.x / 175.0);
+   vShoreDistance=max(0.0,world.z-bankZ);
    gl_Position=projectionMatrix*viewMatrix*world;
  }`;
  const FS=`
  precision highp float;
  varying vec3 vWorld;
+ varying float vShoreDistance;
  uniform float uTime;
  uniform float uDetail;
  uniform float uSunHeight;
@@ -32,18 +37,15 @@
  }
  void main(){
    vec2 p=vWorld.xz;
-   float a=wave(p*.12, .72,1.10,.76);
-   float b=wave(p*.16,-.53,-.75,1.17);
-   float c=wave(p*.43, 1.23,.53,-1.24);
-   float windWave=wave(p*.07,.37+uWind*.21,.92,-.41)*uDetail;
-   // This curve matches buildRiver() and ValleyBiomeStreamer.inRiver().
-   float shoreZ=1200.0+125.0*sin(p.x / 550.0)+65.0*cos(p.x / 175.0);
-   float bankDistance=max(0.0,p.y-shoreZ);
-   float shore=1.0-smoothstep(2.0,26.0,bankDistance);
+   float wind=clamp(uWind,0.0,1.5);
+   float a=wave(p*.12, .72+wind*.14,1.10,.76);
+   float b=wave(p*.16,-.53-wind*.13,-.75,1.17);
+   float c=wave(p*.43, 1.23+wind*.18,.53,-1.24);
+   float shore=1.0-smoothstep(2.0,26.0,vShoreDistance);
    vec3 n=normalize(vec3(
-     (a*.16+b*.13+c*.045*uDetail+windWave*.055*uWind),
+     (a*.16+b*.13+c*.045*uDetail),
      1.0,
-     (b*.16-a*.12+c*.043*uDetail+windWave*.047*uWind)
+     (b*.16-a*.12+c*.043*uDetail)
    ));
    vec3 viewDir=normalize(cameraPosition-vWorld);
    float facing=clamp(abs(dot(viewDir,n)),0.0,1.0);
@@ -51,13 +53,13 @@
    vec3 r=reflect(-viewDir,n);
    float glint=pow(max(dot(r,normalize(uSunDirection)),0.0),96.0);
    float smallGlint=pow(max(dot(r,normalize(uSunDirection)),0.0),280.0);
-   float ripples=.5+.5*(a*.43+b*.34+c*.20*uDetail+windWave*.03);
+   float ripples=.5+.5*(a*.45+b*.35+c*.20*uDetail);
    vec3 base=mix(uDeep,uShallow,clamp(.2+.45*ripples,0.0,1.0));
    vec3 reflected=mix(uSky,vec3(0.91,0.81,0.62),clamp(uSunHeight*.2,0.0,.2));
    vec3 col=mix(base,reflected,clamp(.10+fresnel*.70,0.0,.87));
    col+=vec3(1.0,.78,.45)*glint*(1.6-uStorm*.72)*max(.1,uSunHeight);
    col+=vec3(.82,.92,1.0)*smallGlint*.16*uDetail;
-   float foamWave=.5+.5*sin(p.x*.28+uTime*(1.1+uWind*.23));
+   float foamWave=clamp(.5+.5*(a*.6+b*.4),0.0,1.0);
    float foam=shore*shore*(.3+.5*foamWave)*uDetail*(1.0-uStorm*.34);
    col=mix(col,vec3(.9,.94,.97),clamp(foam*.58,0.0,.4));
    col=mix(col,vec3(.16,.22,.25),uStorm*.25);
