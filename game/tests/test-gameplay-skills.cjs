@@ -59,3 +59,29 @@ test('new minigame, wildlife and controls are actually embedded in offline runti
  assert.ok(read('sw.js').includes('./src/gameplay-skills.js'));
  assert.ok(!html.includes('serviceWorker.register('));
 });
+
+
+const WORLD=require('../src/open-world.js');
+test('in-world activity module initializes without a browser root crash',()=>{
+ assert.equal(WORLD.closestSite(WORLD.SITES.fish),'fish');
+ assert.equal(WORLD.closestSite({x:0,z:0}),null);
+});
+test('animal foraging, flight and targeting expose finite pose signals',()=>{
+ const site={x:0,z:0},stamp=15622,far={x:-9999,z:-9999};
+ const a=S.sampleWildlife(stamp,far,site);
+ for(const [kind,state] of Object.entries(a)){
+  assert.ok(['wander','forage','flee'].includes(state.behavior),kind);
+  for(const key of ['gait','headDip','earFlick','tailSwish','bob'])
+   assert.ok(Number.isFinite(state[key]),kind+' '+key);
+  const near=S.sampleWildlife(stamp,{x:state.x,z:state.z},site)[kind];
+  assert.equal(near.fleeing,true);
+ }
+ const tracked=S.sampleWildlife(stamp,far,site,{kind:'deer',target:.45});
+ assert.equal(tracked.deer.behavior,'tracked');
+ assert.equal(tracked.turkey.visible,false);
+});
+test('physical-looking animal parts, a visible fishing line and terrain-clock crop timing exist in 3D',()=>{
+ const text=fs.readFileSync(__dirname+'/../src/open-world.js','utf8');
+ for(const marker of ['deerHead','turkeyHead','rabbitHead','deerTail','fishingLineGeometry','state.behavior','t-now','mats.hoof','mats.eye'])
+  assert.ok(text.includes(marker),marker);
+});
