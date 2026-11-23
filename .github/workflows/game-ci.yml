@@ -51,7 +51,7 @@ jobs:
           assert all(f['properties']['zone_source']=='INFERRED_GAME_ONLY' for f in features)
           print('PASS: 210 official-shape GAME parcels, conservative safety status and deterministic joins')
           PY
-      - name: Validate gameplay, terrain, models and offline cache
+      - name: Validate gameplay, terrain, models and retired-worker behavior
         run: npm --prefix game test
       - name: Verify game character GLB contract and known BIA repair regression
         run: |
@@ -126,8 +126,8 @@ jobs:
         run: python game/tests/browser_cast_review.py
       - name: Capture controlled 24-condition world rendering matrix on SwiftShader
         run: python game/tests/browser_perf_matrix.py --frames 18 --output /tmp/river-hero-visual-qa/perf-matrix.json
-      - name: Prove fully offline gameplay and save-slot replay in Chromium
-        run: python game/tests/offline_pwa_smoke.py --site-dir game --entry game.html
+      - name: Verify no registered worker and local saves across online browser reload
+        run: python game/tests/service_worker_disabled_smoke.py --site-dir game --entry game.html
       - name: Preserve real browser screenshots and pose-inspection evidence
         if: always()
         uses: actions/upload-artifact@v4
