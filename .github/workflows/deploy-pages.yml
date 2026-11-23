@@ -42,6 +42,10 @@ jobs:
           python -m unittest discover -s game/tests -p test_runtime_graph.py -v
       - name: Test Pages-root and subpath-capable offline packaging
         run: python -m unittest discover -s game/tests -p test_pages_build.py -v
+      - name: Build source-linked Mount Vernon regional zoning scene
+        run: |
+          npm --prefix game/valley-scene ci
+          npm --prefix game/valley-scene run build
       - name: Package playable game at website root
         run: python game/tools/build_pages.py --output _site
       - name: Verify deployed payload before publishing
