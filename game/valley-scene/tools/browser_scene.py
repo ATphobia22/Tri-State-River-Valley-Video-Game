@@ -12,6 +12,14 @@ from package_scene import package
 with tempfile.TemporaryDirectory() as folder, sync_playwright() as pw:
     root = Path(folder)
     package(root)
+    for name in ('river','bill_tucker','scout'):
+        blob = (root/'assets'/(name+'.glb')).read_bytes()
+        length = int.from_bytes(blob[12:16], 'little')
+        header = json.loads(blob[20:20+length])
+        assert 'KHR_draco_mesh_compression' in header['extensionsRequired'], name
+        assert any('normalTexture' in m and
+                   {'baseColorTexture','metallicRoughnessTexture'} <= m['pbrMetallicRoughness'].keys()
+                   for m in header['materials']), name
     handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=root)
     server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()

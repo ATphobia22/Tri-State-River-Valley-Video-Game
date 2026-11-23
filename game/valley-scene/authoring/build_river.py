@@ -88,7 +88,24 @@ material('Boot tread',(.036,.031,.024),.89)
 
 if bill:
     for name, rgb in [('Skin',(.48,.27,.17)),('Olive cotton',(.12,.16,.085)),('Indigo denim',(.07,.14,.21)),('Brown leather',(.09,.047,.026)),('Cap canvas',(.24,.23,.14))]:
-        material(name,rgb,.83)
+        fabric=material(name,rgb,.83)
+        graph=fabric.node_tree
+        bs=graph.nodes.get('Principled BSDF')
+        w=h=128
+        y,x=np.mgrid[:h,:w]
+        weave=np.sin(2*pi*x/4)*np.cos(2*pi*y/4)
+        grain=.014*np.sin(2*pi*(x+2*y)/17)
+        relief=.012*weave if name!='Skin' else .002*weave
+        color=np.array(rgb)[None,None,:]*(1+.085*weave[:,:,None]+grain[:,:,None])
+        tint=bitmap(name+' colour',color)
+        graph.links.new(tint.outputs[0],bs.inputs['Base Color'])
+        dy,dx=np.gradient(relief)
+        normal=bitmap(name+' surface normal',np.stack([.5-dx,.5-dy,np.ones_like(dx)],axis=2))
+        node=graph.nodes.new('ShaderNodeNormalMap')
+        graph.links.new(normal.outputs[0],node.inputs['Color']);graph.links.new(node.outputs[0],bs.inputs['Normal'])
+        packed=bitmap(name+' packed material',np.stack([np.ones_like(x),(.68 if name=='Brown leather' else .80)+.055*weave,np.zeros_like(x)],axis=2))
+        split=graph.nodes.new('ShaderNodeSeparateColor');graph.links.new(packed.outputs[0],split.inputs[0])
+        graph.links.new(split.outputs['Green'],bs.inputs['Roughness']);graph.links.new(split.outputs['Blue'],bs.inputs['Metallic'])
 verts=[];faces=[];uvs=[];weights=[];surface=[]
 def uv(v,panel):
     x,d,z=v;py=165-z/unit
@@ -170,7 +187,12 @@ for sign,side in [(-1,'Left'),(1,'Right')]:
     limb([(14.7,162,318.7,6.6,11.3,foot),(14.9,163.6,318.6,6.75,11.45,foot),(14.9,164.6,318.5,6.55,11.2,foot)],5)
     # Gusseted thigh pockets and weight-bearing shoulder straps.
     limb([(11.8,103.5,319.3,2.1,4.5,thigh),(12.5,106,319.3,2.5,5.2,thigh),(12.75,112.0,319.4,2.75,4.85,thigh),(12.7,115,319.4,2.2,4.1,thigh)])
-    if bill: continue
+    if bill:
+        ellipsoid(175.5+sign*2.9,64.7,323.6,2.8,1.4,.65,'Chest',7)
+        if sign==1:
+            loft([(181.1,70,325.1,2.4,.51,'Chest'),(181.1,74.8,325.8,2.13,.50,'Chest'),(181.1,75.7,325.8,.5,.40,'Chest')],7)
+            for y in (66,69,72):ellipsoid(175.5,y,325.95,.43,.47,.48,'Chest',9)
+        continue
     limb([(6.9,64.1,318.9,1.5,2.8,'Chest'),(7.7,66.2,322.5,1.55,2.7,'Chest'),(8.6,70.1,324.2,1.38,1.55,'Chest'),(9.1,74.4,324.5,1.25,1.18,'Chest'),(9.7,79.0,323.7,1.06,1.0,'Chest'),(10.4,83.6,322.1,1.1,1.0,'Chest')])
     # Narrow lenses plus a separate dark frame and temple.
     ellipsoid(175.5+sign*2.92,51.75,324.05,2.87,1.43,.70,'Head',1)

@@ -61,6 +61,7 @@ def build(game_root: Path, destination: Path) -> None:
     if old not in sw:
         raise ValueError("Service-worker precache contract changed")
     sw = sw.replace(old, new)
+    sw = "// Includes the regional scene link in the county atlas.\n" + sw
     (destination / "game-sw.js").write_text(sw, encoding="utf-8")
 
     # The hosted-site manifest formerly referenced images on a different host.

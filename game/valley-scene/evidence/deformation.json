@@ -96,92 +96,92 @@
     "Wave": {
       "samples": 17,
       "peak_displacement": 7.748991012573242,
-      "edge_ratio_p01": 0.8875560164451599,
-      "edge_ratio_p99": 1.1064488887786865,
+      "edge_ratio_p01": 0.9148688912391663,
+      "edge_ratio_p99": 1.0577069520950317,
       "max_edge_ratio": 1.905212163925171
     },
     "Walk": {
       "samples": 17,
       "peak_displacement": 2.727783441543579,
-      "edge_ratio_p01": 0.9137719869613647,
-      "edge_ratio_p99": 1.0865604877471924,
+      "edge_ratio_p01": 0.9349334239959717,
+      "edge_ratio_p99": 1.0565521717071533,
       "max_edge_ratio": 1.4920164346694946
     },
     "Track": {
       "samples": 17,
       "peak_displacement": 7.909029483795166,
-      "edge_ratio_p01": 0.8070999979972839,
-      "edge_ratio_p99": 1.1516958475112915,
+      "edge_ratio_p01": 0.840528666973114,
+      "edge_ratio_p99": 1.1222485303878784,
       "max_edge_ratio": 1.7985299825668335
     },
     "Sprint": {
       "samples": 17,
       "peak_displacement": 6.824835300445557,
-      "edge_ratio_p01": 0.8788099884986877,
-      "edge_ratio_p99": 1.1248072385787964,
+      "edge_ratio_p01": 0.9087972044944763,
+      "edge_ratio_p99": 1.0924708843231201,
       "max_edge_ratio": 1.6322383880615234
     },
     "Run": {
       "samples": 17,
       "peak_displacement": 4.977933406829834,
-      "edge_ratio_p01": 0.8962740302085876,
-      "edge_ratio_p99": 1.11015784740448,
+      "edge_ratio_p01": 0.9190801382064819,
+      "edge_ratio_p99": 1.0779800415039062,
       "max_edge_ratio": 1.5850472450256348
     },
     "Land": {
       "samples": 17,
       "peak_displacement": 2.3385000228881836,
-      "edge_ratio_p01": 0.8866726756095886,
-      "edge_ratio_p99": 1.1043320894241333,
+      "edge_ratio_p01": 0.9200344681739807,
+      "edge_ratio_p99": 1.0642844438552856,
       "max_edge_ratio": 1.5088732242584229
     },
     "Jump": {
       "samples": 17,
       "peak_displacement": 2.5586233139038086,
-      "edge_ratio_p01": 0.8481675386428833,
-      "edge_ratio_p99": 1.1362967491149902,
+      "edge_ratio_p01": 0.8920697569847107,
+      "edge_ratio_p99": 1.0966389179229736,
       "max_edge_ratio": 1.5349798202514648
     },
     "Interact": {
       "samples": 17,
       "peak_displacement": 5.453903675079346,
-      "edge_ratio_p01": 0.9412204623222351,
-      "edge_ratio_p99": 1.0439503192901611,
+      "edge_ratio_p01": 0.9611701369285583,
+      "edge_ratio_p99": 1.006264328956604,
       "max_edge_ratio": 1.5744566917419434
     },
     "Idle": {
       "samples": 17,
       "peak_displacement": 0.7834233641624451,
-      "edge_ratio_p01": 0.9503771066665649,
-      "edge_ratio_p99": 1.0333706140518188,
+      "edge_ratio_p01": 0.9729243516921997,
+      "edge_ratio_p99": 1.0067243576049805,
       "max_edge_ratio": 1.261551856994629
     },
     "FishingCast": {
       "samples": 17,
       "peak_displacement": 7.047224044799805,
-      "edge_ratio_p01": 0.8904699087142944,
-      "edge_ratio_p99": 1.113231897354126,
+      "edge_ratio_p01": 0.9348686337471008,
+      "edge_ratio_p99": 1.042515754699707,
       "max_edge_ratio": 1.5580710172653198
     },
     "Farm": {
       "samples": 17,
       "peak_displacement": 5.4498748779296875,
-      "edge_ratio_p01": 0.8863272666931152,
-      "edge_ratio_p99": 1.11630380153656,
+      "edge_ratio_p01": 0.9190372824668884,
+      "edge_ratio_p99": 1.08022141456604,
       "max_edge_ratio": 1.6593430042266846
     },
     "Drive": {
       "samples": 17,
       "peak_displacement": 7.8303728103637695,
-      "edge_ratio_p01": 0.7975308299064636,
-      "edge_ratio_p99": 1.189407467842102,
+      "edge_ratio_p01": 0.853101909160614,
+      "edge_ratio_p99": 1.1368520259857178,
       "max_edge_ratio": 1.581131935119629
     },
     "Cook": {
       "samples": 17,
       "peak_displacement": 5.334836483001709,
-      "edge_ratio_p01": 0.9178683161735535,
-      "edge_ratio_p99": 1.0747795104980469,
+      "edge_ratio_p01": 0.9416371583938599,
+      "edge_ratio_p99": 1.0489622354507446,
       "max_edge_ratio": 1.6047155857086182
     }
   },
