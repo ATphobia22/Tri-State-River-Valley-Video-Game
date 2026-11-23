@@ -48,6 +48,26 @@ with tempfile.TemporaryDirectory() as folder, sync_playwright() as pw:
         page.locator('#land').click()
         page.wait_for_function("document.querySelector('#land').getAttribute('aria-pressed')==='true'")
         page.screenshot(path=str(output/'town-parcels.png'))
+        # Test actual 210-vector parcel layer, not only raster parcel texture.
+        expected = json.loads((root/'assets/mount_vernon_zoned.geojson').read_text())
+        assert len(expected['features']) == 210
+        parcel_id = expected['features'][0]['id']
+        page.locator('#zones').click()
+        page.wait_for_function("ValleyScene.diagnostics().zoning?.total===210")
+        assert page.locator('#zonePanel').is_visible()
+        page.evaluate("(id)=>ValleyScene.zoning.paint(id,'R3')", parcel_id)
+        assert page.evaluate("(id)=>ValleyScene.zoning.get(id).zone", parcel_id) == 'R3'
+        prior = page.evaluate("ValleyScene.zoning.snapshot()")
+        # Unknown utilities/flood evidence must be expressly overridden for
+        # a purely fictional scenario, never by default.
+        page.locator('#zoneScenario').check()
+        for _ in range(4):
+            page.locator('#zoneAdvance').click()
+        current = page.evaluate("ValleyScene.zoning.snapshot()")
+        assert current['week'] == prior['week'] + 4 and current['scenarioMode']
+        assert current['total'] == 210
+        page.screenshot(path=str(output/('zoning-offline.png' if offline else 'zoning-downtown.png')))
+        page.locator('#zones').click()
         page.select_option('#place','county')
         page.wait_for_function("ValleyScene.diagnostics().rebases>0 && ValleyScene.diagnostics().fineTiles===0",timeout=30000)
         page.screenshot(path=str(output/'county.png'))
