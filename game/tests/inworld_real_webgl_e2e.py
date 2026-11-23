@@ -64,7 +64,7 @@ with sync_playwright() as p:
     return {initial,growing,corn,game,fish,meals,mode,isModal,persisted,stored:JSON.stringify(window.__gameStore)};
   }""")
   checks.update({'reward_coins':r['initial']>0,'farm_in_world':r['growing'],'corn_harvested':r['corn']==1,'hunt_success':r['game']==1,'fish_success':r['fish']==1,'cook_success':r['meals']==1,'drive_mode':r['mode']=='drive','no_legacy_modal':not r['isModal'],'local_save':r['persisted']})
-  page.screenshot(path=str(root/'docs/v17-inworld-browser-verified.png'),animations='disabled',timeout=12000)
+  page.screenshot(path=str(root/'docs/v17-inworld-browser-verified.png'),animations='disabled',timeout=45000)
   restored=BeautifulSoup(html,'html.parser');init=restored.new_tag('script');init.string='Object.assign(window.__gameStore,'+r['stored']+');';restored.head.insert(1,init)
   page.set_content(str(restored),wait_until='domcontentloaded',timeout=90000)
   page.wait_for_function("() => !!window.RiverValleyDebug?.getState()?.heroModel",timeout=90000)
