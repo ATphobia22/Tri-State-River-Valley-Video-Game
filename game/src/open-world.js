@@ -4,6 +4,7 @@
  */
 (function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.ValleyOpenWorld=api;})(typeof globalThis==='object'?globalThis:this,function(root){'use strict';
 const SKILLS=root.ValleyGameplaySkills||(typeof require==='function'?require('./gameplay-skills.js'):null);
+const CREATURES=root.ValleyCreatures||(typeof require==='function'?require('./creatures.js'):null);
 const SITES=Object.freeze({
  hunt:{x:1260,z:-900,title:'Wildflower Wildlife Trail',label:'🦌 Woodland Hunt',kind:'trail'},
  fish:{x:130,z:1150,title:'Ohio River Fishing Pier',label:'🎣 River Fishing',kind:'river'},
@@ -38,7 +39,7 @@ function alignStaticSite(group,site,ground,excluded=new Set()){
  }
  return Object.freeze({aligned,skipped,siteX:site.x,siteZ:site.z,source:'GAME_LOCAL_TERRAIN_NOT_SURVEYED'});
 }
-function sceneWorld(T,scene,ground){
+function sceneWorld(T,scene,ground,options={}){
  const root=new T.Group();root.name='River Valley in-world activities';scene.add(root);
  const texture=(base,kind)=>{
   if(typeof document==='undefined')return null;
@@ -111,6 +112,18 @@ function sceneWorld(T,scene,ground){
  ball(rabbitHead,mats.cream,0,-.55,-1.52,.62);
  ball(rabbit,mats.cream,0,2,3.8,.89);
  const wildlife={deer,turkey,rabbit};
+ // Keep legacy interactive groups as the terrain/physics anchors, but show the
+ // upgraded detailed models on desktop. Only one visual per species is visible.
+ const creatureVisuals={};
+ if(CREATURES&&options.enhancedCreatures){
+  for(const [kind,holder] of Object.entries(wildlife)){
+   try{
+    const model=CREATURES.create(T,kind);
+    for(const child of holder.children)child.visible=false;
+    holder.add(model);creatureVisuals[kind]=model;
+   }catch(error){console.warn('Could not use enhanced creature:',kind,error);}
+  }
+ }
  // Reuse the same meshes and animation tracks at all frame rates.
  for(const animal of Object.values(wildlife))
   animal.traverse(obj=>{if(obj.isMesh){obj.castShadow=true;obj.receiveShadow=true;}});
@@ -181,7 +194,7 @@ function sceneWorld(T,scene,ground){
   farm:alignStaticSite(groups.farm,SITES.farm,ground,new Set(patches)),
   cook:alignStaticSite(groups.cook,SITES.cook,ground,new Set(smoke))
  };
- const world={root,groups,deer,wildlife,fishModel,aimRing,float,line,ripple,patches,crops,flames,smoke,food,campLight,counts:{activitySites:4,animalModels:3,fieldPlots:9,animatedSmokePuffs:8,barnModels:1,grainSilos:1,terrainAlignment},
+ const world={root,groups,deer,wildlife,creatureVisuals,fishModel,aimRing,float,line,ripple,patches,crops,flames,smoke,food,campLight,counts:{activitySites:4,animalModels:3,fieldPlots:9,animatedSmokePuffs:8,barnModels:1,grainSilos:1,terrainAlignment},
   update({stamp=0,save,activity,huntRound,fishRound,aim=.5,weather='clear',player=null,now=Date.now()}){
    const tick=stamp*.001;
    // Local animation is deterministic and tied to game clock, not browser FPS.
@@ -192,6 +205,11 @@ function sceneWorld(T,scene,ground){
     animal.position.set(state.x,ground(SITES.hunt.x+state.x,SITES.hunt.z+state.z)-ground(SITES.hunt.x,SITES.hunt.z)+state.height+state.bob,state.z);
     animal.rotation.y=state.rotationY;
     animal.userData.state=state.behavior;
+    const detailed=creatureVisuals[kind];
+    if(detailed?.userData?.animate)detailed.userData.animate(1/60,{
+     phase:stamp*.005+(kind==='rabbit'?2:kind==='turkey'?1:0),
+     moving:state.behavior!=='forage',action:state.behavior,headDip:state.headDip
+    });
     const head=animalHeads[kind];
     if(head){head.rotation.x=state.headDip;head.rotation.z=state.earFlick*.28;}
    }
@@ -219,7 +237,7 @@ function sceneWorld(T,scene,ground){
    campLight.intensity=weather==='rain'?.3:.65+Math.sin(tick*11)*.1;
    food.visible=save.inventory.meals>0||activity==='cook';food.rotation.y=tick*.12;
   },
-  dispose(){scene.remove(root);root.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();/* shared materials disposed below */}});fishingLineGeometry.dispose();fishingLineMaterial.dispose();float.material.dispose();Object.values(mats).forEach(m=>{m.map?.dispose();m.dispose();});}
+  dispose(){scene.remove(root);for(const model of Object.values(creatureVisuals))CREATURES?.dispose(model);root.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();/* shared materials disposed below */}});fishingLineGeometry.dispose();fishingLineMaterial.dispose();float.material.dispose();Object.values(mats).forEach(m=>{m.map?.dispose();m.dispose();});}
  };
  return world;
 }
