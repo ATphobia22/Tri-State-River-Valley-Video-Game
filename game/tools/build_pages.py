@@ -25,6 +25,10 @@ def build(game_root: Path, destination: Path) -> None:
     if "serviceWorker.register('./game-sw.js'" not in html:
         raise ValueError("Hosted game lacks its relative-scope offline registration")
 
+    atlas_anchor = '<div class="countyList" id="countyRegionList"'
+    if atlas_anchor not in html:
+        raise ValueError("County atlas entry is missing")
+    html = html.replace(atlas_anchor, '<p><a style="color:inherit" href="./valley-scene/">Explore Mount Vernon in 3D with River, Bill and Scout</a></p>' + atlas_anchor, 1)
     destination.mkdir(parents=True, exist_ok=True)
     for name in ("index.html", "game.html"):
         (destination / name).write_text(html, encoding="utf-8")
@@ -35,6 +39,9 @@ def build(game_root: Path, destination: Path) -> None:
     import sys
     subprocess.run([sys.executable, str(game_root / "tools" / "build_character_review.py"),
                     str(destination / "character-review.html")], check=True)
+
+    subprocess.run([sys.executable, str(game_root / "valley-scene/tools/package_scene.py"),
+                    str(destination / "valley-scene")], check=True)
 
     # Keep the service worker confined to this GitHub Pages project subpath,
     # while ensuring both /repo/ and /repo/index.html are usable offline.
@@ -54,6 +61,7 @@ def build(game_root: Path, destination: Path) -> None:
     if old not in sw:
         raise ValueError("Service-worker precache contract changed")
     sw = sw.replace(old, new)
+    sw = "// Includes the regional scene link in the county atlas.\n" + sw
     (destination / "game-sw.js").write_text(sw, encoding="utf-8")
 
     # The hosted-site manifest formerly referenced images on a different host.

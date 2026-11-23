@@ -6,6 +6,8 @@
 
 [**Play on GitHub Pages**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Direct game page](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/game.html) · [Download single-file offline game](game/River_Valley_Family_Adventure_OFFLINE.html) · [Game technical guide](game/README.md)
 
+[Explore Mount Vernon and Posey County with River, Bill and Scout](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/valley-scene/) · [Download the regional scene](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/valley-scene/valley-offline.html) · [Source and render evidence](game/valley-scene/)
+
 > **Project boundary:** This is the **standalone video game**, not Tri-State Systems Manager's scientific, municipal, or flood-engineering digital twin. The terrain and additional town scenes are artistic game environments, not certified spatial or hydraulic models.
 
 ## What you can play
