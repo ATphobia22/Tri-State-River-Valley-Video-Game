@@ -69,7 +69,7 @@ def bbox_to_wgs84(ex):
     if not isinstance(ex,dict):raise ValueError("Missing source ImageServer extent")
     sr=ex.get("spatialReference") or {}
     wkid=sr.get("latestWkid") or sr.get("wkid")
-    if wkid not in (4326,3857,102100,2966,26916):
+    if wkid not in (4326,3857,102100,2965,2966,26916):
         raise ValueError(f"Unsupported source CRS {wkid}")
     w,s,e,n=(float(ex[k]) for k in ("xmin","ymin","xmax","ymax"))
     if wkid==4326:return (w,s,e,n)
