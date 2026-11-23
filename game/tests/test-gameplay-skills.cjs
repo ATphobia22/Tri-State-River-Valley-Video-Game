@@ -85,3 +85,18 @@ test('physical-looking animal parts, a visible fishing line and terrain-clock cr
  for(const marker of ['deerHead','turkeyHead','rabbitHead','deerTail','fishingLineGeometry','state.behavior','t-now','mats.hoof','mats.eye'])
   assert.ok(text.includes(marker),marker);
 });
+
+
+test('terrain alignment is measured once and excludes dynamic models',()=>{
+ const staticProp={position:{x:4,y:1,z:7}};
+ const animal={position:{x:4,y:2,z:7}};
+ const props={children:[staticProp,animal]};
+ const slope=(x,z)=>12+x*.1+z*.3;
+ const a=WORLD.alignStaticSite(props,{x:100,z:200},slope,new Set([animal]));
+ assert.equal(a.aligned,1);
+ assert.equal(a.skipped,1);
+ assert.ok(Math.abs(staticProp.position.y-(1+4*.1+7*.3))<1e-8);
+ assert.equal(animal.position.y,2);
+ assert.equal(a.source,'GAME_LOCAL_TERRAIN_NOT_SURVEYED');
+ assert.throws(()=>WORLD.alignStaticSite(props,{x:100,z:200},()=>NaN),/terrain source/);
+});
