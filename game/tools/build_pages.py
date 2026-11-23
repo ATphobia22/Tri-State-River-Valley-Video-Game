@@ -30,6 +30,12 @@ def build(game_root: Path, destination: Path) -> None:
         (destination / name).write_text(html, encoding="utf-8")
     shutil.copyfile(offline, destination / "offline.html")
 
+    # Candidate art is an explicitly opt-in page, never the default game.
+    import subprocess
+    import sys
+    subprocess.run([sys.executable, str(game_root / "tools" / "build_character_review.py"),
+                    str(destination / "character-review.html")], check=True)
+
     # Keep the service worker confined to this GitHub Pages project subpath,
     # while ensuring both /repo/ and /repo/index.html are usable offline.
     sw = (game_root / "game-sw.js").read_text(encoding="utf-8")
