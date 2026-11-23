@@ -10,6 +10,7 @@ This `game/` directory contains the **playable family adventure**. It is separat
 
 | System | Implemented behavior |
 | --- | --- |
+| Family + Friends | Ten photo-reference collectibles, eight reversible animated wardrobe prototypes with clothing/hat/facial-hair variations; two group sets reference-only, including memorial inscription |
 | River Explorer | Skinned 27-joint GLB with ten individually articulated fingers, 13 original animation clips, foot-contact corrections, tool grips, cinematic Character Studio and photo capture |
 | Walking and driving | Camera-relative movement, acceleration, jump, collision against extruded building-footprint polygons, terrain-aware follow camera and visually damped four-point vehicle suspension |
 | Posey County Atlas | Indiana GIO county outline (FIPS 18129) and Census centers for five towns; selection and local save progression; four **illustrative**, playable regional 3D destinations |

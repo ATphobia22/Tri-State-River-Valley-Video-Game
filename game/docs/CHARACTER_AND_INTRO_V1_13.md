@@ -15,3 +15,13 @@ Source hero: 3,672 vertices / 7,112 triangles; Scout: 484 / 900; equipment: 822 
 
 ## Release gates
 Run game build, Node/Python tests, full headed desktop/mobile Chromium, 24-condition SwiftShader matrix, offline replay, Pages build/deployment and independently verify public release marker. Passing software-WebGL CI is not proof of native iPhone FPS or a faithful photorealistic match.
+
+## Point Township Family + Friends characters
+
+Eight source-labeled figures (01 Pete Yeida, 02 Larry Goldman, 03 Richard Stratton, 04 Marcus Stevens, 05 Roy Tenney, 06 Bill Tucker, 07 Wally Wallace, 08 Allen Tucker) plus two **gallery-only** family collector sets are represented by user-supplied visual reference photos. The Yeida Family image includes commemorative "In memory of Tony" and "In memory of Jerry" text; no role or personal history is inferred beyond the packaging.
+
+The game bundles a compact 17.7 KB JPEG sprite of all ten supplied photo references inside \`src/family-cast.js\`, so the **Family + Friends** gallery works in the standalone HTML without third-party image hosting. Imported higher-resolution photos are optional and stored only in the device's IndexedDB. No portraits are automatically uploaded.
+
+Individual figures can select **stylized wardrobe prototypes** built on the original 27-joint, 13-clip playable rig. These change garments, colors, simple cap/beanie shapes, facial-hair geometry and procedurally generated fabric surfaces for driving/exploration and the studio. These are *not* scans of the real individuals, Blender-ready detailed remeshes, or claimed faithful visual likenesses; head geometry and other proportions are still shared. Neither family collector set is made into a playable character. The uploaded source photo JPEGs contain no rigging information.
+
+Automated Node tests validate roster labels, unique photo sprite positions, offline JPEG bundling, reversible prototype attachment to a bone, and invalid photo rejection. Headed desktop and mobile-viewport Chromium must independently prove eight selectable options, actual skinned gameplay avatar changes, 27 bones, and restoration to River Explorer. Real-device iPhone visual comparison remains outstanding.
