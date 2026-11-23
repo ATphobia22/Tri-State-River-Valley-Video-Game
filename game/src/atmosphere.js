@@ -12,7 +12,9 @@ function create(THREE,scene,terrainHeight,limit,seed=74378){
    float sun=pow(max(dot(d,normalize(uSunDir)),0.),1900.);
    base+=uSunColor*sun*.78;
    float star=step(.9985,fract(sin(dot(floor(d*1200.),vec3(13.133,78.233,37.719)))*43758.5453))*smoothstep(.35,.8,d.y)*uNight;
-   base+=vec3(star*.48);gl_FragColor=vec4(base,1.);}`});
+   base+=vec3(star*.48);gl_FragColor=vec4(base,1.);
+   #include <tonemapping_fragment>
+   #include <colorspace_fragment>}`});
  const sky=new THREE.Mesh(new THREE.SphereGeometry(6000,32,20),skyMat);sky.frustumCulled=false;sky.renderOrder=-999;scene.add(sky);
  const flowerPositions=[];
  for(let k=0;k<1800;k++){
