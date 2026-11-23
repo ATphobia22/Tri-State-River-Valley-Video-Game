@@ -62,5 +62,5 @@ test('optional Scout upgrade does not supersede a user-provided verified GLB',()
  const source=fs.readFileSync(path.join(__dirname,'../src/game.js'),'utf8');
  assert.ok(source.includes('dog.userData.cinematicScout'));
  assert.ok(source.includes('!dog.userData.customScout'));
- assert.ok(source.includes('visual.userData.animate'));
+ assert.ok(source.includes('enhanced.userData.animate'));
 });
