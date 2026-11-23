@@ -42,14 +42,45 @@ def parse_map(data):
                        "layerType":layer.get("layerType"),"itemId":layer.get("itemId")})
     return result
 
+def walk_map_layers(data):
+    obj=json.loads(data)
+    def walk(layers, path=""):
+        out=[]
+        for layer in layers:
+            name=layer.get("title") or layer.get("id") or "unnamed"
+            url=layer.get("url")
+            out.append({"path":path+"/"+name,"url":url,"layerType":layer.get("layerType")})
+            out.extend(walk(layer.get("layers") or [],path+"/"+name))
+        return out
+    return walk(obj.get("operationalLayers") or [])
+
+def list_prefix(prefix):
+    query=urllib.parse.urlencode({"list-type":"2","prefix":prefix,"max-keys":"40","delimiter":"/"})
+    return parse_s3(get(S3+"?"+query))
+
 def discover():
     result={"officialRegistry":"https://registry.opendata.aws/in-imageryleafon/",
             "bucket":"s3://gisimageryleafoningov", "webmap":WEBMAP,
-            "s3":None,"webmapLayers":None,"failures":[]}
+            "s3":None,"webmapLayers":None,"deepLayers":None,"subtrees":{},"failures":[]}
     url=S3+"?"+urllib.parse.urlencode({"list-type":"2","max-keys":"100","delimiter":"/"})
     try:result["s3"]=parse_s3(get(url))
     except Exception as e:result["failures"].append("S3 LIST: "+str(e))
-    try:result["webmapLayers"]=parse_map(get(WEBMAP))
+    if result["s3"]:
+        roots=result["s3"]["prefixes"]
+        for root in roots:
+            try:
+                level1=list_prefix(root)
+                result["subtrees"][root]=level1
+                # Just the first three branches under optimized, raw and compressed imagery.
+                if root in ("imageryoptimized/","imageryraw/","imagerymrsid/"):
+                    for prefix in level1["prefixes"][:6]:
+                        result["subtrees"][prefix]=list_prefix(prefix)
+            except Exception as e:
+                result["failures"].append(f"Subtree {root}: {e}")
+    try:
+        raw=get(WEBMAP)
+        result["webmapLayers"]=parse_map(raw)
+        result["deepLayers"]=walk_map_layers(raw)
     except Exception as e:result["failures"].append("ArcGIS map: "+str(e))
     return result
 
