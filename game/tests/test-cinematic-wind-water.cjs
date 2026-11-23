@@ -67,3 +67,23 @@ test('GPU effect updates do not require rescaterring terrain instances',()=>{
  assert.equal(material.userData.uWindStrength.value,0);
  assert.ok(first>0);
 });
+
+test('real road material clone becomes rain-wet and dries without new maps',()=>{
+ const polish=require('../src/visual-polish.js');
+ class Material{
+  constructor(config){Object.assign(this,config);}
+  dispose(){}
+ }
+ const THREE={MeshStandardMaterial:Material,MeshLambertMaterial:Material,DoubleSide:2};
+ const palette=polish.make(THREE);
+ const actualRoad={roughness:palette.road.roughness,metalness:palette.road.metalness};
+ palette.setWeather('rain',actualRoad);
+ assert.equal(actualRoad.roughness,.42);
+ assert.equal(actualRoad.metalness,.06);
+ palette.setWeather('clear',actualRoad);
+ assert.equal(actualRoad.roughness,.94);
+ assert.equal(actualRoad.metalness,.02);
+ const game=read('src/game.js');
+ assert.ok(game.includes('facadePalette.setWeather(weather,roadMesh?.material)'));
+ palette.dispose();
+});
