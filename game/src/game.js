@@ -22,8 +22,9 @@ let atmosphere=null,gameModels=[],terrainMeshes=[],terrainIndex=null,terrainAt={
 let roofInstances=null,tourCurve=null;
 let activeTerrainSegments=16,terrainDetail='auto',visualEffects='full';
 let time=15.5,weather='clear',season='summer',keys=new Set(),pointerDown=false,pointerX=0,pointerY=0,cameraYaw=.2,cameraDist=74,mapZoom=1;
-let demArray,grid=DATA.grid,staticMap=null,needsMap=true,lastUI=0,lastFrame=0,lastPersist=0;
-let referenceEnabled=false,referenceImage=null,referenceDrape=null;
+const TERRAIN_CHOICE=window.ValleyTerrainSource?.chooseGrid(window.ValleySourceTerrain,DATA.grid)||{grid:DATA.grid,kind:'illustrative',label:'Illustrative game elevations'};
+let demArray,grid=TERRAIN_CHOICE.grid,staticMap=null,needsMap=true,lastUI=0,lastFrame=0,lastPersist=0;
+let referenceEnabled=Boolean(REF?.imageDataUrl&&GEOREF),referenceImage=null,referenceDrape=null;
 const activeRoads=REF&&Array.isArray(REF.roadsPacked)&&REF.roadsPacked.length>400?REF.roadsPacked:DATA.roads;
 const activeBuildings=REF&&Array.isArray(REF.buildingsPacked)&&REF.buildingsPacked.length>1000?REF.buildingsPacked:DATA.buildings;
 const STREAM=window.ValleyStreamingPolicy;
@@ -294,11 +295,12 @@ function updateReferenceDrape(){
 }
 function setupReferenceImage(){
  const status=$('referenceStatus');
+ const toggle=$('referenceOverlay');if(toggle)toggle.checked=referenceEnabled;
  if(!REF||!REF.imageDataUrl||!GEOREF){if(status)status.textContent='Official map reference not bundled; illustration and original map remain playable.';return;}
  const img=new Image();img.onload=()=>{referenceImage=img;needsMap=true;if(referenceEnabled)updateReferenceDrape();};
  img.onerror=()=>{if(status)status.textContent='Overhead reference image could not be decoded; game remains playable.';};
  img.src=REF.imageDataUrl;
- if(status){const year=REF.metadata&&REF.metadata.downtownTileYear||'unverified';status.textContent='IGIO overhead: '+year+' at downtown · '+REF.metadata.roads+' road segments · '+REF.metadata.buildings+' building polygons · roof heights illustrative.';}
+ if(status){const year=REF.metadata&&REF.metadata.downtownTileYear||'unverified';status.textContent='IGIO overhead: '+year+' downtown · '+REF.metadata.roads+' streets · '+REF.metadata.buildings+' footprints · '+TERRAIN_CHOICE.label+' · roof heights illustrative.';}
 }
 function buildRiver(){
  const shape=[];const n=100;

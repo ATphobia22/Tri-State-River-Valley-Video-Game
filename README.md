@@ -44,6 +44,8 @@
 
 ## Geographic truth versus game art
 
+**Mount Vernon elevation upgrade:** The offline HTML now embeds a 256 × 256 source-derived USGS 3DEP bare-earth elevation snapshot, with a dated source SHA-256 receipt and fail-safe illustrative fallback. Road/building ground placement and player movement use the shared terrain sampler; the original IGIO downtown aerial (identified as **2023**) is shown by default. This is more geographically grounded gameplay, **not** a surveyed 1:1 city replica: the local horizontal transform is approximate, water stage and roofs remain artistic, and the newer 2025 Posey imagery has not been imported. [USGS 3DEP acquisition and validation](game/docs/MOUNT_VERNON_3DEP_WORLD_UPGRADE.md).
+
 The county navigator embeds the **official Posey County boundary (FIPS 18129, EPSG:4326)** and Census town reference centers. The original county polygon had **1,933 vertices**, simplified to **584** for display. The surrounding detailed 3D runtime remains a local Mount Vernon-area stage. The four additional towns are **interpretive regional 3D destinations within that stage**, *not* continuously streamed, survey-accurate countywide terrain, roads or buildings.
 
 The optional Mount Vernon visual-reference snapshot contains **709 Indiana GIO road features**, **4,819 building footprints** and a central downtown aerial tile identified as **2023**. Elevation, building heights, stopping locations and regional vignettes are art-directed and not approved for navigation, property decisions, flood studies or engineering use.

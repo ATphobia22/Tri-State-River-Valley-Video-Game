@@ -1,0 +1,20 @@
+{
+  "sourceUrl": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage?bbox=-87.9228684805%2C37.9143010140%2C-87.8671315195%2C37.9584470691&bboxSR=4326&imageSR=4326&size=256%2C256&format=tiff&pixelType=F32&interpolation=RSP_BilinearInterpolation&f=image",
+  "sourceTIFFSHA256": "514f4658667aba4e85b644c6a0e64a644641bf6ef5d1ee13aeb53d86b05ecc2b",
+  "outputSHA256": "0bd084423f5238c73d0b6c1e9e7f48178865829ebefcf98b6cca17b3cb3bdb16",
+  "captureUTC": "2026-11-23T04:33:14.953545+00:00",
+  "spatialBoundsWGS84": [
+    -87.9228684805,
+    37.908505561050006,
+    -87.8671315195,
+    37.96424252205
+  ],
+  "dimensions": [
+    256,
+    256
+  ],
+  "samples": 65536,
+  "datumVerified": false,
+  "verticalSourceUnits": "meters",
+  "status": "SOURCE_DERIVED_NOT_SURVEY_VALIDATED"
+}

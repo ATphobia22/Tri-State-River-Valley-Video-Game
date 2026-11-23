@@ -25,6 +25,8 @@ This `game/` directory contains the **playable family adventure**. It is separat
 
 **Geographic limit:** The county boundary and settlement points are sourced reference geography, **not** evidence of continuous countywide 3D terrain. New Harmony, Griffin, Poseyville and Cynthiana are thematic *vignettes inside the existing Mount Vernon-area local stage*, not site-accurate town reconstructions. [Data provenance and scope](docs/POSEY_COUNTY_EXPANSION_v1.10.md).
 
+**Source-backed terrain update:** The Mount Vernon world includes an offline USGS 3DEP 256 × 256 DEM snapshot and SHA-256 provenance receipt. If the dataset fails admission, the older illustrative DEM remains available. Indiana GIO aerial imagery (2023 at downtown) is shown by default; 2025 imagery and surveyed landmark meshes are not installed. See [elevation acquisition and accuracy limitations](docs/MOUNT_VERNON_3DEP_WORLD_UPGRADE.md).
+
 ## Key directories and responsibilities
 
 | Source | Purpose |
