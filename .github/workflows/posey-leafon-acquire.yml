@@ -1,0 +1,92 @@
+name: Acquire vetted Posey 2025 leaf-on aerial for offline game
+on:
+  push:
+    branches:
+      - feat/posey-leafon-2025-orthophoto
+    paths:
+      - .github/workflows/posey-leafon-acquire.yml
+      - game/tools/acquire_2025_leafon.py
+      - game/tests/test_leafon_acquire_python.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: posey-leafon-2025-import
+  cancel-in-progress: false
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install geospatial image processing and game dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r game/requirements.txt 'pyproj==3.7.2'
+      - name: Validate source admission before acquiring imagery
+        run: |
+          python -m unittest discover -s game/tests -p test_leafon_acquire_python.py -v
+          python -m unittest discover -s game/tests -p test_leafon_discovery_python.py -v
+      - name: Download IGIO-endorsed 2025 leaf-on partial image and source receipts
+        run: |
+          python game/tools/acquire_2025_leafon.py \
+            --out game/data/leafon-2025-bundle.js \
+            --receipt game/reference/mount-vernon/leafon-2025-receipt.json \
+            --preview game/reference/mount-vernon/leafon-2025-overlay.png \
+            --registration game/reference/mount-vernon/registration.json
+      - name: Confirm honest 2025 coverage and repackage playable offline game
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          receipt=json.loads(Path('game/reference/mount-vernon/leafon-2025-receipt.json').read_text())
+          assert receipt['sourceYear']==2025
+          assert receipt['coveredFraction']>=.20
+          assert receipt['sourceRenderServices']
+          assert all('/Indiana/P3500372s' in s['service'] for s in receipt['sourceRenderServices'])
+          assert hashlib.sha256(Path('game/reference/mount-vernon/leafon-2025-overlay.png').read_bytes()).hexdigest()==receipt['sourceOverlaySHA256']
+          print('Trusted leaf-on coverage:',receipt['coveredFraction'],'source services:',len(receipt['sourceRenderServices']))
+          PY
+          npm --prefix game run build
+          npm --prefix game test
+          python game/tools/audit_runtime_graph.py
+          python -m unittest discover -s game/tests -p test_runtime_graph.py -v
+          python -m unittest discover -s game/tests -p test_pages_build.py -v
+          python game/tools/build_pages.py --output _site
+          git diff --check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: posey-2025-igio-leafon-game-source
+          path: |
+            game/reference/mount-vernon/leafon-2025-receipt.json
+            game/reference/mount-vernon/leafon-2025-overlay.png
+            game/data/leafon-2025-bundle.js
+            _site/index.html
+            _site/offline.html
+          retention-days: 14
+      - name: Commit tested source snapshot and hosted/offline release to feature branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add game/data/leafon-2025-bundle.js \
+            game/reference/mount-vernon/leafon-2025-receipt.json \
+            game/reference/mount-vernon/leafon-2025-overlay.png \
+            game/game.html game/River_Valley_Family_Adventure_OFFLINE.html
+          if git diff --cached --quiet; then
+            echo 'No data changes to commit'
+          else
+            git commit -m 'assets(game): embed validated IGIO 2025 Posey leaf-on imagery'
+            git pull --rebase origin feat/posey-leafon-2025-orthophoto
+            git push origin HEAD:feat/posey-leafon-2025-orthophoto
+          fi
