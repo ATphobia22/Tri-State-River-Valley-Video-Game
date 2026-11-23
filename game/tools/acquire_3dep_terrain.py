@@ -58,7 +58,7 @@ def fetch_tiff(url: str) -> bytes:
         data = response.read(MAX_DOWNLOAD + 1)
     if len(data) > MAX_DOWNLOAD:
         raise ValueError("Raster download exceeds byte budget")
-    if not (data.startswith(b"II*\\x00") or data.startswith(b"MM\\x00*")):
+    if not (data.startswith(b"II*\x00") or data.startswith(b"MM\x00*")):
         raise ValueError("USGS did not return a classic TIFF (rejecting HTML/error image)")
     return data
 
