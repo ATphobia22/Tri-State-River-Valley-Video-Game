@@ -18,6 +18,10 @@ for script in soup.find_all('script'):
     if script.string and "navigator.serviceWorker.register('./sw.js')" in str(script.string):
         script.decompose()
 html='<!doctype html>\n'+str(soup).replace('<!DOCTYPE html>','')
+if 'window.ValleyLeafOn2025=' not in html:
+    raise RuntimeError('Bundling lost the IGIO 2025 leaf-on source; check malformed script tags')
+if 'window.ValleyCourthouseFidelity=' not in html:
+    raise RuntimeError('Bundling lost the source-backed courthouse mesh')
 target=ROOT/'River_Valley_Family_Adventure_OFFLINE.html'
 target.write_text(html,encoding='utf-8')
 print('Single offline HTML:',target,target.stat().st_size,hashlib.sha256(target.read_bytes()).hexdigest())
