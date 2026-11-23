@@ -1,3 +1,5 @@
+**Verified branch reconciliation**: [28 historical branches examined by file-tree SHA and merge-policy decisions](docs/BRANCH_RECONCILIATION_20261123.md). Optional source-rig staging uses `python tools/stage_character_candidate.py /path/to/candidate.glb` and cannot replace the live playable avatar.
+
 **Blender rig-to-offline PBR pipeline**: [baking, strict GLB validation, direct binary decoding and bone-mounted props](docs/BLENDER_OFFLINE_PBR_RIG_PIPELINE_20261123.md). Actual v2 Blender source meshes and deformed clip-frame tests are still required; the live 27-joint rig is deliberately preserved.
 
 # River Valley — Game Architecture and Release Guide
