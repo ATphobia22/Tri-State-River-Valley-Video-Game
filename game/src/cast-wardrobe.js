@@ -6,10 +6,10 @@
 'use strict';
 const STYLE=Object.freeze({
  'pete-yeida':{hat:'beanie',hatColor:0xbc642d,shirt:0x627f8e,pants:0x44596c,beard:null,glasses:true,pattern:'work'},
- 'larry-goldman':{hat:'cap',hatColor:0x6b634b,shirt:0x596152,pants:0x46596b,beard:0x3f3530,glasses:true,pattern:'bark'},
+ 'larry-goldman':{hat:'cap',hatColor:0x6b634b,shirt:0x596152,pants:0x46596b,beard:0x3f3530,facialHair:'mustache',glasses:true,pattern:'bark'},
  'richard-stratton':{hat:'beanie',hatColor:0xb56c29,shirt:0x797872,pants:0x46617a,beard:0xa9a8a2,glasses:false,pattern:'plaid'},
  'marcus-stevens':{hat:'beanie',hatColor:0xc96a27,shirt:0x4c613b,pants:0x526340,beard:0x292522,glasses:true,pattern:'camo'},
- 'roy-tenney':{hat:'beanie',hatColor:0x9f2e29,shirt:0x66675e,pants:0x45596e,beard:0x42332c,glasses:false,pattern:'bark'},
+ 'roy-tenney':{hat:'beanie',hatColor:0x9f2e29,shirt:0x66675e,pants:0x45596e,beard:0x42332c,facialHair:'mustache',glasses:false,pattern:'bark'},
  'bill-tucker':{hat:'cap',hatColor:0x999781,shirt:0x4e5b4b,pants:0x3e5772,beard:null,glasses:false,pattern:'bark'},
  'wally-wallace':{hat:'cap',hatColor:0x727d61,shirt:0x616951,pants:0x59614b,beard:0xbfc0b6,glasses:true,pattern:'camo'},
  'allen-tucker':{hat:'cap',hatColor:0x677553,shirt:0x526643,pants:0x465a71,beard:null,glasses:false,pattern:'camo'}
@@ -21,19 +21,23 @@ function saveSelection(id){
  try{if(id)root.localStorage?.setItem(KEY,id);else root.localStorage?.removeItem(KEY);}catch(_){}
  return id;
 }
-function makePattern(THREE,style,seed){
+function makePattern(THREE,style,pattern,seed){
  if(typeof root.document==='undefined'||typeof THREE.CanvasTexture!=='function')return null;
  const canvas=root.document.createElement('canvas');canvas.width=canvas.height=128;
  const ctx=canvas.getContext('2d');if(!ctx)return null;
  const background='#'+style.toString(16).padStart(6,'0');ctx.fillStyle=background;ctx.fillRect(0,0,128,128);
  let value=seed;const rand=()=>{value=(Math.imul(value,1664525)+1013904223)>>>0;return value/4294967296;};
  if(style===0)return null;
- if(seed%3===0){
+ if(pattern==='plaid'){
   // Soft woven plaid for the overshirt, not a copied photograph.
   for(let i=0;i<128;i+=22){ctx.fillStyle='rgba(228,224,211,.12)';ctx.fillRect(i,0,4,128);ctx.fillRect(0,i,128,4);ctx.fillStyle='rgba(16,21,19,.25)';ctx.fillRect(i+9,0,4,128);ctx.fillRect(0,i+9,128,4);}
- }else{
-  // Original deterministic fabric flecks, never a photographic camouflage pattern.
+ }else if(pattern==='camo'||pattern==='bark'){
+  // Original deterministic camouflage/tree-bark flecks, not copied photographs.
   for(let i=0;i<65;i++){const x=rand()*128,y=rand()*128,w=6+rand()*23,h=3+rand()*13;ctx.fillStyle=i%3===0?'rgba(27,36,28,.26)':i%3===1?'rgba(186,177,139,.16)':'rgba(72,61,47,.26)';ctx.beginPath();ctx.ellipse(x,y,w,h,rand()*3.14,0,6.283);ctx.fill();}
+ }else{
+  // Subtle work-shirt weave and denim shading: avoid painting camouflage on blue shirts.
+  ctx.strokeStyle='rgba(248,247,225,.075)';ctx.lineWidth=1;
+  for(let i=0;i<128;i+=6){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i-16,128);ctx.stroke();}
  }
  const map=new THREE.CanvasTexture(canvas);map.wrapS=map.wrapT=THREE.RepeatWrapping;
  map.colorSpace=THREE.SRGBColorSpace;map.anisotropy=2;map.needsUpdate=true;return map;
@@ -57,7 +61,10 @@ function decorate(THREE,hero,id){
   add(new THREE.SphereGeometry(1.42,16,9,0,6.283,0,1.8),material,0,1.59,0,1,.46,.98);
   add(new THREE.SphereGeometry(1,12,8),brimMaterial,0,1.42,-1.13,1.12,.11,.66);
  }
- if(beardMaterial){
+ if(beardMaterial&&style.facialHair==='mustache'){
+  add(new THREE.SphereGeometry(.52,10,8),beardMaterial,-.42,-.35,-1.42,1,.18,.30);
+  add(new THREE.SphereGeometry(.52,10,8),beardMaterial,.42,-.35,-1.42,1,.18,.30);
+ }else if(beardMaterial){
   add(new THREE.SphereGeometry(1.06,12,9),beardMaterial,0,-.22,-1.10,1,.57,.40);
   add(new THREE.SphereGeometry(.91,10,8),beardMaterial,0,-.51,-1.10,1,.43,.32);
   if(style.beard!==0x3f3530)add(new THREE.SphereGeometry(.88,10,8),beardMaterial,0,-.77,-1.02,.95,.43,.31);
@@ -73,7 +80,8 @@ function decorate(THREE,hero,id){
   if(isShirt||isPants){
    const previous=mat.map,previousColor=mat.color.clone(),wasVertex=mat.vertexColors;
    const color=isShirt?style.shirt:style.pants;
-   const map=makePattern(THREE,color,(isShirt?3:4)+(id.length%9));
+   const mode=isShirt?style.pattern:id==='marcus-stevens'?'camo':'denim';
+   const map=makePattern(THREE,color,mode,(isShirt?3:4)+(id.length%9));
    if(map){
     originalMaps.push(previous);textureOverrides.push(map);
     mat.map=map;mat.color.setHex(0xffffff);
@@ -85,6 +93,8 @@ function decorate(THREE,hero,id){
   if(!style.glasses&&(/glasses|lens/.test(name)))mesh.visible=false;
   if(beardMaterial&&/mask/.test(name))mesh.visible=false;
  }
+ const gaiter=hero.joints.Head.children.find(child=>child.name==='River/skull-gaiter-fabric-print');
+ if(gaiter)gaiter.visible=false;
  const oldRootDispose=hero.dispose;
  let disposed=false;
  hero.dispose=function(){
