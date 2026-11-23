@@ -15,7 +15,7 @@ class LeafOnTests(TestCase):
         self.assertEqual(m.leafon_services(webmap),["https://iserver5.surdex.com/arcgis/rest/services/Indiana/P3500372s1/ImageServer"])
 
     def test_untrusted_layer_path_rejected(self):
-        bad={"operationalLayers":[{"title":"2025 Leaf-on - 6-inch","layers":[
+        bad={"operationalLayers":[{"title":"2025 Leaf-on - 6-inch","layerType":"GroupLayer","layers":[
             {"url":"https://iserver5.surdex.com.evil.test/arcgis/rest/services/Indiana/P3500372s1/ImageServer"}]}]}
         self.assertEqual(m.leafon_services(bad),[])
 
