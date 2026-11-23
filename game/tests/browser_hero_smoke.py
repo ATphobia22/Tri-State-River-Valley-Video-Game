@@ -34,6 +34,15 @@ def inspect(page, *, mobile: bool):
     )
     state = lambda: page.evaluate("window.RiverValleyDebug.getState()")
     assert state()["renderMode"] == "webgl", "WebGL fallback cannot validate hero stage"
+    # The actual 2025 source-derived map must be decoded and draped in the
+    # playable WebGL scene. A data file merely present in Git is insufficient.
+    page.wait_for_function(
+        "() => !!window.RiverValleyDebug?.getState()?.georeference?.leafOn2025?.draped",
+        timeout=45_000,
+    )
+    assert state()["georeference"]["leafOn2025"]["coverage"] > 0.98
+    assert state()["georeference"]["imageryYear"] == "2025-partial / 2023-fallback"
+
     assert state()["heroParts"] >= 10
     assert state()["heroSkinned"] is True, "Rigged GLB did not instantiate: procedural fallback used"
     assert state()["heroBoneCount"] >= 27
