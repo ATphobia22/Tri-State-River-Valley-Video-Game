@@ -29,7 +29,7 @@ function safeName(v){
 }
 function freshSave(name){return {
  version:3,name:safeName(name),coins:0,xp:0,level:1,completed:[],inventory:{corn:0,fish:0,game:0,meals:0},
- position:{x:16,z:504},farmPlots:Array(9).fill(0),homestead:false,mode:'walk',time:15.5,weather:'clear',season:'summer',pet:true,muted:false,scoutBond:0,scoutLastRewardAt:0,countyRegion:'mount-vernon',countyVisited:['mount-vernon'],lastMeal:null
+ position:{x:-30,z:503},farmPlots:Array(9).fill(0),homestead:false,mode:'walk',time:15.5,weather:'clear',season:'summer',pet:true,muted:false,scoutBond:0,scoutLastRewardAt:0,countyRegion:'mount-vernon',countyVisited:['mount-vernon'],lastMeal:null
 };}
 function validateSave(raw){
  let base=freshSave(raw&&raw.name);
