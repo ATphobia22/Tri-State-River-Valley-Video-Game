@@ -25,6 +25,13 @@ class ThreeDepTests(unittest.TestCase):
         self.assertEqual(len(raw),256*256*2)
         self.assertEqual(struct.unpack_from('<H',raw,2)[0],1)
 
+    def test_expanded_export_extents_must_still_cover_game(self):
+        w,s,e,n=m.requested_bounds()
+        expanded=(w-.004,s-.006,e+.004,n+.006)
+        m.validate_bounds(expanded)
+        with self.assertRaisesRegex(ValueError, "not a complete"):
+            m.validate_bounds((w+.01,s,e,n))
+
     def test_fail_closed_for_void_pixels_wrong_area_and_overflow(self):
         bounds=m.requested_bounds()
         samples=[110.]* (256*256)
