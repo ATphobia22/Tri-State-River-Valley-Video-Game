@@ -1,6 +1,6 @@
 # River Valley — Game Architecture and Release Guide
 
-[**Play the game**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Repository overview](../README.md) · [Offline HTML download](River_Valley_Family_Adventure_OFFLINE.html) · [GitHub Actions](../.github/workflows/game-ci.yml)
+[**Play the game**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Repository overview](../README.md) · [Offline HTML download](River_Valley_Family_Adventure_OFFLINE.html) · [**Mount Vernon map links**](docs/MOUNT_VERNON_47620_MAP_LINKS.md) · [GitHub Actions](../.github/workflows/game-ci.yml)
 
 **Version 1.13.0** · Offline-first browser game · Original Three.js/WebGL world · Three local save slots · No account or server required.
 
