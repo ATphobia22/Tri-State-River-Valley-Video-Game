@@ -315,7 +315,7 @@ function updateReferenceDrape(){
  if(referenceImage&&REF?.bboxWGS84)referenceDrape=makeAerialDrape(referenceImage,REF.bboxWGS84,.26,.78,2);
  // Transparent 2025 source pixels replace ONLY the source-covered part of the older 2023 base.
  // The southern river/Kentucky margin is not falsely labeled 2025 imagery.
- if(leafonImage&&LEAFON)leafonDrape=makeAerialDrape(leafonImage,LEAFON.bboxWGS84,.38,.96,3);
+ if(leafonImage&&LEAFON)leafonDrape=makeAerialDrape(leafonImage,LEAFON.bboxWGS84,.38,1.0,3);
 }
 function setupReferenceImage(){
  const status=$('referenceStatus');
