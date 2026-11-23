@@ -27,7 +27,8 @@ function weaveTexture(THREE,name){
  }
  const texture=new THREE.CanvasTexture(canvas);
  texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
- texture.colorSpace=THREE.SRGBColorSpace;
+ if(custom)texture.flipY=false;
+    texture.colorSpace=THREE.SRGBColorSpace;
  texture.generateMipmaps=true;texture.minFilter=THREE.LinearMipmapLinearFilter;
  texture.anisotropy=2;texture.needsUpdate=true;
  return texture;
@@ -96,7 +97,8 @@ function skullGaiterPrint(THREE){
  for(const x of [48,208]){
   ctx.beginPath();ctx.moveTo(x,58);ctx.quadraticCurveTo(x+(x<128?-16:16),92,x,127);ctx.stroke();
  }
- const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ const texture=new THREE.CanvasTexture(canvas);if(custom)texture.flipY=false;
+    texture.colorSpace=THREE.SRGBColorSpace;
  texture.wrapS=texture.wrapT=THREE.ClampToEdgeWrapping;
  texture.anisotropy=2;texture.generateMipmaps=true;texture.minFilter=THREE.LinearMipmapLinearFilter;
  const geo=new THREE.PlaneGeometry(2.04,1.14,16,6),pos=geo.attributes.position;
@@ -142,7 +144,10 @@ function create(THREE,{seated=false,samplePose,lod='LOD0'}={}){
  if(!plantLibrary?.create)throw Error('Offline foot-contact solver must load before rigged hero');
  const footContacts=plantLibrary.create({reach:5.5});
  const skin=doc.skins[0],jointNodes=skin.joints;
- const bones=jointNodes.map(i=>{const data=doc.nodes[i],b=new THREE.Bone();b.name=data.name;b.position.fromArray(data.translation||[0,0,0]);return b;});
+ const bones=jointNodes.map(i=>{const data=doc.nodes[i],b=new THREE.Bone();b.name=data.name;b.position.fromArray(data.translation||[0,0,0]);
+  if(data.rotation)b.quaternion.fromArray(data.rotation);
+  if(data.scale)b.scale.fromArray(data.scale);
+  return b;});
  const byNode=new Map(jointNodes.map((n,i)=>[n,bones[i]]));
  const joints={};jointNodes.forEach((n,i)=>{joints[doc.nodes[n].name]=bones[i];});
  for(const [node,object] of byNode){const parent=jointNodes.find(n=>doc.nodes[n].children?.includes(node));if(parent!==undefined)byNode.get(parent).add(object);else scene.add(object);}
@@ -155,11 +160,11 @@ function create(THREE,{seated=false,samplePose,lod='LOD0'}={}){
  const pendingBlobUrls=new Set(),gpuTextureMaps=new Set();
  const browserImageSupport=typeof document!=='undefined'&&typeof Blob==='function'&&typeof URL!=='undefined'&&typeof URL.createObjectURL==='function'&&typeof THREE.TextureLoader==='function';
  for(const spec of doc.materials||[]){
-  const pbr=spec.pbrMetallicRoughness||{},c=pbr.baseColorFactor||[.5,.5,.5,1];
+  const pbr=spec.pbrMetallicRoughness||{},c=pbr.baseColorFactor||[1,1,1,1];
   const bumpMap=weaveBumpTexture(THREE,spec.name);
   const material=new THREE.MeshStandardMaterial({name:spec.name,
    color:new THREE.Color().setRGB(c[0],c[1],c[2],THREE.LinearSRGBColorSpace),
-   metalness:pbr.metallicFactor??0,roughness:pbr.roughnessFactor??.9,
+   metalness:pbr.metallicFactor??1,roughness:pbr.roughnessFactor??1,
    bumpMap,bumpScale:/\bskin\b/.test(spec.name)?.006:/\bboots\b/.test(spec.name)?.023:.013,
    transparent:spec.alphaMode==='BLEND',opacity:c[3],
    side:spec.doubleSided?THREE.DoubleSide:THREE.FrontSide,depthWrite:spec.alphaMode!=='BLEND'});
@@ -180,6 +185,7 @@ function create(THREE,{seated=false,samplePose,lod='LOD0'}={}){
      material.needsUpdate=true;
      console.warn('Embedded River GLB texture fell back to local procedural fabric:',spec.name,String(err));
     });
+    if(custom)texture.flipY=false;
     texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
     texture.minFilter=THREE.LinearMipmapLinearFilter;texture.anisotropy=2;
     texture.userData.riverEmbeddedSource='GLB_BIN';
@@ -194,6 +200,22 @@ function create(THREE,{seated=false,samplePose,lod='LOD0'}={}){
   }else if(Number.isInteger(index)){
    // Headless Node or older browsers keep a local procedural compatibility fallback.
    material.map=/\bskin\b/.test(spec.name)?skinTexture(THREE):weaveTexture(THREE,spec.name);
+  }
+  if(custom&&browserImageSupport){
+   for(const [index,slots] of [[spec.normalTexture?.index,['normalMap']],[pbr.metallicRoughnessTexture?.index,['roughnessMap','metalnessMap']]]){
+    if(!Number.isInteger(index))continue;
+    const image=extractEmbeddedImage(parsed,index);
+    const url=URL.createObjectURL(new Blob([image.bytes],{type:image.mimeType}));
+    pendingBlobUrls.add(url);embeddedTextureState.expected++;
+    function finish(ok){
+     URL.revokeObjectURL(url);pendingBlobUrls.delete(url);
+     if(!scene.userData.disposed)embeddedTextureState[ok?'loaded':'failed']++;
+    }
+    const texture=new THREE.TextureLoader().load(url,()=>finish(true),undefined,()=>finish(false));
+    texture.flipY=false;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
+    for(const slot of slots)material[slot]=texture;
+    gpuTextureMaps.add(texture);
+   }
   }
  }
  for(const prim of meshDoc.primitives){
@@ -236,7 +258,7 @@ function create(THREE,{seated=false,samplePose,lod='LOD0'}={}){
    if(times.channels!==1||quats.channels!==4||times.count!==quats.count)continue;
    tracks.push(new THREE.QuaternionKeyframeTrack(jointName+'.quaternion',times.values,quats.values));
   }
-  if(tracks.length){const clip=new THREE.AnimationClip(animation.name,1,tracks);clipActions.set(animation.name,mixer.clipAction(clip));}
+  if(tracks.length){const clip=new THREE.AnimationClip(animation.name,-1,tracks);clipActions.set(animation.name,mixer.clipAction(clip));}
  }
  const stateToClip={idle:'Idle',walk:'Walk',run:'Run',sprint:'Sprint',jump:'Jump',land:'Land',farm:'Farm',
   fish:'FishingCast',cook:'Cook',hunt:'Track',drive:'Drive',interact:'Interact'};

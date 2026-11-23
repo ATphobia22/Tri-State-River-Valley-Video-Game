@@ -9,6 +9,8 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 
@@ -29,6 +31,9 @@ def build(game_root: Path, destination: Path) -> None:
     for name in ("index.html", "game.html"):
         (destination / name).write_text(html, encoding="utf-8")
     shutil.copyfile(offline, destination / "offline.html")
+
+    subprocess.run([sys.executable, str(game_root / "tools" / "build_character_review.py"),
+                    str(destination / "character-review.html")], check=True)
 
     # Keep the service worker confined to this GitHub Pages project subpath,
     # while ensuring both /repo/ and /repo/index.html are usable offline.
