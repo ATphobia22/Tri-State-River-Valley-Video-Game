@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Courthouse Reconstruction Review — River Valley Game</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;background:#09171b;color:#e9f1e9;font:15px/1.5 system-ui,sans-serif}
+header{padding:16px 22px;background:#143035;border-bottom:1px solid #55756f}
+h1{font-size:22px;margin:0 0 7px}p{margin:8px 0}
+main{display:grid;grid-template-columns:minmax(280px,390px) 1fr;min-height:calc(100dvh - 120px)}
+aside{padding:20px;background:#11282d;border-right:1px solid #42645d}
+label{display:block;margin:12px 0 6px;font-weight:700}
+input{width:100%;color:#fff;background:#21494b;padding:12px;border-radius:8px}
+button{padding:10px 15px;margin-top:12px;border-radius:8px;color:#fff;background:#205b55;border:1px solid #95c5aa}
+#viewer{height:calc(100dvh - 120px);min-height:480px;touch-action:none}
+#status{padding:12px;margin-top:12px;border:1px solid #6a9a8e;border-radius:8px;white-space:pre-wrap;word-break:break-word}
+small{color:#bacfc7}a{color:#a9ecd0}
+@media(max-width:850px){main{display:block}#viewer{height:56vh;min-height:360px}}
+</style></head>
+<body><header><h1>Posey Courthouse — experimental reconstruction review</h1>
+<p>Local GLB preview, isolated from the live game. Camera recovery and photogrammetry of game turntable renders do not prove the geometry of the physical courthouse.</p></header>
+<main><aside>
+<a href="./">Return to playable River Valley game</a>
+<label for="mesh">Load a local GLB candidate (max 150 MB)</label>
+<input type="file" id="mesh" accept=".glb,model/gltf-binary">
+<button id="reset" type="button">Reset camera</button>
+<div id="status" role="status" aria-live="polite">No review asset loaded. The game retains its verified current procedural courthouse.</div>
+<p><small>Drag to orbit, scroll/pinch to zoom. This viewer does not upload files, write save slots, change building placement, or install service workers. Textures must already be embedded inside the GLB.</small></p>
+</aside><div id="viewer" aria-label="Three-dimensional model preview"></div></main>
+<script src="./vendor/three.js"></script><script src="./vendor/gltf-loader.js"></script>
+<script>
+'use strict';
+const status=document.getElementById('status'),panel=document.getElementById('viewer');
+const scene=new THREE.Scene();
+scene.background=new THREE.Color('#213a3a');
+scene.add(new THREE.AmbientLight(0xffffff,1.1));
+const light=new THREE.DirectionalLight(0xffe4b7,2.5);
+light.position.set(4,7,5);scene.add(light);
+const camera=new THREE.PerspectiveCamera(48,1,.01,10000);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+panel.appendChild(renderer.domElement);
+const floor=new THREE.GridHelper(50,24,0x77afa1,0x3e6361);scene.add(floor);
+let model=null,center=new THREE.Vector3(),radius=3,azimuth=.5,elevation=.25,zoom=2.5,down=null;
+function cameraUpdate(){
+ const dist=Math.max(.1,radius*zoom);
+ camera.position.set(center.x+dist*Math.cos(elevation)*Math.sin(azimuth),
+ center.y+dist*Math.sin(elevation),
+ center.z+dist*Math.cos(elevation)*Math.cos(azimuth));
+ camera.lookAt(center);
+}
+function resize(){const w=panel.clientWidth,h=panel.clientHeight;camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
+new ResizeObserver(resize).observe(panel);resize();
+function animate(){renderer.render(scene,camera);requestAnimationFrame(animate)}animate();
+panel.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY};panel.setPointerCapture(e.pointerId)});
+panel.addEventListener('pointermove',e=>{if(!down)return;azimuth-=(e.clientX-down.x)*.008;elevation=Math.max(-1.25,Math.min(1.25,elevation+(e.clientY-down.y)*.006));down={x:e.clientX,y:e.clientY};cameraUpdate()});
+panel.addEventListener('pointerup',()=>down=null);
+panel.addEventListener('pointercancel',()=>down=null);
+panel.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.5,Math.min(12,zoom*Math.exp(e.deltaY*.001)));cameraUpdate()},{passive:false});
+document.getElementById('reset').addEventListener('click',()=>{azimuth=.5;elevation=.25;zoom=2.5;cameraUpdate()});
+function inspectHeader(data){
+ const view=new DataView(data);
+ if(view.byteLength<20||view.getUint32(0,true)!==0x46546c67||view.getUint32(4,true)!==2||view.getUint32(8,true)!==data.byteLength)throw Error('Corrupt/non-glTF 2.0 binary');
+ const bytes=view.getUint32(12,true),kind=view.getUint32(16,true);
+ if(kind!==0x4e4f534a||bytes>data.byteLength-20)throw Error('Malformed JSON chunk');
+ const json=JSON.parse(new TextDecoder().decode(new Uint8Array(data,20,bytes)));
+ return {meshes:(json.meshes||[]).length,
+         images:(json.images||[]).length,
+         embedded:(json.images||[]).filter(i=>i.bufferView!==undefined||String(i.uri||'').startsWith('data:')).length};
+}
+document.getElementById('mesh').addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>150*1024*1024||file.size<20)throw Error('Invalid file size');
+  const raw=await file.arrayBuffer(),summary=inspectHeader(raw);
+  if(!summary.meshes)throw Error('GLB has no meshes');
+  const parsed=await new Promise((resolve,reject)=>new RiverGLTFLoader().parse(raw,'',resolve,reject));
+  if(model){scene.remove(model);model.traverse(o=>{o.geometry?.dispose?.();if(o.material){const a=Array.isArray(o.material)?o.material:[o.material];a.forEach(m=>m.dispose())}})}
+  model=parsed.scene;scene.add(model);
+  const bounds=new THREE.Box3().setFromObject(model);
+  if(bounds.isEmpty())throw Error('No spatial geometry');
+  bounds.getCenter(center);radius=Math.max(1,bounds.getSize(new THREE.Vector3()).length()*.5);
+  azimuth=.5;elevation=.25;zoom=2.5;cameraUpdate();
+  status.textContent=file.name+'\nMeshes: '+summary.meshes+'\nEmbedded textures: '+summary.embedded+'/'+summary.images+
+   '\nStatus: REVIEW ONLY — unregistered geometry, never auto-loaded into the production game.';
+ }catch(error){status.textContent='Review failed: '+error.message;console.error(error)}
+});
+cameraUpdate();
+</script></body></html>

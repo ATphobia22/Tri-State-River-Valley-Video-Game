@@ -12,7 +12,9 @@ function create(THREE,scene,terrainHeight,limit,seed=74378){
    float sun=pow(max(dot(d,normalize(uSunDir)),0.),1900.);
    base+=uSunColor*sun*.78;
    float star=step(.9985,fract(sin(dot(floor(d*1200.),vec3(13.133,78.233,37.719)))*43758.5453))*smoothstep(.35,.8,d.y)*uNight;
-   base+=vec3(star*.48);gl_FragColor=vec4(base,1.);}`});
+   base+=vec3(star*.48);gl_FragColor=vec4(base,1.);
+   #include <tonemapping_fragment>
+   #include <colorspace_fragment>}`});
  const sky=new THREE.Mesh(new THREE.SphereGeometry(6000,32,20),skyMat);sky.frustumCulled=false;sky.renderOrder=-999;scene.add(sky);
  const flowerPositions=[];
  for(let k=0;k<1800;k++){
@@ -44,13 +46,20 @@ function create(THREE,scene,terrainHeight,limit,seed=74378){
  }
  const glintGeo=new THREE.BufferGeometry();glintGeo.setAttribute('position',new THREE.Float32BufferAttribute(riverGlints,3));
  const glints=new THREE.Points(glintGeo,new THREE.PointsMaterial({color:0xf9e0b1,size:2.5,transparent:true,opacity:.54,depthWrite:false}));scene.add(glints);
- function update(camera,time,weather,season,stamp){
+ function update(camera,time,weather,season,stamp,film){
   sky.position.copy(camera.position);
-  const day=Math.max(0,Math.sin((time-6)*Math.PI/12)),night=1-Math.min(1,day*2.4);
+  const day=Math.max(0,Math.sin((time-6)*Math.PI/12)),night=(film?.look==='golden'&&time>=17.5&&time<19.2)?0:1-Math.min(1,day*2.4);
   skyMat.uniforms.uNight.value=night;
-  skyMat.uniforms.uHorizon.value.set(weather==='rain'?'#677d91':day<.25?'#a77272':'#e8b892');
-  skyMat.uniforms.uZenith.value.set(day<.25?'#101d39':weather==='rain'?'#445867':'#4a82a1');
-  skyMat.uniforms.uSunDir.value.set(Math.cos((time-6)*Math.PI/12),Math.sin((time-6)*Math.PI/12),-.16).normalize();
+  // One shared art-directed sun/sky palette, not mismatched background and water lighting.
+  skyMat.uniforms.uHorizon.value.set(film?.horizon||(weather==='rain'?'#677d91':day<.25?'#a77272':'#e8b892'));
+  skyMat.uniforms.uZenith.value.set(film?.zenith||(day<.25?'#101d39':weather==='rain'?'#445867':'#4a82a1'));
+  if(film?.sunDirection){
+   const d=film.sunDirection;
+   skyMat.uniforms.uSunDir.value.set(d.x,d.y,d.z);
+   skyMat.uniforms.uSunColor.value.set(film.sun);
+  }else{
+   skyMat.uniforms.uSunDir.value.set(Math.cos((time-6)*Math.PI/12),Math.sin((time-6)*Math.PI/12),-.16).normalize();
+  }
   clouds.forEach((c,i)=>{const x=c.userData.x+((stamp*.001*c.userData.drift)%(limit*2));c.position.set((((x+limit)%(limit*2)+limit*2)%(limit*2))-limit,c.userData.altitude,c.userData.z);});
   cloudMaterial.opacity=weather==='rain'?.78:weather==='mist'?.75:.47;
   glints.material.opacity=weather==='rain'?.18:day*.55;

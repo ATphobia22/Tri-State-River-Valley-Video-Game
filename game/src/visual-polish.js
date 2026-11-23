@@ -116,8 +116,8 @@
   const roofs=['#615b59','#75544a','#626d69'].map((color,i)=>
    new THREE.MeshStandardMaterial({color:0xffffff,map:createTexture(THREE,'roof',color,i+14),
     roughness:.94,metalness:0,side:THREE.DoubleSide}));
-  const road=new THREE.MeshLambertMaterial({color:0x555b5b,map:createTexture(THREE,'road','#a9b4b3',9),side:THREE.DoubleSide,
-   polygonOffset:true,polygonOffsetFactor:-2});
+  const road=new THREE.MeshStandardMaterial({color:0x555b5b,map:createTexture(THREE,'road','#a9b4b3',9),side:THREE.DoubleSide,
+   roughness:.94,metalness:.02,polygonOffset:true,polygonOffsetFactor:-2});
   const terrainMap=createTexture(THREE,'terrain','#f3f6e9',10);
   const glass=new THREE.MeshStandardMaterial({color:0x426679,roughness:.19,metalness:.17,
    emissive:0x0a1821,emissiveIntensity:.12,side:THREE.DoubleSide});
@@ -128,10 +128,23 @@
      family==='limestone'?walls[2]:family==='metal'?walls[7]:family==='batten'?walls[6]:walls[3+rec.i%2];
    return {family,wall,roof:roofs[rec.i%roofs.length],glass,trim};
   }
+  let previousWeather=null;
+  function setWeather(weather){
+   const key=weather==='rain'?'rain':weather==='mist'?'mist':'clear';
+   if(key===previousWeather)return false;
+   previousWeather=key;
+   // Real PBR wetness response, not a screen-space filter or reflective planar RTT.
+   const wet=key==='rain',damp=key==='mist';
+   road.roughness=wet?.42:damp?.75:.94;
+   road.metalness=wet?.06:.02;
+   for(const roof of roofs)roof.roughness=wet?.52:damp?.79:.94;
+   glass.roughness=wet?.085:.19;
+   return true;
+  }
   function dispose(){
    [...walls,...roofs,road,glass,trim].forEach(m=>{if(m.map)m.map.dispose();m.dispose();});terrainMap?.dispose();
   }
-  return Object.freeze({pick,dispose,road,terrainMap,wallCount:walls.length,roofCount:roofs.length});
+  return Object.freeze({pick,setWeather,dispose,road,terrainMap,wallCount:walls.length,roofCount:roofs.length});
  }
  return Object.freeze({facadeFamily,hueVariation,make});
 });

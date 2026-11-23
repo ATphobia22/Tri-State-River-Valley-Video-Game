@@ -1,0 +1,5 @@
+# Light native-adapter and camera-math dependencies (no CUDA / native photogrammetry binaries).
+numpy>=1.26,<3
+Pillow>=10,<13
+# For CPU neural training, install a compatible trusted PyTorch wheel separately.
+# COLMAP and OpenMVS binaries must be installed independently, never pip-vendored.

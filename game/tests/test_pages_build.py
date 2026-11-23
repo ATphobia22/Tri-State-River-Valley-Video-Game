@@ -31,6 +31,19 @@ class PagesBuildTests(unittest.TestCase):
         self.assertNotIn('http-equiv="refresh"', html)
         self.assertEqual((self.out / 'game.html').read_bytes(), (self.out / 'index.html').read_bytes())
 
+    def test_courthouse_reconstruction_review_is_opt_in_and_local(self):
+        self.build()
+        html = (self.out / "index.html").read_text()
+        review = (self.out / "courthouse-review.html").read_text()
+        self.assertIn("./courthouse-review.html", html)
+        self.assertNotIn("RiverGLTFLoader", html)
+        self.assertIn("RiverGLTFLoader", review)
+        self.assertIn('type="file"', review)
+        self.assertIn("REVIEW ONLY", review)
+        self.assertTrue((self.out / "vendor" / "three.js").is_file())
+        self.assertTrue((self.out / "vendor" / "gltf-loader.js").is_file())
+        self.assertNotIn("serviceWorker.register(", review)
+
     def test_opt_in_character_review_preserves_normal_pages_entry(self):
         self.build()
         regular = (self.out / 'index.html').read_text()
