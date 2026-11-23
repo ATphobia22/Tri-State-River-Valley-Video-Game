@@ -99,7 +99,7 @@ def verify_coverage(im):
     if im.mode!="RGBA":raise ValueError("Imagery must be an RGBA mask with auditable transparency")
     mask=im.getchannel("A")
     extrema=mask.getextrema()
-    if extrema[1]<240:raise ValueError("No opaque 2025 imagery source pixels")
+    if extrema[1]<240:raise ValueError("Insufficient 2025 imagery coverage: zero opaque source pixels")
     hist=mask.histogram()
     total=im.width*im.height
     fraction=sum(hist[240:])/total
