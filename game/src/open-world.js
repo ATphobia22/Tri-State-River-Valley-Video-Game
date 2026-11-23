@@ -38,7 +38,7 @@ function sceneWorld(T,scene,ground){
   const map=new T.CanvasTexture(canvas);map.wrapS=map.wrapT=T.RepeatWrapping;
   map.colorSpace=T.SRGBColorSpace;map.generateMipmaps=true;map.minFilter=T.LinearMipmapLinearFilter;return map;
  };
- const mats={wood:new T.MeshStandardMaterial({color:0x8b5936,roughness:.94,map:texture('#c8a37a','timber')}),woodLight:new T.MeshLambertMaterial({color:0xb18b5f}),iron:new T.MeshLambertMaterial({color:0x374d52}),clay:new T.MeshLambertMaterial({color:0xa56648}),soil:new T.MeshStandardMaterial({color:0x594932,roughness:.98,map:texture('#cab391','soil')}),leaf:new T.MeshLambertMaterial({color:0x538440}),corn:new T.MeshLambertMaterial({color:0xf4cb4b}),water:new T.MeshPhongMaterial({color:0x5bb4c3,shininess:72,transparent:true,opacity:.94}),glow:new T.MeshBasicMaterial({color:0xffc767}),smoke:new T.MeshLambertMaterial({color:0xd2d1c4,transparent:true,opacity:.25,depthWrite:false}),animal:new T.MeshLambertMaterial({color:0xa8784b}),cream:new T.MeshLambertMaterial({color:0xebd5ad}),roof:new T.MeshLambertMaterial({color:0x655344}),barn:new T.MeshStandardMaterial({color:0x9c5040,roughness:.87}),tin:new T.MeshStandardMaterial({color:0x677c7e,roughness:.46,metalness:.25})};
+ const mats={wood:new T.MeshStandardMaterial({color:0x8b5936,roughness:.94,map:texture('#c8a37a','timber')}),woodLight:new T.MeshLambertMaterial({color:0xb18b5f}),iron:new T.MeshLambertMaterial({color:0x374d52}),clay:new T.MeshLambertMaterial({color:0xa56648}),soil:new T.MeshStandardMaterial({color:0x594932,roughness:.98,map:texture('#cab391','soil')}),leaf:new T.MeshLambertMaterial({color:0x538440}),corn:new T.MeshLambertMaterial({color:0xf4cb4b}),water:new T.MeshPhongMaterial({color:0x5bb4c3,shininess:72,transparent:true,opacity:.94}),glow:new T.MeshBasicMaterial({color:0xffc767}),smoke:new T.MeshLambertMaterial({color:0xd2d1c4,transparent:true,opacity:.25,depthWrite:false}),animal:new T.MeshStandardMaterial({color:0x93623d,roughness:.96,metalness:0}),cream:new T.MeshStandardMaterial({color:0xc9a276,roughness:.98,metalness:0}),hoof:new T.MeshStandardMaterial({color:0x302a25,roughness:.88}),eye:new T.MeshStandardMaterial({color:0x1a1712,roughness:.21,metalness:.02}),feathers:new T.MeshStandardMaterial({color:0x70452c,roughness:.91}),roof:new T.MeshLambertMaterial({color:0x655344}),barn:new T.MeshStandardMaterial({color:0x9c5040,roughness:.87}),tin:new T.MeshStandardMaterial({color:0x677c7e,roughness:.46,metalness:.25})};
  const make=(geo,mat,parent,pos,rotation)=>{let m=new T.Mesh(geo,mat);if(pos)m.position.set(...pos);if(rotation)m.rotation.set(...rotation);parent.add(m);return m;};
  const cube=(parent,mat,x,y,z,w,h,d)=>make(new T.BoxGeometry(w,h,d),mat,parent,[x,y,z]);
  const cyl=(parent,mat,x,y,z,r1,r2,h,n=10)=>make(new T.CylinderGeometry(r1,r2,h,n),mat,parent,[x,y,z]);
@@ -50,24 +50,66 @@ function sceneWorld(T,scene,ground){
  const track=cube(hunt,mats.soil,0,-.35,-5,95,.65,22);
  for(let i=-1;i<=1;i+=2){for(let n=0;n<6;n++){const z=-52+n*19;const post=cyl(hunt,mats.woodLight,i*55,4,z,1.5,1.6,8,6);cube(hunt,mats.woodLight,i*55,6,z+8,1,1.5,19);}}
  const deer=new T.Group();deer.name='Animated low-poly deer';hunt.add(deer);
- cube(deer,mats.animal,0,7,0,7,5,13);cube(deer,mats.cream,0,5,-5.5,4.3,1.4,4);cube(deer,mats.animal,0,10,-6.5,3,7,3);ball(deer,mats.animal,0,13,-7,2.9);
+ // Rounded anatomical silhouettes replace block-shaped deer, with animated limbs and expressive head.
+ const deerTorso=ball(deer,mats.animal,0,7,0,1);deerTorso.scale.set(3.65,2.65,7.1);
+ const deerChest=ball(deer,mats.cream,0,5.2,-4.7,1);deerChest.scale.set(2.4,1.1,2.8);
+ const deerNeck=cyl(deer,mats.animal,0,10.1,-5.3,1.4,2.2,6,11);deerNeck.rotation.x=-.21;
+ const deerHead=new T.Group();deerHead.position.set(0,13,-7);deer.add(deerHead);
+ const deerSkull=ball(deerHead,mats.animal,0,0,0,2.7);
+ const muzzle=ball(deerHead,mats.cream,0,-.75,-2.65,1.55);
+ muzzle.scale.set(.95,.7,1.5);
+ ball(deerHead,mats.hoof,0,-.8,-4.28,.64);
+ for(const side of [-1,1]){
+  const ear=ball(deerHead,mats.cream,side*2.7,1.55,.25,1);ear.scale.set(1.65,.47,.8);ear.rotation.z=side*.4;
+  ball(deerHead,mats.eye,side*2.38,.15,-1.25,.37);
+  const antler=cyl(deerHead,mats.wood,side*1.38,4.75,.15,.24,.54,6.6,7);antler.rotation.z=side*.24;
+  for(let n=0;n<3;n++){const tine=cyl(deerHead,mats.wood,side*(1.7+n*.22),3.1+n*1.7,-.9,.11,.22,2.3,6);tine.rotation.x=-.8;tine.rotation.z=side*.25;}
+ }
  let legIndex=0;
- for(const side of [-1,1]){for(const z of [-4.2,4.2]){const leg=cube(deer,mats.animal,side*2.2,2,z,1.4,5,1.2);leg.userData.legIndex=legIndex++;}const antler=cyl(deer,mats.wood,side*2,17,-7,.45,.7,6,6);antler.rotation.z=side*.27;}
- const tail=make(new T.ConeGeometry(1.8,4,5),mats.cream,deer,[0,8,7],[Math.PI/2,0,0]);
+ for(const side of [-1,1])for(const z of [-4.1,4.1]){
+  const leg=cyl(deer,mats.animal,side*2.25,2.2,z,.51,.79,4.8,8);
+  leg.userData.legIndex=legIndex++;
+  const hoof=cube(leg,mats.hoof,0,-2.1,-.4,1.25,.72,1.75);
+  hoof.rotation.x=.08;
+ }
+ const deerTail=ball(deer,mats.cream,0,7.8,7.3,1.15);deerTail.scale.set(.83,.65,1.5);
  const turkey=new T.Group();turkey.name='Animated turkey';hunt.add(turkey);
- ball(turkey,mats.animal,0,4,0,3.8);ball(turkey,mats.cream,0,6,-2.5,1.7);
+ const turkeyBody=ball(turkey,mats.feathers,0,4,0,1);turkeyBody.scale.set(3.8,3,4.7);
+ const turkeyHead=new T.Group();turkeyHead.position.set(0,6,-2.5);turkey.add(turkeyHead);
+ const neck=ball(turkeyHead,mats.cream,0,0,0,1.7);
+ const beak=make(new T.ConeGeometry(.8,2.3,7),mats.corn,turkeyHead,[0,-.05,-1.8],[Math.PI/2,0,0]);
+ for(const side of [-1,1])ball(turkeyHead,mats.eye,side*1.28,.38,-.85,.25);
  for(let n=0;n<7;n++){const t=(n-3)*.32;const feather=make(new T.ConeGeometry(1.1,7,5),mats.animal,turkey,[Math.sin(t)*5,5.8,3.8],[Math.PI/2,0,-t]);}
  for(const sx of [-1,1])cyl(turkey,mats.wood,sx*1.6,1,-.3,.22,.25,2.2,5);
  const rabbit=new T.Group();rabbit.name='Animated rabbit';hunt.add(rabbit);
- ball(rabbit,mats.animal,0,2.3,0,2.6);ball(rabbit,mats.animal,0,3,-3.2,1.7);
- for(const sx of [-1,1]){const ear=make(new T.ConeGeometry(.68,4,6),mats.cream,rabbit,[sx*.9,6,-3.4]);ear.rotation.z=sx*.14;}
+ const rabbitTorso=ball(rabbit,mats.animal,0,2.3,0,1);rabbitTorso.scale.set(2.65,1.6,3.75);
+ const rabbitHead=new T.Group();rabbitHead.position.set(0,3,-3.1);rabbit.add(rabbitHead);
+ ball(rabbitHead,mats.animal,0,0,0,1.8);
+ for(const sx of [-1,1]){
+  const ear=make(new T.ConeGeometry(.69,4.4,8),mats.cream,rabbitHead,[sx*.85,2.7,-.35]);ear.rotation.z=sx*.14;
+  ball(rabbitHead,mats.eye,sx*1.25,.25,-1.06,.26);
+  const hind=ball(rabbit,mats.cream,sx*1.8,.95,2,1.45);hind.scale.set(1,.55,1.35);
+ }
+ ball(rabbitHead,mats.cream,0,-.55,-1.52,.62);
+ ball(rabbit,mats.cream,0,2,3.8,.89);
  const wildlife={deer,turkey,rabbit};
+ // Reuse the same meshes and animation tracks at all frame rates.
+ for(const animal of Object.values(wildlife))
+  animal.traverse(obj=>{if(obj.isMesh){obj.castShadow=true;obj.receiveShadow=true;}});
+ const animalHeads={deer:deerHead,turkey:turkeyHead,rabbit:rabbitHead};
+ const animalTails={deer:deerTail};
  const aimRing=new T.Group();hunt.add(aimRing);make(new T.TorusGeometry(5,.7,6,20),mats.glow,aimRing,[0,10,-3]);cyl(aimRing,mats.glow,0,6,-3,.5,.5,5);
  // River fishing. A real pier and moving bobber in world space.
  const fish=groups.fish;for(const side of [-1,1])for(let z=-20;z<=52;z+=18)cyl(fish,mats.wood,side*14,-5,z,2,2,16,8);
  const deck=cube(fish,mats.woodLight,0,2,13,33,2,100);for(let z=-30;z<57;z+=8)cube(fish,mats.wood,0,3.2,z,31,.3,.5);
  const rod=cyl(fish,mats.iron,-10,10,-20,.45,.8,23,7);rod.rotation.z=.35;
- const line=new T.Group();fish.add(line);const float=ball(line,new T.MeshLambertMaterial({color:0xf4cb4b}),0,0,0,1.75);cyl(line,mats.water,0,-1.1,0,.7,.7,1.4);
+ const line=new T.Group();fish.add(line);
+ const fishingLineGeometry=new T.BufferGeometry().setFromPoints([
+  new T.Vector3(-2,21,-20),new T.Vector3(15,-3,40)
+ ]);
+ const fishingLineMaterial=new T.LineBasicMaterial({color:0xc7d9d1,transparent:true,opacity:.75});
+ const fishingLine=new T.Line(fishingLineGeometry,fishingLineMaterial);fish.add(fishingLine);
+ const float=ball(line,new T.MeshStandardMaterial({color:0xffb54a,roughness:.28,metalness:0}),0,0,0,1.75);cyl(line,mats.water,0,-1.1,0,.7,.7,1.4);
  const ripple=make(new T.TorusGeometry(4,.2,4,24),mats.water,line,[0,-.2,0],[Math.PI/2,0,0]);
  const fishModel=new T.Group();fishModel.name='Jumping fish when the bobber dips';line.add(fishModel);
  const fishBody=make(new T.SphereGeometry(2.1,12,8),mats.iron,fishModel,[0,0,0]);fishBody.scale.set(1.3,.6,.5);
@@ -126,30 +168,35 @@ function sceneWorld(T,scene,ground){
     animal.visible=state.visible;
     animal.position.set(state.x,ground(SITES.hunt.x+state.x,SITES.hunt.z+state.z)-ground(SITES.hunt.x,SITES.hunt.z)+state.height+state.bob,state.z);
     animal.rotation.y=state.rotationY;
-    animal.userData.state=state.fleeing?'avoiding-player':huntRound?'tracked':'wandering';
+    animal.userData.state=state.behavior;
+    const head=animalHeads[kind];
+    if(head){head.rotation.x=state.headDip;head.rotation.z=state.earFlick*.28;}
    }
    deer.children.forEach(c=>{if(c.userData.legIndex!==undefined)c.rotation.x=(moving?.deer?.gait||0)*(c.userData.legIndex%2?1:-1);});
+   deerTail.rotation.y=moving?.deer?.tailSwish||0;
    turkey.rotation.z=(moving?.turkey?.gait||0)*.12;
    rabbit.rotation.z=(moving?.rabbit?.gait||0)*.10;
    const ringX=(aim-.5)*67;
    aimRing.position.set(ringX,ground(SITES.hunt.x+ringX,SITES.hunt.z-5)-ground(SITES.hunt.x,SITES.hunt.z),-5);
    aimRing.visible=activity==='hunt'&&!!huntRound;
    line.position.set(15,-3,40);line.visible=activity==='fish';
-   const biting=fishRound&&SKILLS?.fishCue(fishRound,now).phase==='bite';
-   float.position.y=Math.sin(tick*5)*.45-(biting?2.5:0);
-   fishModel.visible=!!biting;fishModel.position.set(0,(biting?2.5:0)+Math.abs(Math.sin(tick*7))*1.3,0);
+   const fishPhase=fishRound&&SKILLS?.fishCue(fishRound,now).phase;
+   const biting=fishPhase==='bite',struggling=fishPhase==='fight';
+   float.position.y=Math.sin(tick*5)*.45-(biting?2.5:0)-(struggling?Math.sin(tick*7)*.85:0);
+   fishModel.visible=!!(biting||struggling);
+   fishModel.position.set(0,(biting?2.5:0)+Math.abs(Math.sin(tick*7))*(struggling?2.4:1.3),0);
    fishTail.rotation.y=Math.sin(tick*13)*.45;
    float.material.color.setHex(biting?0xff5c43:0xf4cb4b);
    ripple.scale.setScalar(biting?1.6:1+.15*Math.sin(tick*4));
    for(let i=0;i<9;i++){const t=save.farmPlots[i],growing=t>now,ready=t>0&&!growing;
-    const c=crops[i];c.visible=t>0;c.scale.y=ready?1:growing?Math.max(.18,1-Math.min(8000,t-Date.now())/9700):.001;
+    const c=crops[i];c.visible=t>0;c.scale.y=ready?1:growing?Math.max(.18,1-Math.min(8000,t-now)/9700):.001;
    }
    flames.scale.y=1+Math.sin(tick*10)*.13;
    smoke.forEach((m,i)=>{m.position.y=16+((i*5+tick*5)%43);m.position.x=Math.sin(tick+i*2)*2.7;m.position.z=Math.cos(tick*.65+i)*2;m.scale.setScalar(.65+.36*(i/8));});
    campLight.intensity=weather==='rain'?.3:.65+Math.sin(tick*11)*.1;
    food.visible=save.inventory.meals>0||activity==='cook';food.rotation.y=tick*.12;
   },
-  dispose(){scene.remove(root);root.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();/* shared materials disposed below */}});Object.values(mats).forEach(m=>{m.map?.dispose();m.dispose();});}
+  dispose(){scene.remove(root);root.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();/* shared materials disposed below */}});fishingLineGeometry.dispose();fishingLineMaterial.dispose();float.material.dispose();Object.values(mats).forEach(m=>{m.map?.dispose();m.dispose();});}
  };
  return world;
 }
