@@ -5793,12 +5793,50 @@ return {SCENES,render};
  }
  return Object.freeze({SPECIES,sampleWildlife,fishCue,newFishingRound,reel,farmPlotIndex});
 });
+</script><script>(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.ValleyCreatures=api;})(typeof globalThis==='object'?globalThis:this,function(){'use strict';
+let geometryEngine=null;
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,Number.isFinite(v)?v:a));
+function mats(T){geometryEngine=T;return{fur:new T.MeshStandardMaterial({color:0x8a6a4a,roughness:.94,metalness:.02}),cream:new T.MeshStandardMaterial({color:0xc9a276,roughness:.96}),darkFur:new T.MeshStandardMaterial({color:0x4a3a2c,roughness:.92}),hoof:new T.MeshStandardMaterial({color:0x2a241f,roughness:.85}),eye:new T.MeshStandardMaterial({color:0x1a1510,roughness:.22,metalness:.05}),eyeHighlight:new T.MeshBasicMaterial({color:0xf5f0e6}),nose:new T.MeshStandardMaterial({color:0x1c1814,roughness:.55}),collar:new T.MeshStandardMaterial({color:0x2f5f4a,roughness:.7,metalness:.15}),gold:new T.MeshStandardMaterial({color:0xd4a84b,roughness:.35,metalness:.65}),feather:new T.MeshStandardMaterial({color:0x6b4428,roughness:.9}),featherTip:new T.MeshStandardMaterial({color:0xc4a574,roughness:.88}),beak:new T.MeshStandardMaterial({color:0xc47a2a,roughness:.7}),antler:new T.MeshStandardMaterial({color:0x9a7a52,roughness:.82}),white:new T.MeshStandardMaterial({color:0xe8e2d8,roughness:.95})};}
+function ball(p,m,x,y,z,r,s){s=s||10;const o=new geometryEngine.Mesh(new geometryEngine.SphereGeometry(r,s,s),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;p.add(o);return o;}
+function cyl(p,m,x,y,z,rt,rb,h,s){s=s||8;const o=new geometryEngine.Mesh(new geometryEngine.CylinderGeometry(rt,rb,h,s),m);o.position.set(x,y,z);o.castShadow=true;p.add(o);return o;}
+function createScout(THREE){const M=mats(THREE),root=new THREE.Group();root.name='Scout/full-3d-companion';
+ball(root,M.fur,0,3.6,0,1,12).scale.set(2.35,1.75,3.55);ball(root,M.cream,0,3.35,-2.85,1,10).scale.set(1.85,1.35,1.55);
+const head=new THREE.Group();head.position.set(0,5.35,-4.15);root.add(head);ball(head,M.fur,0,.15,0,1.85,12);ball(head,M.cream,0,-.55,-1.85,1.05,10).scale.set(1.05,.85,1.35);ball(head,M.nose,0,-.65,-3.05,.38,8);
+for(const side of[-1,1]){const ear=ball(head,M.darkFur,side*1.55,1.35,.35,.72,8);ear.scale.set(.55,1.35,.85);ear.rotation.z=side*.35;ear.rotation.x=-.25;const ew=ball(head,M.white,side*.95,.35,-1.15,.32,8);ball(ew,M.eye,0,0,-.22,.2,8);ball(ew,M.eyeHighlight,.08,.08,-.32,.07,6);}
+cyl(root,M.collar,0,4.55,-2.55,1.35,1.35,.35,12).rotation.x=Math.PI/2;const tag=new THREE.Mesh(new THREE.TorusGeometry(.42,.1,6,14),M.gold);tag.position.set(0,4.35,-2.95);tag.rotation.x=Math.PI/2;root.add(tag);
+const legs=[],offs=[[-1.35,1.55,-2.1],[1.35,1.55,-2.1],[-1.35,1.55,2],[1.35,1.55,2]];
+for(let i=0;i<4;i++){const pivot=new THREE.Group();pivot.position.set(offs[i][0],offs[i][1],offs[i][2]);cyl(pivot,M.fur,0,-1.1,0,.55,.48,2.2,8);ball(pivot,M.cream,0,-2.35,-.15,.55,8).scale.set(1.15,.55,1.35);root.add(pivot);legs.push(pivot);}
+const tail=new THREE.Group();tail.position.set(0,4.4,3.35);root.add(tail);ball(tail,M.fur,0,.2,.8,.55,8).scale.set(.7,.7,1.4);ball(tail,M.cream,0,.15,1.85,.4,8);
+const lodFar=new THREE.Group();lodFar.name='Scout/lod-far';ball(lodFar,M.fur,0,3.2,0,2.2,8).scale.set(1.2,1,2);lodFar.visible=false;root.add(lodFar);
+root.userData.setLod=function(level){const full=level<2;for(const c of root.children){if(c!==lodFar)c.visible=full;}lodFar.visible=!full;};
+root.userData.animate=function(dt,state){state=state||{};const phase=Number.isFinite(state.phase)?state.phase:0,moving=!!state.moving,sit=state.action==='sit',amp=moving?.55:0;for(let i=0;i<legs.length;i++){const sign=i%2===0?1:-1,pair=i<2?1:-1;legs[i].rotation.x=sit?.85:amp*Math.sin(phase+(i+pair)*1.57)*sign*.9;}tail.rotation.z=Math.sin(phase*1.8)*(moving?.55:.25);tail.rotation.x=moving?.15:-.1;if(Number.isFinite(state.lookYaw))head.rotation.y=clamp(state.lookYaw,-.6,.6);head.rotation.x=sit?.15:Math.sin(phase*.5)*.04;};
+root.userData.kind='scout';return root;}
+function createDeer(THREE){const M=mats(THREE),root=new THREE.Group();root.name='Wildlife/deer-full-3d';ball(root,M.fur,0,7,0,1,12).scale.set(2.8,2.2,5.4);ball(root,M.cream,0,5.4,-3.6,1,10).scale.set(1.9,1,2.2);cyl(root,M.fur,0,10.2,-4.2,1.1,1.35,3.2,10).rotation.x=-.28;const head=new THREE.Group();head.position.set(0,13.2,-5.8);root.add(head);ball(head,M.fur,0,0,0,2.2,12);ball(head,M.cream,0,-.6,-2.2,1.2,10).scale.set(1,.85,1.3);ball(head,M.nose,0,-.7,-3.5,.45,8);for(const side of[-1,1]){const ear=ball(head,M.cream,side*2.1,1.4,.2,.85,8);ear.scale.set(1.4,.45,.7);ear.rotation.z=side*.35;ball(head,M.eye,side*1.7,.25,-1.1,.28,8);const antler=cyl(head,M.antler,side*1.1,3.8,.2,.18,.28,5.2,6);antler.rotation.z=side*.28;for(let n=0;n<2;n++){const tine=cyl(antler,M.antler,side*.6,.8+n*1.4,.1,.1,.12,1.8,5);tine.rotation.z=side*(.7+n*.15);}}const legs=[],offs=[[-1.5,4.2,-2.8],[1.5,4.2,-2.8],[-1.5,4.2,2.6],[1.5,4.2,2.6]];for(let i=0;i<4;i++){const pivot=new THREE.Group();pivot.position.set(offs[i][0],offs[i][1],offs[i][2]);cyl(pivot,M.fur,0,-2,0,.45,.38,4,8);ball(pivot,M.hoof,0,-4.15,.1,.42,8);root.add(pivot);legs.push(pivot);}ball(root,M.white,0,8.2,5,.55,8).scale.set(.7,.9,1.2);root.userData.animate=function(dt,state){const phase=(state&&state.phase)||0,amp=(state&&state.moving)?.45:.05;for(let i=0;i<4;i++)legs[i].rotation.x=Math.sin(phase+i*1.57)*amp*(i%2?-1:1);head.rotation.y=Math.sin(phase*.3)*.12;};root.userData.kind='deer';return root;}
+function createTurkey(THREE){const M=mats(THREE),root=new THREE.Group();root.name='Wildlife/turkey-full-3d';ball(root,M.feather,0,2.4,0,1,12).scale.set(1.8,1.6,2.4);ball(root,M.featherTip,0,2,-1.5,1,10).scale.set(1.4,1.2,1.3);const head=new THREE.Group();head.position.set(0,4.2,-2.35);root.add(head);ball(head,M.cream,0,0,0,.7,10);cyl(head,M.beak,0,-.15,-.95,.12,.22,.9,6).rotation.x=Math.PI/2;ball(head,M.eye,.35,.15,-.35,.12,6);ball(head,M.eye,-.35,.15,-.35,.12,6);ball(head,new THREE.MeshStandardMaterial({color:0xb03a2e,roughness:.7}),0,-.55,-.4,.28,8);const tail=new THREE.Group();tail.position.set(0,2.8,2);root.add(tail);for(let i=-4;i<=4;i++){const f=cyl(tail,i%2?M.feather:M.featherTip,i*.35,1.2,.2,.08,.2,2.8,5);f.rotation.z=i*.18;f.rotation.x=-.5;}const legs=[];for(const side of[-1,1]){const pivot=new THREE.Group();pivot.position.set(side*.7,1.2,.2);cyl(pivot,M.beak,0,-.7,0,.12,.12,1.4,6);root.add(pivot);legs.push(pivot);}root.userData.animate=function(dt,state){const phase=(state&&state.phase)||0,moving=!!(state&&state.moving);for(let i=0;i<legs.length;i++)legs[i].rotation.x=Math.sin(phase+i*Math.PI)*(moving?.5:.08);head.rotation.y=Math.sin(phase*.4)*.2;tail.rotation.y=Math.sin(phase*.25)*.08;};root.userData.kind='turkey';return root;}
+function createRabbit(THREE){const M=mats(THREE),root=new THREE.Group();root.name='Wildlife/rabbit-full-3d';ball(root,M.fur,0,1.5,0,1,12).scale.set(1.3,1.15,1.9);ball(root,M.cream,0,1.35,-1,.7,10);const head=new THREE.Group();head.position.set(0,2.6,-1.55);root.add(head);ball(head,M.fur,0,0,0,.95,12);ball(head,M.cream,0,-.25,-.75,.45,8);ball(head,M.nose,0,-.2,-1.15,.18,6);for(const side of[-1,1]){const ear=ball(head,M.fur,side*.45,1.35,.15,.35,8);ear.scale.set(.55,1.8,.35);ear.rotation.z=side*.12;ball(ear,M.cream,0,.1,-.15,.18,6).scale.set(.7,1.4,.3);ball(head,M.eye,side*.55,.15,-.55,.16,6);}const legs=[];for(const side of[-1,1]){const pivot=new THREE.Group();pivot.position.set(side*.7,1,.85);ball(pivot,M.fur,0,-.35,0,.55,8);ball(pivot,M.cream,0,-.85,-.15,.35,8);root.add(pivot);legs.push(pivot);}for(const side of[-1,1]){const pivot=new THREE.Group();pivot.position.set(side*.55,1,-.7);cyl(pivot,M.fur,0,-.45,0,.18,.16,.9,6);ball(pivot,M.cream,0,-.95,0,.22,6);root.add(pivot);legs.push(pivot);}ball(root,M.white,0,1.7,1.7,.4,8);root.userData.animate=function(dt,state){const phase=(state&&state.phase)||0,moving=!!(state&&state.moving);root.position.y=moving?Math.abs(Math.sin(phase*2))*.35:0;for(let i=0;i<legs.length;i++)legs[i].rotation.x=Math.sin(phase+(i<2?0:Math.PI))*(moving?.6:.05);head.rotation.y=Math.sin(phase*.35)*.15;};root.userData.kind='rabbit';return root;}
+function create(THREE,kind){if(!THREE)throw new TypeError('THREE required');kind=String(kind||'scout').toLowerCase();if(kind==='scout'||kind==='dog')return createScout(THREE);if(kind==='deer')return createDeer(THREE);if(kind==='turkey')return createTurkey(THREE);if(kind==='rabbit')return createRabbit(THREE);throw new RangeError('Unknown creature kind: '+kind);}
+function dispose(model){
+ const geometry=new Set(),materials=new Set(),textures=new Set();
+ model?.traverse?.(object=>{
+  if(!object.isMesh)return;
+  if(object.geometry)geometry.add(object.geometry);
+  for(const material of Array.isArray(object.material)?object.material:[object.material]){
+   if(!material)continue;
+   materials.add(material);
+   for(const value of Object.values(material))if(value?.isTexture)textures.add(value);
+  }
+ });
+ for(const item of [...geometry,...materials,...textures])item.dispose?.();
+}
+function attachWildlife(THREE,scene,descriptors,options){options=options||{};const scale=options.scale!=null?options.scale:1,group=new THREE.Group();group.name='Wildlife/full-3d-layer';const instances=[];for(let i=0;i<(descriptors||[]).length;i++){const d=descriptors[i];let mesh;try{mesh=create(THREE,d.kind);}catch(e){continue;}mesh.position.set(d.x,0,d.z);mesh.rotation.y=Number.isFinite(d.heading)?d.heading:0;mesh.scale.setScalar((d.size||1)*scale);mesh.userData.descriptor=d;group.add(mesh);instances.push(mesh);}scene.add(group);return{group,instances,animate:function(dt,stamp){const phase=(Number.isFinite(stamp)?stamp:0)*.004;for(let i=0;i<instances.length;i++){const mesh=instances[i];if(typeof mesh.userData.animate==='function')mesh.userData.animate(dt,{phase:phase+((mesh.userData.descriptor&&mesh.userData.descriptor.x)||0)*.01,moving:!!(mesh.userData.descriptor&&mesh.userData.descriptor.alert)});}},dispose:function(){scene.remove(group);for(const item of instances)dispose(item);}};}
+return Object.freeze({create,createScout,createDeer,createTurkey,createRabbit,attachWildlife,mats,dispose});});
 </script><script>/* River Valley / in-world gameplay layer, original procedural geometry. Local and offline.
  * The geometry shares the terrain sample function supplied by the main render engine.
  * All hunting/fishing progression is handled by the existing unit-tested ValleyCore.
  */
 (function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.ValleyOpenWorld=api;})(typeof globalThis==='object'?globalThis:this,function(root){'use strict';
 const SKILLS=root.ValleyGameplaySkills||(typeof require==='function'?require('./gameplay-skills.js'):null);
+const CREATURES=root.ValleyCreatures||(typeof require==='function'?require('./creatures.js'):null);
 const SITES=Object.freeze({
  hunt:{x:1260,z:-900,title:'Wildflower Wildlife Trail',label:'🦌 Woodland Hunt',kind:'trail'},
  fish:{x:130,z:1150,title:'Ohio River Fishing Pier',label:'🎣 River Fishing',kind:'river'},
@@ -5833,7 +5871,7 @@ function alignStaticSite(group,site,ground,excluded=new Set()){
  }
  return Object.freeze({aligned,skipped,siteX:site.x,siteZ:site.z,source:'GAME_LOCAL_TERRAIN_NOT_SURVEYED'});
 }
-function sceneWorld(T,scene,ground){
+function sceneWorld(T,scene,ground,options={}){
  const root=new T.Group();root.name='River Valley in-world activities';scene.add(root);
  const texture=(base,kind)=>{
   if(typeof document==='undefined')return null;
@@ -5906,6 +5944,18 @@ function sceneWorld(T,scene,ground){
  ball(rabbitHead,mats.cream,0,-.55,-1.52,.62);
  ball(rabbit,mats.cream,0,2,3.8,.89);
  const wildlife={deer,turkey,rabbit};
+ // Keep legacy interactive groups as the terrain/physics anchors, but show the
+ // upgraded detailed models on desktop. Only one visual per species is visible.
+ const creatureVisuals={};
+ if(CREATURES&&options.enhancedCreatures){
+  for(const [kind,holder] of Object.entries(wildlife)){
+   try{
+    const model=CREATURES.create(T,kind);
+    for(const child of holder.children)child.visible=false;
+    holder.add(model);creatureVisuals[kind]=model;
+   }catch(error){console.warn('Could not use enhanced creature:',kind,error);}
+  }
+ }
  // Reuse the same meshes and animation tracks at all frame rates.
  for(const animal of Object.values(wildlife))
   animal.traverse(obj=>{if(obj.isMesh){obj.castShadow=true;obj.receiveShadow=true;}});
@@ -5976,7 +6026,7 @@ function sceneWorld(T,scene,ground){
   farm:alignStaticSite(groups.farm,SITES.farm,ground,new Set(patches)),
   cook:alignStaticSite(groups.cook,SITES.cook,ground,new Set(smoke))
  };
- const world={root,groups,deer,wildlife,fishModel,aimRing,float,line,ripple,patches,crops,flames,smoke,food,campLight,counts:{activitySites:4,animalModels:3,fieldPlots:9,animatedSmokePuffs:8,barnModels:1,grainSilos:1,terrainAlignment},
+ const world={root,groups,deer,wildlife,creatureVisuals,fishModel,aimRing,float,line,ripple,patches,crops,flames,smoke,food,campLight,counts:{activitySites:4,animalModels:3,fieldPlots:9,animatedSmokePuffs:8,barnModels:1,grainSilos:1,terrainAlignment},
   update({stamp=0,save,activity,huntRound,fishRound,aim=.5,weather='clear',player=null,now=Date.now()}){
    const tick=stamp*.001;
    // Local animation is deterministic and tied to game clock, not browser FPS.
@@ -5987,6 +6037,11 @@ function sceneWorld(T,scene,ground){
     animal.position.set(state.x,ground(SITES.hunt.x+state.x,SITES.hunt.z+state.z)-ground(SITES.hunt.x,SITES.hunt.z)+state.height+state.bob,state.z);
     animal.rotation.y=state.rotationY;
     animal.userData.state=state.behavior;
+    const detailed=creatureVisuals[kind];
+    if(detailed?.userData?.animate)detailed.userData.animate(1/60,{
+     phase:stamp*.005+(kind==='rabbit'?2:kind==='turkey'?1:0),
+     moving:state.behavior!=='forage',action:state.behavior,headDip:state.headDip
+    });
     const head=animalHeads[kind];
     if(head){head.rotation.x=state.headDip;head.rotation.z=state.earFlick*.28;}
    }
@@ -6014,7 +6069,7 @@ function sceneWorld(T,scene,ground){
    campLight.intensity=weather==='rain'?.3:.65+Math.sin(tick*11)*.1;
    food.visible=save.inventory.meals>0||activity==='cook';food.rotation.y=tick*.12;
   },
-  dispose(){scene.remove(root);root.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();/* shared materials disposed below */}});fishingLineGeometry.dispose();fishingLineMaterial.dispose();float.material.dispose();Object.values(mats).forEach(m=>{m.map?.dispose();m.dispose();});}
+  dispose(){scene.remove(root);for(const model of Object.values(creatureVisuals))CREATURES?.dispose(model);root.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();/* shared materials disposed below */}});fishingLineGeometry.dispose();fishingLineMaterial.dispose();float.material.dispose();Object.values(mats).forEach(m=>{m.map?.dispose();m.dispose();});}
  };
  return world;
 }
@@ -9664,7 +9719,7 @@ let currentTravelSpeed=0;
 const G=window.THREE;
 const POLISH=window.ValleyVisualPolish,BIOME=window.ValleyBiomeStreamer,LODPLAN=window.ValleyLODTransition,GRAPHICS=window.ValleyGraphicsQuality,ASSET_CODEC=window.ValleyCompressedAssets;
 const RIVER_WATER=window.ValleyRiverWater,ROOFS=window.ValleyBuildingRoofs,LANDMARKS=window.ValleyLandmarkAnchors;
-const CINEMATIC=window.ValleyCinematicLighting,DRESS=window.ValleyCinematicSetDressing,SKILLS=window.ValleyGameplaySkills;
+const CINEMATIC=window.ValleyCinematicLighting,DRESS=window.ValleyCinematicSetDressing,SKILLS=window.ValleyGameplaySkills,CREATURES=window.ValleyCreatures;
 const ACCESS=window.ValleyLandmarkAccess;
 const CUSTOM_HERO=window.ValleyCustomHero,CAST_WARDROBE=window.ValleyCastWardrobe;
 const UX=window.ValleyPlayerExperience;
@@ -9772,7 +9827,7 @@ function tryRenderer(){
   if(DRESS)cinematicDressing=DRESS.create(G,scene,height,{mobile:innerWidth<781});
   if(COUNTY_SCENES&&COUNTY){countyVignettes=COUNTY_SCENES.create(G,scene,height,COUNTY);
     collisionWorld=COLLISION.create([...buildingItems,...countyVignettes.colliders],{radius:1.7,stepHeight:2.8});}
-  if(WORLD)worldGame=WORLD.sceneWorld(G,scene,height);if(ATM)atmosphere=ATM.create(G,scene,height,LIMIT);if(DIR)director3D=DIR.makeWorldFX(G,scene,height,LIMIT);
+  if(WORLD)worldGame=WORLD.sceneWorld(G,scene,height,{enhancedCreatures:!!CREATURES&&innerWidth>=781&&visualEffects!=='lite'});if(ATM)atmosphere=ATM.create(G,scene,height,LIMIT);if(DIR)director3D=DIR.makeWorldFX(G,scene,height,LIMIT);
   return true;
  }catch(err){console.warn('WebGL unavailable; 2D atlas gameplay remains active.',err.message); if(renderer){try{renderer.dispose();}catch(_){}}renderer=null;scene=null;return false;}
 }
@@ -10257,6 +10312,15 @@ function buildPlayer(){
  const tail=new G.Group();tail.position.set(0,4.5,3.5);dog.add(tail);
  const tailMesh=new G.Mesh(new G.ConeGeometry(.75,4,7),fur);tailMesh.position.z=1.8;tailMesh.rotation.x=Math.PI/2;tail.add(tailMesh);
  dogParts={legs,head,tail};scene.add(dog);
+ // Art-directed Scout is the local desktop default; user's verified custom GLB
+ // still takes precedence and can be restored from existing offline saves.
+ if(CREATURES&&innerWidth>=781&&visualEffects!=='lite'){
+  try{
+   const detailed=CREATURES.create(G,'scout');
+   for(const child of dog.children)child.visible=false;
+   dog.add(detailed);dog.userData.cinematicScout=detailed;
+  }catch(error){console.warn('Retaining legacy Scout model:',error);}
+ }
 }
 let scoutImportGeneration=0;
 const SCOUT_GLB_KEY='river-valley-custom-scout-v1';
@@ -10296,7 +10360,7 @@ function clearStaticScout(){
   disposeScoutVisual(custom);
   dog.userData.customScout=null;
  }
- for(const child of dog.children)child.visible=true;
+ for(const child of dog.children)child.visible=!dog.userData.cinematicScout||child===dog.userData.cinematicScout;
 }
 function disposeScoutVisual(visual){
  const resources=new Set();
@@ -10488,6 +10552,11 @@ function updateVisuals(dt,stamp){
      anim.active=clip;
     }
     anim.mixer.update(dt);
+   }
+   const enhanced=dog.userData.cinematicScout;
+   if(enhanced&&!dog.userData.customScout){
+    enhanced.userData.animate?.(dt,{phase:state.phase*2,moving:state.pace>1,action:state.action,lookYaw:0});
+    enhanced.userData.setLod?.(visualEffects==='lite'?2:0);
    }
    if(dogParts){dogParts.tail.rotation.y=state.tailWag;
      dogParts.head.rotation.x=state.action==='sit'?.16:Math.sin(stamp*.001)*.055;
