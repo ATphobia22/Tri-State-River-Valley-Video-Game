@@ -813,6 +813,7 @@ function buildOriginalModels(){
       status:match.status};
    }
    group.position.set(bx,ground,bz);group.scale.setScalar(modelScale);group.userData.model=name;
+   group.traverse(obj=>{if(obj.isMesh){obj.castShadow=true;obj.receiveShadow=true;}});
    if(name==='oak_cottage'){if(house){scene.remove(house);house.traverse(obj=>{if(obj.isMesh){obj.geometry.dispose();obj.material.dispose();}});}house=group;group.visible=false;}
    scene.add(group);gameModels.push(group);
   }catch(err){console.warn('Optional 3D model not available:',name,err.message);}
