@@ -1,0 +1,118 @@
+{
+  "river": {
+    "Wave": {
+      "samples": 17,
+      "peak_displacement": 7.8757643699646,
+      "edge_ratio_p01": 0.9999825358390808,
+      "edge_ratio_p99": 1.0000154972076416,
+      "max_edge_ratio": 1.000048041343689
+    },
+    "Walk": {
+      "samples": 17,
+      "peak_displacement": 4.69116735458374,
+      "edge_ratio_p01": 0.9999821782112122,
+      "edge_ratio_p99": 1.0000176429748535,
+      "max_edge_ratio": 1.000087022781372
+    },
+    "Track": {
+      "samples": 17,
+      "peak_displacement": 3.9274067878723145,
+      "edge_ratio_p01": 0.9999831914901733,
+      "edge_ratio_p99": 1.000016212463379,
+      "max_edge_ratio": 1.0000754594802856
+    },
+    "Sprint": {
+      "samples": 17,
+      "peak_displacement": 6.055644512176514,
+      "edge_ratio_p01": 0.9999821782112122,
+      "edge_ratio_p99": 1.00001859664917,
+      "max_edge_ratio": 1.0000587701797485
+    },
+    "Run": {
+      "samples": 17,
+      "peak_displacement": 5.465866565704346,
+      "edge_ratio_p01": 0.9999820590019226,
+      "edge_ratio_p99": 1.00001859664917,
+      "max_edge_ratio": 1.0000652074813843
+    },
+    "Land": {
+      "samples": 17,
+      "peak_displacement": 5.5590691566467285,
+      "edge_ratio_p01": 0.9999815225601196,
+      "edge_ratio_p99": 1.0000181198120117,
+      "max_edge_ratio": 1.0001064538955688
+    },
+    "Jump": {
+      "samples": 17,
+      "peak_displacement": 5.070113658905029,
+      "edge_ratio_p01": 0.9999842643737793,
+      "edge_ratio_p99": 1.0000132322311401,
+      "max_edge_ratio": 1.00005304813385
+    },
+    "Interact": {
+      "samples": 17,
+      "peak_displacement": 3.448335886001587,
+      "edge_ratio_p01": 0.9999814629554749,
+      "edge_ratio_p99": 1.000017523765564,
+      "max_edge_ratio": 1.0000886917114258
+    },
+    "Idle": {
+      "samples": 17,
+      "peak_displacement": 3.6952359676361084,
+      "edge_ratio_p01": 0.9999847412109375,
+      "edge_ratio_p99": 1.000015139579773,
+      "max_edge_ratio": 1.0000810623168945
+    },
+    "FishingCast": {
+      "samples": 17,
+      "peak_displacement": 3.787025213241577,
+      "edge_ratio_p01": 0.9999812841415405,
+      "edge_ratio_p99": 1.0000190734863281,
+      "max_edge_ratio": 1.0000728368759155
+    },
+    "Farm": {
+      "samples": 17,
+      "peak_displacement": 5.655653953552246,
+      "edge_ratio_p01": 0.9999783635139465,
+      "edge_ratio_p99": 1.0000216960906982,
+      "max_edge_ratio": 1.0000909566879272
+    },
+    "Drive": {
+      "samples": 17,
+      "peak_displacement": 6.715924263000488,
+      "edge_ratio_p01": 0.999979555606842,
+      "edge_ratio_p99": 1.00001859664917,
+      "max_edge_ratio": 1.0000886917114258
+    },
+    "Cook": {
+      "samples": 17,
+      "peak_displacement": 2.7995407581329346,
+      "edge_ratio_p01": 0.999981164932251,
+      "edge_ratio_p99": 1.0000189542770386,
+      "max_edge_ratio": 1.0000728368759155
+    }
+  },
+  "scout": {
+    "Walk": {
+      "samples": 17,
+      "peak_displacement": 0.1410958468914032,
+      "edge_ratio_p01": 0.9523223042488098,
+      "edge_ratio_p99": 1.0589691400527954,
+      "max_edge_ratio": 1.1584340333938599
+    },
+    "Run": {
+      "samples": 17,
+      "peak_displacement": 0.2372070550918579,
+      "edge_ratio_p01": 0.9217527508735657,
+      "edge_ratio_p99": 1.0931979417800903,
+      "max_edge_ratio": 1.2987087965011597
+    },
+    "Idle": {
+      "samples": 17,
+      "peak_displacement": 0.04037141799926758,
+      "edge_ratio_p01": 0.991163969039917,
+      "edge_ratio_p99": 1.0102018117904663,
+      "max_edge_ratio": 1.1584340333938599
+    }
+  }
+}
