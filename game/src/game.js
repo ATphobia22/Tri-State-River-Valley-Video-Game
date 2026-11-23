@@ -46,7 +46,7 @@ let collisionWorld=COLLISION.create(),lastFootstepAt=0,lastCollision=null,terrai
 let motionState=motion.snapshot(),heroHeightOffset=0,groundShadow=null;
 const streamingGovernor=STREAM?STREAM.createGovernor({maxTiles:innerWidth<781?110:200,minTiles:innerWidth<781?60:85,targetFPS:30}):null;
 let currentTravelSpeed=0;
-const G=window.THREE,COURTHOUSE=window.ValleyCourthouseFidelity;
+const G=window.THREE,COURTHOUSE=window.ValleyCourthouseFidelity,ROOF=window.ValleyRoofFidelity;
 const POLISH=window.ValleyVisualPolish,BIOME=window.ValleyBiomeStreamer,LODPLAN=window.ValleyLODTransition,GRAPHICS=window.ValleyGraphicsQuality,ASSET_CODEC=window.ValleyCompressedAssets;
 const RIVER_WATER=window.ValleyRiverWater;
 const CUSTOM_HERO=window.ValleyCustomHero,CAST_WARDROBE=window.ValleyCastWardrobe;
@@ -366,6 +366,7 @@ function detailedBuilding(rec){
  const g=new G.Group(),wall=[],wallUV=[],terrainY=pts.map(([x,z])=>height(x,z));
  const mats=facadePalette?facadePalette.pick(rec):null;
  const roofY=Math.max(...terrainY)+rec.h;
+ let roofStatus='UNVERIFIED_ARTISTIC_FLAT';
  for(let i=0;i<pts.length;i++){
    const j=(i+1)%pts.length,[x,z]=pts[i],[nx,nz]=pts[j],h0=terrainY[i]-.25,h1=terrainY[j]-.25;
    if(Math.hypot(nx-x,nz-z)<.1)continue;
@@ -380,14 +381,16 @@ function detailedBuilding(rec){
    const sh=new G.Shape();pts.forEach(([x,z],i)=>{if(!i)sh.moveTo(x,z);else sh.lineTo(x,z);});sh.closePath();
    const roofGeo=new G.ShapeGeometry(sh);roofGeo.rotateX(Math.PI/2);
    const roofMat=mats?mats.roof:new G.MeshLambertMaterial({color:0x676f6b,side:G.DoubleSide});
-   const roof=new G.Mesh(roofGeo,roofMat);roof.position.y=roofY;g.add(roof);
-   // Simple gabled overlay on near-rectangular footprints: a deliberate fictional design, not LOD2 survey geometry.
-   if(pts.length===4){
-     const x0=Math.min(...pts.map(p=>p[0])),x1=Math.max(...pts.map(p=>p[0])),z0=Math.min(...pts.map(p=>p[1])),z1=Math.max(...pts.map(p=>p[1]));
-     if(x1-x0>5&&z1-z0>5){const ridge=roofY+Math.min(7,Math.min(x1-x0,z1-z0)*.24),m=(x0+x1)*.5;
-       const ar=[x0,roofY,z0, m,ridge,z0, x0,roofY,z1, x0,roofY,z1,m,ridge,z0,m,ridge,z1, m,ridge,z0,x1,roofY,z0,m,ridge,z1, m,ridge,z1,x1,roofY,z0,x1,roofY,z1];
-       const rg=new G.BufferGeometry();rg.setAttribute('position',new G.Float32BufferAttribute(ar,3));rg.computeVertexNormals();g.add(new G.Mesh(rg,roofMat));
-     }
+   // No axis-aligned or invented survey-grade ridge: all roof triangles use the
+   // orientation of the actual IGIO 2020 footprint ring.
+   const plan=ROOF?.planRoof(pts,roofY,{form:ROOF.suggestedForm(rec)});
+   if(!plan||plan.kind==='ILLUSTRATIVE_PARAPET'){
+    const roof=new G.Mesh(roofGeo,roofMat);roof.position.y=roofY;g.add(roof);
+   }else{roofGeo.dispose();}
+   if(plan){
+    const rg=new G.BufferGeometry();rg.setAttribute('position',new G.Float32BufferAttribute(plan.positions,3));
+    rg.computeVertexNormals();g.add(new G.Mesh(rg,roofMat));
+    roofStatus=plan.kind+' / NO_ROOF_LIDAR';
    }
    // Near-camera windows follow each source footprint segment rather than world axes.
    const winMat=mats?mats.glass:new G.MeshBasicMaterial({color:0x234d5d,side:G.DoubleSide});
@@ -412,7 +415,8 @@ function detailedBuilding(rec){
      g.add(new G.Mesh(winGeo,winMat));
    }
  }catch(_){/* Invalid derived footprint: display walls and keep running. */}
- g.userData.index=rec.i;g.userData.facade=mats?.family||'classic';return g;
+ g.userData.index=rec.i;g.userData.facade=mats?.family||'classic';
+ g.userData.roofStatus=roofStatus;g.userData.heightStatus='ARTISTIC_GAME_ESTIMATE_NOT_SURVEYED';return g;
 }
 function buildBuildings(){
  buildingItems=[];
@@ -421,7 +425,7 @@ function buildBuildings(){
  const col=new G.Color(),colors=[0xdac5a5,0xb7afa2,0xb67861,0xbdb9ad,0x969f9a,0xd7b08a];
  buildingItems.forEach((b,i)=>buildingMesh.setColorAt(i,col.setHex(colors[b.i%colors.length])));
  buildingMesh.instanceColor.needsUpdate=true;buildingMesh.frustumCulled=false;scene.add(buildingMesh);
- roofInstances=new G.InstancedMesh(new G.ConeGeometry(.74,1,4),new G.MeshStandardMaterial({color:0x665b53,roughness:.92,side:G.DoubleSide}),buildingItems.length);
+ roofInstances=new G.InstancedMesh(new G.BoxGeometry(1,1,1),new G.MeshStandardMaterial({color:0x665b53,roughness:.92,side:G.DoubleSide}),buildingItems.length);
  roofInstances.frustumCulled=false;scene.add(roofInstances);
  collisionWorld=COLLISION.create(buildingItems,{radius:1.7,stepHeight:2.8});
  detailGroup=new G.Group();scene.add(detailGroup);updateBuildingLOD(true);
@@ -451,8 +455,8 @@ function updateBuildingLOD(force=false){
    dummy.updateMatrix();buildingMesh.setMatrixAt(i,dummy.matrix);
    if(roofInstances){if(b.isLandmark||want.has(i)||range>1900){dummy.position.set(0,-999,0);dummy.scale.set(.001,.001,.001);}
     else{const base=Math.min(height(b.x-b.dx*.5,b.z-b.dz*.5),height(b.x+b.dx*.5,b.z+b.dz*.5),height(b.x-b.dx*.5,b.z+b.dz*.5),height(b.x+b.dx*.5,b.z-b.dz*.5));
-     dummy.position.set(b.x,base+b.h+Math.max(1.5,Math.min(b.dx,b.dz)*.16)/2-.35,b.z);
-     dummy.scale.set(b.dx*1.1,Math.max(2.5,Math.min(b.dx,b.dz)*.3),b.dz*1.1);dummy.rotation.y=Math.PI/4;}
+     dummy.position.set(b.x,base+b.h+.15,b.z);
+     dummy.scale.set(b.dx*1.02,.55,b.dz*1.02);dummy.rotation.y=0;}
     dummy.updateMatrix();roofInstances.setMatrixAt(i,dummy.matrix);dummy.rotation.y=0;}
  });buildingMesh.instanceMatrix.needsUpdate=true;if(roofInstances)roofInstances.instanceMatrix.needsUpdate=true;
  for(const {i} of near){if(!detailBuildings.has(i)){
