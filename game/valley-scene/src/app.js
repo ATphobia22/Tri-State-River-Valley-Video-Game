@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import ZONING from './zoning-sim.cjs';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
@@ -28,6 +29,12 @@ const load=async file=>loader.parseAsync(await bytes(file),'');
 const root=new THREE.Group(),scene=new THREE.Scene(),origin=new THREE.Vector3();
 const camera=new THREE.PerspectiveCamera(47,1,.12,160000);
 let renderer,controls,manifest,ground,terrain,Aerial,parcelMap;
+let zoneSim=null,zoneData=null,zoneSelected=null,zonePaint=false,zoneSaveKey='';
+const zoneLines=new Map(),zoneBaseBuilt=new Set(),zoneGroup=new THREE.Group(),zoneBuildingGroup=new THREE.Group();
+const zoneColors={R1:0x8fb8e6,R2:0xb4a0e0,R3:0xd695cf,C:0xf2cb88,I:0xd68e79,AG:0x93c485,NONE:0xc5d1cd};
+const zoneMats=Object.fromEntries(Object.entries(zoneColors).map(([k,v])=>[k,new THREE.LineBasicMaterial({color:v,depthTest:false})]));
+const zoneHighlight=new THREE.LineBasicMaterial({color:0xffffff,depthTest:false});
+let zoneGrowthMesh=null;
 let particlesLoaded=0,rebases=0,queued=0,pumping=false,walking=false,yaw=Math.PI;
 let lastSelection='cast',lastTime=0,elapsed=0,actorStates=[],frameTimes=[],streamError=null;
 const tiles=[],landmarks=[],once=new Set(),pressed=new Set();
@@ -43,6 +50,110 @@ function height(x,z){
 function worldFromGeo(lon,lat){
   return [(lon-manifest.origin[0])*manifest.metresPerDegree[0],(manifest.origin[1]-lat)*manifest.metresPerDegree[1]];
 }
+
+function zonePoly(feature){
+ const geom=feature.geometry;
+ const ps=geom.type==='Polygon'?[geom.coordinates]:geom.type==='MultiPolygon'?geom.coordinates:[];
+ return ps.map(poly=>poly.map(ring=>ring.map(([lon,lat])=>worldFromGeo(lon,lat))));
+}
+function zoneContains(point,ring){
+ let inside=false;
+ for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+  const a=ring[i],b=ring[j];
+  if((a[1]>point[1])!==(b[1]>point[1])&&point[0]<(b[0]-a[0])*(point[1]-a[1])/(b[1]-a[1])+a[0])inside=!inside;
+ }
+ return inside;
+}
+function zoneAt(point){
+ for(const [id,p] of zoneLines)if(p.polys.some(poly=>zoneContains(point,poly[0])&&!poly.slice(1).some(r=>zoneContains(point,r))))return id;
+ return null;
+}
+function zonePersist(){try{localStorage.setItem(zoneSaveKey,JSON.stringify(zoneSim.exportDiffs()));}catch(_){}}
+function updateGrowthMassing(){
+ if(!zoneGrowthMesh)return;
+ let n=0;const tone=new THREE.Color();
+ for(const f of zoneData.features){
+  const p=zoneSim.get(f.id);
+  if(!p.built||zoneBaseBuilt.has(f.id))continue;
+  const [x,z]=p.center_local_m,b=Math.sqrt(Math.max(50,p.area_m2));
+  const y=4+p.building_level*2.5;
+  matrixHelper.position.set(x,height(x,z)+y/2,z);matrixHelper.scale.set(Math.min(14,b*.3),y,Math.min(12,b*.25));
+  matrixHelper.rotation.set(0,0,0);matrixHelper.updateMatrix();
+  zoneGrowthMesh.setMatrixAt(n,matrixHelper.matrix);tone.setHex(p.abandoned?0x665e53:zoneColors[p.zone]);
+  zoneGrowthMesh.setColorAt(n,tone);n++;
+ }
+ zoneGrowthMesh.count=n;zoneGrowthMesh.instanceMatrix.needsUpdate=true;
+ if(zoneGrowthMesh.instanceColor)zoneGrowthMesh.instanceColor.needsUpdate=true;
+ zoneGrowthMesh.computeBoundingSphere();
+}
+function zonePaintParcel(id,zone){
+ const p=zoneSim.paint(id,zone);zoneSelected=id;zonePersist();zoneRefresh();return p;
+}
+function zoneRefresh(note=''){
+ if(!zoneSim)return;
+ for(const [id,p] of zoneLines)p.lines.forEach(line=>line.material=id===zoneSelected?zoneHighlight:zoneMats[zoneSim.get(id).zone]);
+ const a=zoneSim.snapshot(),p=zoneSelected?zoneSim.get(zoneSelected):null;
+ $('zoneStats').textContent='Week '+a.week+' · '+a.total+' parcels · '+a.built+' built · '+a.households+
+  ' game households · '+a.abandoned+' abandoned · '+a.cacheCells+' cached 50m cells'+
+  (a.scenarioMode?' · FICTIONAL missing-data assumptions ON':' · Unverified flood/utilities block growth')+(note?' · '+note:'');
+ $('zoneSelection').textContent=p?'Parcel '+p.id+' · GAME zone '+p.zone+' · desirability '+p.desirability+
+  '/100 · '+(p.road_access_estimate?'road-near estimate':'no road-near estimate')+' · flood '+p.flood_status+
+  ' · '+(p.built?'built':'vacant')+' · level '+p.building_level+(p.abandoned?' · abandoned':''):
+  'Select a lot by tapping its outline. GAME zones are not legally recorded zoning.';
+}
+function zoneAdvance(){
+ const q=$('zoneDemand').value;
+ const d=q==='recession'?{residential:-100,commercial:-60,industrial:-50,agricultural:-40}:
+  q==='stagnant'?{residential:0,commercial:0,industrial:0,agricultural:0}:
+  {residential:80,commercial:55,industrial:35,agricultural:25};
+ const e=zoneSim.tick({demand:d});
+ updateGrowthMassing();zonePersist();zoneRefresh(e.length?e.map(x=>x.type+' '+x.parcelId).join(', '):'No parcel change');
+ return e;
+}
+async function setupZoning(){
+ const base=await jsonFile('mount_vernon_zoned.geojson');
+ if(base.type!=='FeatureCollection'||base.features?.length!==manifest.parcels)throw Error('Invalid parcel layer; zoning disabled');
+ zoneData=base;zoneSim=ZONING.create({features:base.features});
+ zoneSaveKey='rva-parcel-game-zoning-v1-'+base.properties.parcelGitBlob;
+ try{const saved=localStorage.getItem(zoneSaveKey);if(saved)zoneSim.importDiffs(JSON.parse(saved));}catch(e){console.warn('Zoning local save rejected',e);}
+ for(const feature of base.features){
+  const id=String(feature.id),polys=zonePoly(feature),lines=[];
+  if(feature.properties.built)zoneBaseBuilt.add(id);
+  for(const poly of polys)for(const ring of poly){
+   if(ring.length<4)continue;
+   const geo=new THREE.BufferGeometry().setFromPoints(ring.map(([x,z])=>new THREE.Vector3(x,height(x,z)+.45,z)));
+   const line=new THREE.LineLoop(geo,zoneMats[zoneSim.get(id).zone]);zoneGroup.add(line);lines.push(line);
+  }
+  zoneLines.set(id,{polys,lines});
+ }
+ zoneGroup.visible=false;root.add(zoneGroup);
+ zoneGrowthMesh=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.84}),base.features.length);
+ zoneGrowthMesh.count=0;zoneGrowthMesh.name='game-only new building massing proxies';zoneBuildingGroup.add(zoneGrowthMesh);root.add(zoneBuildingGroup);
+ updateGrowthMassing();zoneRefresh();
+ $('zones').onclick=()=>{const open=$('zonePanel').hidden;$('zonePanel').hidden=!open;
+  $('zones').setAttribute('aria-expanded',String(open));zoneGroup.visible=open;if(open)setView('town');};
+ $('zonePaint').onclick=()=>{zonePaint=!zonePaint;$('zonePaint').setAttribute('aria-pressed',String(zonePaint));
+  $('zonePaint').textContent=zonePaint?'Paint: on':'Paint: off';if(zonePaint){zoneGroup.visible=true;setView('town');}};
+ $('zoneOverlay').onclick=()=>{zoneGroup.visible=!zoneGroup.visible;$('zoneOverlay').setAttribute('aria-pressed',String(zoneGroup.visible));
+  $('zoneOverlay').textContent=zoneGroup.visible?'Zone outlines: on':'Zone outlines: off';};
+ $('zoneBulldoze').onclick=()=>{if(!zoneSelected){zoneRefresh('Select a parcel first');return;}
+  zoneSim.bulldoze(zoneSelected);updateGrowthMassing();zonePersist();zoneRefresh();};
+ $('zoneAdvance').onclick=zoneAdvance;
+ $('zoneScenario').onchange=e=>{zoneSim.setScenarioMode(e.target.checked);zoneRefresh();};
+ const canvas=$('world'),down=[0,0],ray=new THREE.Raycaster(),point=new THREE.Vector2();
+ canvas.addEventListener('pointerdown',e=>{down[0]=e.clientX;down[1]=e.clientY;});
+ canvas.addEventListener('pointerup',e=>{
+  if($('zonePanel').hidden||!zoneGroup.visible||Math.hypot(e.clientX-down[0],e.clientY-down[1])>7)return;
+  const rect=canvas.getBoundingClientRect();
+  point.set((e.clientX-rect.left)*2/rect.width-1,1-(e.clientY-rect.top)*2/rect.height);
+  ray.setFromCamera(point,camera);const hit=ray.intersectObject(terrain,true)[0];
+  if(!hit)return;
+  const id=zoneAt([hit.point.x+origin.x,hit.point.z+origin.z]);
+  if(!id)return;zoneSelected=id;
+  if(zonePaint)zonePaintParcel(id,$('zoneType').value);else zoneRefresh();
+ });
+}
+
 function install(gltf,name,x=0,y=0,z=0){
   const model=gltf.scene;model.name=name;model.position.set(x,y,z);root.add(model);groupNames.add(name);
   model.traverse(o=>{if(o.isMesh)o.receiveShadow=true;});return model;
@@ -149,7 +260,7 @@ function diagnostics(){
     actors:actorStates.map(a=>({name:a.file,clip:a.current,bones:a.model.getObjectByProperty('isSkinnedMesh',true)?.skeleton.bones.length})),
     drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,
     fineTiles:tiles.filter(t=>t.detail).length,proxyInstances:tiles.reduce((s,t)=>s+(t.proxies.visible?t.proxies.count:0),0),
-    streamError,parcelCount:manifest.parcels,frames:frameTimes.length};
+    streamError,parcelCount:manifest.parcels,zoning:zoneSim?.snapshot()||null,selectedParcel:zoneSelected,frames:frameTimes.length};
 }
 function tick(now){
   const delta=lastTime?(now-lastTime)/1000:0;lastTime=now;
@@ -190,7 +301,9 @@ async function start(){
     const bounds=new THREE.Box3().setFromObject(model.scene);const box=new THREE.Mesh(new THREE.BoxGeometry(...bounds.getSize(new THREE.Vector3()).toArray()),new THREE.MeshStandardMaterial({color:0xb7a48f}));
     bounds.getCenter(box.position);landmark.addLevel(model.scene,0);landmark.addLevel(box,950,.1);root.add(landmark);landmarks.push(landmark);
   }
-  setupTiles();setView('cast');
+  setupTiles();
+  try{await setupZoning();}catch(e){console.warn('Optional zoning unavailable',e);$('zones').disabled=true;$('zones').title='Zoning source unavailable';}
+  setView('cast');
   $('place').onchange=e=>setView(e.target.value);
   $('walk').onpointerdown=e=>{if(lastSelection!=='cast')setView('cast');walking=true;e.currentTarget.setPointerCapture(e.pointerId);};
   for(const ev of ['pointerup','pointercancel','lostpointercapture'])$('walk').addEventListener(ev,()=>walking=false);
@@ -216,6 +329,12 @@ async function start(){
     const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}));const a=document.createElement('a');
     a.href=url;a.download='river-valley-scene-performance.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
   };
-  window.ValleyScene={diagnostics,setView};requestAnimationFrame(tick);
+  window.ValleyScene={diagnostics,setView,zoning:{
+    snapshot:()=>zoneSim?.snapshot()||null,
+    get:id=>zoneSim?.get(id)||null,
+    paint:(id,zone)=>{if(!zoneSim)throw Error('Zoning unavailable');return zonePaintParcel(id,zone);},
+    bulldoze:id=>{if(!zoneSim)throw Error('Zoning unavailable');const p=zoneSim.bulldoze(id);updateGrowthMassing();zonePersist();zoneRefresh();return p;},
+    advance:()=>zoneAdvance()
+  }};requestAnimationFrame(tick);
 }
 start().catch(err=>{console.error(err);status.textContent='Scene could not start · '+err.message;});
