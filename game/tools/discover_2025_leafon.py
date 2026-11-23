@@ -58,10 +58,20 @@ def list_prefix(prefix):
     query=urllib.parse.urlencode({"list-type":"2","prefix":prefix,"max-keys":"40","delimiter":"/"})
     return parse_s3(get(S3+"?"+query))
 
+def service_info(layer):
+    url=layer.get("url") or ""
+    if not url.startswith("https://iserver5.surdex.com/arcgis/rest/services/Indiana/P3500372s") or not url.endswith("/ImageServer"):
+        return None
+    try:
+        obj=json.loads(get(url+"?f=json"))
+        extent=obj.get("extent") or obj.get("fullExtent")
+        return {"url":url,"extent":extent,"name":obj.get("name"),"error":obj.get("error")}
+    except Exception as e:return {"url":url,"error":str(e)}
+
 def discover():
     result={"officialRegistry":"https://registry.opendata.aws/in-imageryleafon/",
             "bucket":"s3://gisimageryleafoningov", "webmap":WEBMAP,
-            "s3":None,"webmapLayers":None,"deepLayers":None,"subtrees":{},"failures":[]}
+            "s3":None,"webmapLayers":None,"deepLayers":None,"serviceExtents":[],"subtrees":{},"failures":[]}
     url=S3+"?"+urllib.parse.urlencode({"list-type":"2","max-keys":"100","delimiter":"/"})
     try:result["s3"]=parse_s3(get(url))
     except Exception as e:result["failures"].append("S3 LIST: "+str(e))
@@ -89,6 +99,10 @@ def discover():
         raw=get(WEBMAP)
         result["webmapLayers"]=parse_map(raw)
         result["deepLayers"]=walk_map_layers(raw)
+        for layer in result["deepLayers"]:
+            if "2025 Leaf-on - 6-inch" in layer["path"] and layer.get("url"):
+                item=service_info(layer)
+                if item:result["serviceExtents"].append(item)
     except Exception as e:result["failures"].append("ArcGIS map: "+str(e))
     return result
 
