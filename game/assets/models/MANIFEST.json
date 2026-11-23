@@ -58,21 +58,40 @@
     },
     {
       "name": "courthouse",
-      "bytes": 6828,
-      "meshes": 5,
-      "sha256": "f69463606cf0ab2b2f390eb07d3b2c64cb01810c4cdbf7e6dd618f131d015373",
+      "bytes": 142196,
+      "meshes": 6,
+      "sha256": "53224521b3171165d4577d8b804255b3ff77e346010bd559a4b6d52263205a1a",
       "bounds": [
         [
-          -28.0,
+          -11.49,
           0.0,
-          -25.5
+          -20.0
         ],
         [
-          28.0,
-          70.0,
-          22.5
+          11.49,
+          29.95,
+          16.17
         ]
-      ]
+      ],
+      "architecturalProvenance": {
+        "id": "courthouse",
+        "horizontalFootprintSourceObjectID": 741267,
+        "heightEvidence": "UNMEASURED_ARTISTIC_PROPORTIONS",
+        "architecturalFeatures": {
+          "archedWindows": 64,
+          "corniceBands": 4,
+          "octagonalCupola": true,
+          "projectingFrontBays": 2,
+          "stonePortico": true,
+          "clockFaces": 2
+        },
+        "nominalFootprintMeters": [
+          21.73,
+          31.55
+        ],
+        "nominalMaxHeightMeters": 29.8,
+        "license": "Project-original procedural geometry informed by NPS photos; no photographic textures"
+      }
     },
     {
       "name": "oak_cottage",
