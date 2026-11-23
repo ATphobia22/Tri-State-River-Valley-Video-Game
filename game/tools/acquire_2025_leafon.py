@@ -29,7 +29,8 @@ WIDTH, HEIGHT = 2048, 1393
 MAX_BYTES = 18_000_000
 
 def get(url, cap=MAX_BYTES):
-    allowed = (url == OFFICIAL_MAP or url.startswith(SOURCE_ROOT))
+    allowed = (url == OFFICIAL_MAP or url.startswith(SOURCE_ROOT) or
+               url.startswith("https://iserver5.surdex.com/arcgis/rest/directories/arcgisoutput/"))
     if not allowed:raise ValueError("URL not in the IGIO-authorized source allowlist")
     with urllib.request.urlopen(urllib.request.Request(url,headers={"User-Agent":"RiverValleyGame-2025-LeafOn/1.0"}),timeout=50) as r:
         if r.status != 200:raise ValueError(f"HTTP {r.status}")
@@ -116,7 +117,8 @@ def render_export(url, bbox):
            "noDataInterpretation":"esriNoDataMatchAny","f":"json"}
     response=json_get(url+"/exportImage?"+urllib.parse.urlencode(param))
     href=response.get("href")
-    if not isinstance(href,str) or not href.startswith(SOURCE_ROOT):
+    if not isinstance(href,str) or not (href.startswith(SOURCE_ROOT) or
+          href.startswith("https://iserver5.surdex.com/arcgis/rest/directories/arcgisoutput/")):
         raise ValueError("ImageServer returned an untrusted image URI")
     extent=bbox_to_wgs84(response.get("extent") or {})
     verify_extent(bbox,extent)
