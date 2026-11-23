@@ -849,6 +849,7 @@ function updateVisuals(dt,stamp){
   sunLight.position.set(-200,Math.max(30,380*light),180);
   renderer.toneMappingExposure=.75+light*.62;
  }
+ if(grassLayer?.tick)grassLayer.tick(stamp,visualEffects,weather);
  avatar.position.set(player.x,height(player.x,player.z)+heroHeightOffset,player.z);
  vehicleState=suspension.update({x:player.x,z:player.z,yaw:playerHeading,groundAt:height,dt:save.mode==='drive'?dt:0});
  car.position.set(player.x,height(player.x,player.z)+vehicleState.bodyHeight,player.z);
