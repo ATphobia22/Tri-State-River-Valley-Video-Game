@@ -46,7 +46,7 @@ let collisionWorld=COLLISION.create(),lastFootstepAt=0,lastCollision=null,terrai
 let motionState=motion.snapshot(),heroHeightOffset=0,groundShadow=null;
 const streamingGovernor=STREAM?STREAM.createGovernor({maxTiles:innerWidth<781?110:200,minTiles:innerWidth<781?60:85,targetFPS:30}):null;
 let currentTravelSpeed=0;
-const G=window.THREE;
+const G=window.THREE,COURTHOUSE=window.ValleyCourthouseFidelity;
 const POLISH=window.ValleyVisualPolish,BIOME=window.ValleyBiomeStreamer,LODPLAN=window.ValleyLODTransition,GRAPHICS=window.ValleyGraphicsQuality,ASSET_CODEC=window.ValleyCompressedAssets;
 const RIVER_WATER=window.ValleyRiverWater;
 const CUSTOM_HERO=window.ValleyCustomHero,CAST_WARDROBE=window.ValleyCastWardrobe;
@@ -416,7 +416,7 @@ function detailedBuilding(rec){
 }
 function buildBuildings(){
  buildingItems=[];
- activeBuildings.forEach((b,i)=>{const footprint=GEO.buildingFootprint(b,LIMIT);if(footprint)buildingItems.push({...footprint,i});});
+ activeBuildings.forEach((b,i)=>{const footprint=GEO.buildingFootprint(b,LIMIT);if(footprint)buildingItems.push({...footprint,i,isLandmark:!!(COURTHOUSE&&GEOREF&&COURTHOUSE.isSourceBuilding(footprint,COURTHOUSE.anchor(GEOREF)))});});
  buildingMesh=new G.InstancedMesh(new G.BoxGeometry(1,1,1),new G.MeshStandardMaterial({color:0xffffff,roughness:.89,metalness:0}),buildingItems.length);
  const col=new G.Color(),colors=[0xdac5a5,0xb7afa2,0xb67861,0xbdb9ad,0x969f9a,0xd7b08a];
  buildingItems.forEach((b,i)=>buildingMesh.setColorAt(i,col.setHex(colors[b.i%colors.length])));
@@ -435,7 +435,7 @@ function updateBuildingLOD(force=false){
  // dozens of new textured wall/roof buffers in the driving frame.
  const detailCap=fastDriving?0:save.mode==='drive'?(innerWidth<920?24:38):(innerWidth<920?38:64);
  let near=buildingItems.map((b,i)=>({i,dist:Math.hypot(b.x-player.x,b.z-player.z)}))
-  .filter(p=>p.dist<(save.mode==='drive'?270:330)).sort((a,b)=>a.dist-b.dist).slice(0,detailCap);
+  .filter(p=>!buildingItems[p.i].isLandmark&&p.dist<(save.mode==='drive'?270:330)).sort((a,b)=>a.dist-b.dist).slice(0,detailCap);
  const want=new Set(near.map(x=>x.i));
  for(const [i,g] of detailBuildings){if(!want.has(i)){
    detailGroup.remove(g);g.traverse(obj=>{if(obj.isMesh)obj.geometry.dispose();});detailBuildings.delete(i);
@@ -443,13 +443,13 @@ function updateBuildingLOD(force=false){
  const dummy=new G.Object3D();
  buildingItems.forEach((b,i)=>{
    const range=Math.hypot(b.x-player.x,b.z-player.z);
-   if(want.has(i)||range>1900){dummy.position.set(0,-999,0);dummy.scale.set(.001,.001,.001);}
+   if(b.isLandmark||want.has(i)||range>1900){dummy.position.set(0,-999,0);dummy.scale.set(.001,.001,.001);}
    else{ // Mid-distance box LOD; ground contact sinks slightly into slope, never floats above sampled corners.
      const ground=Math.min(height(b.x-b.dx*.5,b.z-b.dz*.5),height(b.x+b.dx*.5,b.z-b.dz*.5),height(b.x-b.dx*.5,b.z+b.dz*.5),height(b.x+b.dx*.5,b.z+b.dz*.5));
      dummy.position.set(b.x,ground+b.h*.5-.35,b.z);dummy.scale.set(b.dx,b.h,b.dz);
    }
    dummy.updateMatrix();buildingMesh.setMatrixAt(i,dummy.matrix);
-   if(roofInstances){if(want.has(i)||range>1900){dummy.position.set(0,-999,0);dummy.scale.set(.001,.001,.001);}
+   if(roofInstances){if(b.isLandmark||want.has(i)||range>1900){dummy.position.set(0,-999,0);dummy.scale.set(.001,.001,.001);}
     else{const base=Math.min(height(b.x-b.dx*.5,b.z-b.dz*.5),height(b.x+b.dx*.5,b.z+b.dz*.5),height(b.x-b.dx*.5,b.z+b.dz*.5),height(b.x+b.dx*.5,b.z-b.dz*.5));
      dummy.position.set(b.x,base+b.h+Math.max(1.5,Math.min(b.dx,b.dz)*.16)/2-.35,b.z);
      dummy.scale.set(b.dx*1.1,Math.max(2.5,Math.min(b.dx,b.dz)*.3),b.dz*1.1);dummy.rotation.y=Math.PI/4;}
@@ -705,9 +705,18 @@ function buildHouse(){
 }
 // Original self-contained low-poly glTF 2.0 environment assets. No third-party models or online fetch.
 function buildOriginalModels(){
+ // Preserve the original low-poly GLB as a fallback; in the source-backed region,
+ // load our modeled courthouse at the authoritative 2020 footprint centroid.
+ let restoredCourt=false;
+ if(COURTHOUSE&&GEOREF){
+  try{
+   const landmark=COURTHOUSE.create(G,GEOREF,height);
+   scene.add(landmark);gameModels.push(landmark);restoredCourt=true;
+  }catch(err){console.warn('Detailed courthouse unavailable, using legacy low-poly landmark:',err.message);}
+ }
  const definitions=[
   ['barn',-1285,-816,null,.9],
-  ['courthouse',92,465,null,.8],
+  ...(restoredCourt?[]:[['courthouse',16,504,null,.8]]),
   ['fishing_pier',130,1184,.6,1],
   ['riverboat',-1320,1570,.9,1.1],
   ['oak_cottage',-740,-210,null,1]
