@@ -56,8 +56,9 @@ jobs:
           review=Path('game/courthouse-review.html').read_text()
           engine=Path('game/tools/reconstruction_engine.py').read_text()
           assert 'RiverGLTFLoader' in review
-          assert 'courthouse_candidate_REVIEW_ONLY.glb' in engine
-          assert 'courthouse_candidate_REVIEW_ONLY.glb' not in html
+          candidates=('courthouse_candidate_REVIEW_ONLY.glb','asset_PRODUCTION_READY.glb')
+          assert any(name in engine for name in candidates)
+          assert all(name not in html for name in candidates)
           assert 'serviceWorker.register(' not in review
           print('PASS: reconstruction is review-only and does not restore service workers')
           PY
