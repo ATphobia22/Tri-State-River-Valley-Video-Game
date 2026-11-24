@@ -64,6 +64,14 @@ function inspectHeader(data){
  const bytes=view.getUint32(12,true),kind=view.getUint32(16,true);
  if(kind!==0x4e4f534a||bytes>data.byteLength-20)throw Error('Malformed JSON chunk');
  const json=JSON.parse(new TextDecoder().decode(new Uint8Array(data,20,bytes)));
+ if(json.asset?.version!=='2.0')throw Error('Invalid glTF asset version');
+ if(Array.isArray(json.extensionsRequired)&&json.extensionsRequired.length)
+  throw Error('Unsupported required GLB extensions');
+ if((json.buffers||[]).some(item=>Object.prototype.hasOwnProperty.call(item,'uri')))
+  throw Error('External mesh buffers are not allowed');
+ if((json.images||[]).some(item=>!Number.isInteger(item.bufferView)&&
+       !String(item.uri||'').startsWith('data:')))
+  throw Error('External image resources are not allowed');
  return {meshes:(json.meshes||[]).length,
          images:(json.images||[]).length,
          embedded:(json.images||[]).filter(i=>i.bufferView!==undefined||String(i.uri||'').startsWith('data:')).length};

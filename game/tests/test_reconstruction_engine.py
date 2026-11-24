@@ -77,6 +77,62 @@ class PhotogrammetryWorkerTests(unittest.TestCase):
             report=engine.inspect_glb(glb)
             self.assertFalse(report["embedded_texture"])
             self.assertEqual(report["classification"],"GEOMETRY_REVIEW_ONLY")
+    def test_colmap_registration_accepts_distinct_filenames_containing_spaces(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            self.make_model(dirname,3)
+            root=Path(dirname)
+            names=["view one.png","view two.png","view three.png"]
+            (root/"images.txt").write_text("".join(
+                f"{i} 1 0 0 0 0 0 0 1 {name}\n\n"
+                for i,name in enumerate(names,1)
+            ))
+            quality=engine.sparse_quality(root,3)
+            self.assertTrue(quality["pass"])
+            self.assertEqual(quality["registered"],3)
+
+    def test_camera_conversion_refuses_nonfinite_quaternion(self):
+        with self.assertRaisesRegex(ValueError,"quaternion"):
+            engine.rotation([float("nan"),0,0,0])
+        with self.assertRaisesRegex(ValueError,"quaternion"):
+            engine.rotation([0,0,0,0])
+
+    def test_invalid_camera_focal_length_rejected_before_photo_copy(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            root=Path(dirname)
+            photos=root/"photos";photos.mkdir()
+            model=root/"model";model.mkdir()
+            self.make_model(model,3)
+            (model/"cameras.txt").write_text("1 PINHOLE 16 16 -10 10 8 8\n")
+            for i in range(1,4):
+                Image.new("RGB",(16,16),(i*30,50,80)).save(photos/f"view{i}.png")
+            target=root/"dataset"
+            with self.assertRaisesRegex(ValueError,"intrinsics"):
+                engine.nerfstudio_dataset(model,photos,target)
+            self.assertFalse(target.exists())
+
+    def test_review_glb_denies_remote_buffers_images_and_required_extensions(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            root=Path(dirname)
+            base={"asset":{"version":"2.0"},"meshes":[{"primitives":[{"attributes":{}}]}]}
+            variants=[
+                {**base,"buffers":[{"uri":"https://cdn.example.net/mesh.bin","byteLength":4}]},
+                {**base,"images":[{"uri":"https://cdn.example.net/coat.png"}]},
+                {**base,"extensionsRequired":["KHR_draco_mesh_compression"]},
+                {**base,"asset":{"version":"1.0"}},
+            ]
+            for i,doc in enumerate(variants):
+                payload=json.dumps(doc).encode("utf-8")
+                payload+=b" "*((-len(payload))%4)
+                glb=root/f"untrusted-{i}.glb"
+                glb.write_bytes(struct.pack("<4sII",b"glTF",2,20+len(payload))
+                                +struct.pack("<I4s",len(payload),b"JSON")+payload)
+                with self.subTest(i=i),self.assertRaises(ValueError):
+                    engine.inspect_glb(glb)
+            viewer=(Path(__file__).resolve().parents[1]/"courthouse-review.html").read_text()
+            self.assertIn("External mesh buffers",viewer)
+            self.assertIn("External image resources",viewer)
+            self.assertIn("Unsupported required GLB extensions",viewer)
+
     def test_official_game_gis_registers_horizontal_only(self):
         reference=gis.verify(Path(__file__).resolve().parents[1])
         self.assertEqual(reference["objectid"],741267)
