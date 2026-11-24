@@ -152,6 +152,15 @@ class NerfstudioProfileTests(unittest.TestCase):
         self.assertGreater(profiles.PROFILES["splatfacto-cinematic"]["approx_gpu_gb"],
                            profiles.PROFILES["splatfacto-balanced"]["approx_gpu_gb"])
 
+    def test_splats_opt_in_to_sparse_point_loading_only_when_ply_exists(self):
+        splat=profiles.training_command("/tmp/scene","/tmp/train",
+                                        "splatfacto-balanced",load_sparse_points=True)
+        self.assertIn("--load-3D-points",splat)
+        self.assertEqual(splat[splat.index("--load-3D-points")+1],"True")
+        self.assertGreater(splat.index("--load-3D-points"),splat.index("nerfstudio-data"))
+        no_ply=profiles.training_command("/tmp/scene","/tmp/train","splatfacto-balanced")
+        self.assertNotIn("--load-3D-points",no_ply)
+
     def test_profile_rejects_unknown_profile_or_resource_overrun(self):
         with self.assertRaises(ValueError):
             profiles.training_command("/tmp/a", "/tmp/out", "unknown")
