@@ -15,6 +15,9 @@ from pathlib import Path
 import shutil
 import struct
 import subprocess
+from colmap_database_audit import inspect as audit_database
+from nerfstudio_profiles import (PROFILES, describe_profiles, profile_for_appearance,
+                                  training_command)
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".tif", ".tiff"}
 NATIVE_TOOLS = ("colmap", "InterfaceCOLMAP", "DensifyPointCloud",
@@ -211,13 +214,21 @@ def run_cmd(argv,cwd,logs,index,timeout):
     return str(output)
 
 def run(images,workspace,kind,license_id,appearance="none",
-        min_registration=0.75,max_reprojection=2.0,timeout=7200):
+        min_registration=0.75,max_reprojection=2.0,timeout=7200,
+        appearance_profile=None,max_iterations=None,min_verified_inliers=15):
     if kind not in ("benchmark_photographs","rendered_game_asset","physical_landmark"):
         raise ValueError("Explicit evidence class required")
     if not license_id.strip():
         raise ValueError("License/right declaration required")
     if not 0<min_registration<=1 or max_reprojection<=0:
         raise ValueError("Invalid quality thresholds")
+    if appearance_profile:
+        if appearance not in ("nerfacto","gsplat") or appearance_profile not in PROFILES:
+            raise ValueError("Nerfstudio profile requires a matching neural engine")
+        if appearance=="nerfacto" and not appearance_profile.startswith("nerfacto"):
+            raise ValueError("Use a Nerfacto profile with Nerfacto appearance")
+        if appearance=="gsplat" and not appearance_profile.startswith("splatfacto"):
+            raise ValueError("Use Splatfacto profile with gsplat appearance")
     photos=image_inventory(images)
     installed=tools()
     missing=[x for x in NATIVE_TOOLS if not installed[x]]
@@ -253,6 +264,19 @@ def run(images,workspace,kind,license_id,appearance="none",
     try:
         for i,argv in enumerate(commands(images,work),1):
             run_cmd(argv,work,logs,i,timeout)
+            if i == 2:
+                # Database contains feature observations and verified pairs, NOT
+                # accepted camera poses. Do not infer registration from this graph.
+                receipt["colmap_database_audit"]=audit_database(
+                    work/"database.db", expected_images=len(photos),
+                    min_verified_inliers=min_verified_inliers)
+                graph=receipt["colmap_database_audit"]
+                if graph["expected_image_coverage"] < 1:
+                    receipt["status"]="SOURCE_IMAGES_NOT_ALL_INDEXED"
+                    return receipt
+                if graph["largest_verified_component"] < 3:
+                    receipt["status"]="MATCH_GRAPH_INSUFFICIENT"
+                    return receipt
         candidates=[]
         for n,model in enumerate(sorted((work/"sparse").iterdir())):
             if not model.is_dir():
@@ -306,8 +330,18 @@ def run(images,workspace,kind,license_id,appearance="none",
         receipt["candidate"]=inspect_glb(candidate)
         receipt["status"]="REVIEW_REQUIRED"
         if appearance in ("nerfacto","gsplat"):
-            method="splatfacto" if appearance=="gsplat" else "nerfacto"
-            run_cmd(["ns-train",method,"--data",str(work/"nerfstudio")],work,logs,40,timeout)
+            profile=appearance_profile or profile_for_appearance(appearance)
+            command=training_command(work/"nerfstudio",work/"nerfstudio-output",
+                                     profile,max_iterations=max_iterations)
+            receipt["appearance_plan"]={"profile":profile,"command":command,
+                                        "automatic_game_promotion":False}
+            run_cmd(command,work,logs,40,timeout)
+            configs=list((work/"nerfstudio-output").rglob("config.yml"))
+            if not configs:
+                raise RuntimeError("Nerfstudio command completed without a saved config.yml")
+            receipt["appearance_config"]={
+                "relative_path":str(configs[0].relative_to(work)),
+                "sha256":sha256(configs[0])}
             receipt["appearance"]="TRAIN_FINISHED_UNVALIDATED"
         elif appearance=="cpu":
             from cpu_volume import train
@@ -323,6 +357,11 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     subs=parser.add_subparsers(dest="action",required=True)
     subs.add_parser("doctor")
+    dbsub=subs.add_parser("db-audit",help="Read-only COLMAP SQLite match and schema audit")
+    dbsub.add_argument("--database",required=True,type=Path)
+    dbsub.add_argument("--expected-images",type=int)
+    dbsub.add_argument("--min-verified-inliers",type=int,default=15)
+    subs.add_parser("profiles",help="List documented Nerfstudio profile budgets")
     for cmd in ("plan","run"):
         p=subs.add_parser(cmd)
         p.add_argument("--images",required=True,type=Path)
@@ -332,6 +371,9 @@ def main():
         p.add_argument("--license-id",required=True)
         p.add_argument("--appearance",default="none",
                        choices=("none","cpu","nerfacto","gsplat"))
+        p.add_argument("--appearance-profile",choices=sorted(PROFILES))
+        p.add_argument("--max-iterations",type=int)
+        p.add_argument("--min-verified-inliers",type=int,default=15)
         p.add_argument("--min-registration",type=float,default=.75)
         p.add_argument("--max-reprojection",type=float,default=2.)
         p.add_argument("--timeout",type=int,default=7200)
@@ -340,20 +382,37 @@ def main():
     options=parser.parse_args()
     if options.action=="doctor":
         print(json.dumps({"tools":tools(),"cpu_fallback":"cpu_volume.py",
-                          "gsplat_requirement":"CUDA-enabled GPU"},indent=2));return
+                          "gsplat_requirement":"CUDA-enabled GPU",
+                          "colmap_database_audit":"read-only SQLite; see db-audit",
+                          "nerfstudio_profiles":describe_profiles()},indent=2));return
+    if options.action=="profiles":
+        print(json.dumps(describe_profiles(),indent=2));return
+    if options.action=="db-audit":
+        print(json.dumps(audit_database(options.database,
+                         expected_images=options.expected_images,
+                         min_verified_inliers=options.min_verified_inliers),
+                         indent=2));return
     if options.action=="inspect-glb":
         print(json.dumps(inspect_glb(options.path),indent=2));return
     if options.action=="plan":
         photos=image_inventory(options.images)
         from courthouse_gis_adapter import verify as verify_game_reference
+        profile=options.appearance_profile or (profile_for_appearance(options.appearance)
+                                             if options.appearance in ("nerfacto","gsplat") else None)
+        neural=training_command(options.workspace/"nerfstudio",
+                               options.workspace/"nerfstudio-output",profile,
+                               max_iterations=options.max_iterations) if profile else None
         print(json.dumps({"game_reference":verify_game_reference(Path(__file__).resolve().parents[1]),
                           "source_class":options.kind,"license":options.license_id,
                           "inputs":photos,"native_toolchain":tools(),
                           "colmap_commands":commands(options.images,options.workspace),
+                          "colmap_db_audit":"After feature extraction and matching; prior to mapping",
+                          "nerfstudio_command":neural,
                           "status":"PLAN_ONLY_NOT_EXECUTED"},indent=2));return
     result=run(options.images,options.workspace,options.kind,options.license_id,
                options.appearance,options.min_registration,options.max_reprojection,
-               options.timeout)
+               options.timeout,options.appearance_profile,options.max_iterations,
+               options.min_verified_inliers)
     print(json.dumps(result,indent=2))
 
 if __name__=="__main__":
