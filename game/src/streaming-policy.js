@@ -8,7 +8,7 @@
   else root.ValleyStreamingPolicy=api;
   // Hosted multi-file pages: load companion roadmap modules without editing the large index.html blob.
   if(typeof document!=='undefined'){
-    const companions=['physics-bakeoff.js','maplibre-reference.js','hand-ik-validation.js','gpu-evidence.js'];
+    const companions=['physics-bakeoff.js','maplibre-reference.js','hand-ik-validation.js','gpu-evidence.js','cinema-particles.js'];
     const base=(document.currentScript&&document.currentScript.src||'').replace(/streaming-policy\.js.*$/,'');
     companions.forEach(function(name){
       if(document.querySelector('script[src*="'+name+'"]'))return;
