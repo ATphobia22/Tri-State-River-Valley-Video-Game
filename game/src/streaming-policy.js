@@ -1,7 +1,6 @@
-/* Lightweight frame-budget governor + optional online streaming mode.
- * Offline-first remains the default. Online mode raises tile budgets and
- * look-ahead when the browser reports connectivity — without requiring
- * remote asset fetches for core play.
+/* Online-first frame-budget governor; offline is the backup path.
+ * When online: cinematic tile density (Slow Roads–style seamless streaming).
+ * When offline: reduced budgets so the single-file offline HTML still runs.
  */
 (function(root,factory){
   const api=factory();
@@ -19,10 +18,10 @@
 
   function lookAheadDistance(speed,estimatedPrepMs=600,nearDistance=80){
     const v=Number.isFinite(speed)?clamp(speed,0,450):0;
-    const prep=Number.isFinite(estimatedPrepMs)?clamp(estimatedPrepMs,0,1250):600;
-    const near=Number.isFinite(nearDistance)?clamp(nearDistance,0,240):80;
-    const onlineBoost=isOnline()?1.25:1;
-    return Math.min(320, (near+v*prep/1000)*onlineBoost);
+    const prep=Number.isFinite(estimatedPrepMs)?clamp(estimatedPrepMs,0,1400):600;
+    const near=Number.isFinite(nearDistance)?clamp(nearDistance,0,280):80;
+    const boost=isOnline()?1.55:1;
+    return Math.min(420,(near+v*prep/1000)*boost);
   }
 
   function createGovernor({maxTiles=200,minTiles=80,targetFPS=30,preferOnline=true}={}){
@@ -31,7 +30,7 @@
     if(!(Number.isFinite(targetFPS)&&targetFPS>=15&&targetFPS<=120))
       throw new RangeError('Invalid target frame rate');
     const online=preferOnline&&isOnline();
-    const effectiveMax=online?Math.min(400,Math.floor(maxTiles*1.35)):Math.floor(maxTiles);
+    const effectiveMax=online?Math.min(480,Math.floor(maxTiles*1.6)):Math.floor(maxTiles);
     const effectiveMin=Math.floor(minTiles);
     const targetFrameMs=1000/targetFPS;
     let tiles=effectiveMax,ema=null,slow=0,fast=0,lastChangeAt=-Infinity,lastObservedAt=-Infinity,validFrames=0;
@@ -49,25 +48,18 @@
         return {changed:true,budget:tiles,averageFrameMs:ema,online:isOnline()};
       }
       if(fast>=60&&stampMs-lastChangeAt>=3500&&tiles<effectiveMax){
-        tiles=Math.min(effectiveMax,tiles+12);lastChangeAt=stampMs;slow=0;fast=0;
+        tiles=Math.min(effectiveMax,tiles+16);lastChangeAt=stampMs;slow=0;fast=0;
         return {changed:true,budget:tiles,averageFrameMs:ema,online:isOnline()};
       }
       return unchanged();
     }
     return Object.freeze({
-      observe,
-      tileBudget:()=>tiles,
-      isOnline,
+      observe,tileBudget:()=>tiles,isOnline,
       snapshot:()=>({
-        tileBudget:tiles,
-        minTiles:effectiveMin,
-        maxTiles:effectiveMax,
-        targetFrameMs,
-        averageFrameMs:ema,
-        validFrames,
-        lastChangeAt,
+        tileBudget:tiles,minTiles:effectiveMin,maxTiles:effectiveMax,targetFrameMs,
+        averageFrameMs:ema,validFrames,lastChangeAt,
         onlineStreaming:isOnline()&&preferOnline,
-        mode:isOnline()&&preferOnline?'online-enhanced':'offline-first'
+        mode:isOnline()&&preferOnline?'online-first':'offline-backup'
       })
     });
   }
