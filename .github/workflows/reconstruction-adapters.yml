@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths:
       - 'game/tools/reconstruction_engine.py'
+      - 'game/tools/colmap_database_audit.py'
+      - 'game/tools/nerfstudio_profiles.py'
+      - 'game/tests/test_nerfstudio_colmap_db.py'
       - 'game/tools/cpu_volume.py'
       - 'game/tools/requirements-reconstruction.txt'
       - 'game/tests/test_reconstruction_engine.py'
@@ -14,6 +17,9 @@ on:
     branches: [main]
     paths:
       - 'game/tools/reconstruction_engine.py'
+      - 'game/tools/colmap_database_audit.py'
+      - 'game/tools/nerfstudio_profiles.py'
+      - 'game/tests/test_nerfstudio_colmap_db.py'
       - 'game/tools/cpu_volume.py'
       - 'game/tools/requirements-reconstruction.txt'
       - 'game/tests/test_reconstruction_engine.py'
@@ -36,8 +42,10 @@ jobs:
         run: python -m pip install -r game/tools/requirements-reconstruction.txt
       - name: Parse and test real COLMAP/OpenMVS adapters without invented native runs
         run: |
-          python -m compileall -q game/tools/reconstruction_engine.py game/tools/cpu_volume.py game/tests/test_reconstruction_engine.py
+          python -m compileall -q game/tools/reconstruction_engine.py game/tools/colmap_database_audit.py game/tools/nerfstudio_profiles.py game/tools/cpu_volume.py game/tests/test_reconstruction_engine.py game/tests/test_nerfstudio_colmap_db.py
           python -m unittest discover -s game/tests -p test_reconstruction_engine.py -v
+          python -m unittest discover -s game/tests -p test_nerfstudio_colmap_db.py -v
+          python game/tools/nerfstudio_profiles.py --list
       - name: Inspect available native programs, do not pretend to run missing binaries
         run: python game/tools/reconstruction_engine.py doctor
       - name: Confirm reviewed GLB is opt-in and worker remains absent from production runtime
@@ -48,8 +56,9 @@ jobs:
           review=Path('game/courthouse-review.html').read_text()
           engine=Path('game/tools/reconstruction_engine.py').read_text()
           assert 'RiverGLTFLoader' in review
-          assert 'courthouse_candidate_REVIEW_ONLY.glb' in engine
-          assert 'courthouse_candidate_REVIEW_ONLY.glb' not in html
+          candidates=('courthouse_candidate_REVIEW_ONLY.glb','asset_PRODUCTION_READY.glb')
+          assert any(name in engine for name in candidates)
+          assert all(name not in html for name in candidates)
           assert 'serviceWorker.register(' not in review
           print('PASS: reconstruction is review-only and does not restore service workers')
           PY

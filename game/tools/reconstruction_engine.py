@@ -20,6 +20,8 @@ from pathlib import Path
 import shutil
 import struct
 import subprocess
+from colmap_database_audit import inspect as audit_database
+from nerfstudio_profiles import PROFILES, describe_profiles, profile_for_appearance, training_command
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".tif", ".tiff"}
 NATIVE_TOOLS = ("colmap", "InterfaceCOLMAP", "DensifyPointCloud",
@@ -75,7 +77,7 @@ def sparse_quality(model, total, min_fraction=0.75, max_error_px=2.0):
         pose = [float(x) for x in tokens[1:8]]
         if iid <= 0 or cid <= 0 or not all(math.isfinite(x) for x in pose):
             raise ValueError("Invalid COLMAP pose")
-        registered.append(tokens[9])
+        registered.append(" ".join(tokens[9:]))
     if len(set(registered)) != len(registered) or len(registered) > total:
         raise ValueError("Duplicate or excessive camera registrations")
     errors = []
@@ -100,12 +102,52 @@ def rotation(q):
     import numpy as np
     w,x,y,z = q
     norm = math.sqrt(sum(v*v for v in q))
-    if norm < 1.e-9:
-        raise ValueError("Degenerate camera quaternion")
+    if not math.isfinite(norm) or norm < 1.e-9:
+        raise ValueError("Degenerate or nonfinite camera quaternion")
     w,x,y,z = [v/norm for v in q]
     return np.array([[1-2*y*y-2*z*z,2*x*y-2*w*z,2*x*z+2*w*y],
                      [2*x*y+2*w*z,1-2*x*x-2*z*z,2*y*z-2*w*x],
                      [2*x*z-2*w*y,2*y*z+2*w*x,1-2*x*x-2*y*y]])
+
+def export_sparse_ply(model, destination, *, max_points=1_000_000):
+    """Preserve original COLMAP world coordinates and colors for Splatfacto.
+
+    The Nerfstudio dataparser applies the same orientation/scale transform to
+    the cameras and this point cloud. These are not surveyed world coordinates.
+    """
+    source=Path(model)/"points3D.txt"
+    if not source.is_file():
+        return 0
+    points=[]
+    for line in lines(source):
+        fields=line.split()
+        if len(fields)<8:
+            raise ValueError("Malformed COLMAP points3D row")
+        xyz=[float(v) for v in fields[1:4]]
+        rgb=[int(v) for v in fields[4:7]]
+        error=float(fields[7])
+        if not all(math.isfinite(v) for v in xyz+[error]):
+            raise ValueError("Nonfinite COLMAP sparse points")
+        if not all(0<=v<=255 for v in rgb) or error<0:
+            raise ValueError("Invalid COLMAP sparse point colors/reprojection")
+        if error<=4.0:
+            points.append((xyz,rgb))
+        if len(points)>max_points:
+            raise ValueError("Sparse point count exceeds bounded PLY budget")
+    if len(points)<3:
+        return 0
+    target=Path(destination)
+    with target.open("w",encoding="ascii") as output:
+        output.write("ply\nformat ascii 1.0\n")
+        output.write(f"element vertex {len(points)}\n")
+        output.write("property float x\nproperty float y\nproperty float z\n")
+        output.write("property uchar red\nproperty uchar green\nproperty uchar blue\n")
+        output.write("end_header\n")
+        for xyz,rgb in points:
+            output.write(" ".join(format(v,".9g") for v in xyz)
+                         +" "+" ".join(str(v) for v in rgb)+"\n")
+    return len(points)
+
 
 def nerfstudio_dataset(model, images, destination):
     import numpy as np
@@ -122,6 +164,8 @@ def nerfstudio_dataset(model, images, destination):
             fx=fy=focal
         else:
             raise ValueError("Undistort cameras before Nerfstudio export: "+kind)
+        if width<=0 or height<=0 or not all(map(math.isfinite,(fx,fy,cx,cy))) or fx<=0 or fy<=0:
+            raise ValueError("Invalid camera intrinsics")
         cameras[cid] = dict(fl_x=fx,fl_y=fy,cx=cx,cy=cy,w=width,h=height)
     raw=[x.strip() for x in (model/"images.txt").read_text().splitlines()
          if not x.lstrip().startswith("#")]
@@ -136,6 +180,8 @@ def nerfstudio_dataset(model, images, destination):
             raise ValueError("Unsafe or missing undistorted photograph: "+name)
         quat=[float(x) for x in tokens[1:5]]
         trans=np.array([float(x) for x in tokens[5:8]])
+        if not np.isfinite(trans).all():
+            raise ValueError("Invalid camera translation")
         rot=rotation(quat).T
         pose=np.eye(4)
         pose[:3,:3] = rot@np.diag([1,-1,-1])
@@ -150,8 +196,13 @@ def nerfstudio_dataset(model, images, destination):
         dst=destination/"images"/rel
         dst.parent.mkdir(parents=True,exist_ok=True)
         shutil.copy2(images/rel,dst)
+    payload={"camera_model":"OPENCV","frames":frames}
+    sparse_count=export_sparse_ply(model,destination/"sparse_points.ply")
+    if sparse_count>=3:
+        payload["ply_file_path"]="sparse_points.ply"
+        payload["sparse_initialization_points"]=sparse_count
     output=destination/"transforms.json"
-    output.write_text(json.dumps({"camera_model":"OPENCV","frames":frames},indent=2))
+    output.write_text(json.dumps(payload,indent=2))
     return output
 
 def inspect_glb(path):
@@ -211,7 +262,7 @@ def run_cmd(argv,cwd,logs,index,timeout):
         raise RuntimeError(f"{argv[0]} failed with exit={completed.returncode}; inspect {output}")
     return str(output)
 
-def run_appearance(work, appearance, timeout):
+def run_appearance(work, appearance, timeout, argv_override=None):
     ns = shutil.which("ns-train")
     if not ns:
         return {"status": "SKIPPED", "reason": "ns-train not installed"}
@@ -222,11 +273,16 @@ def run_appearance(work, appearance, timeout):
     except ImportError:
         return {"status": "SKIPPED", "reason": "PyTorch not available"}
     try:
-        from nerfstudio_configs import build_ns_train_argv, PRESETS
-        preset = "gsplat" if appearance == "gsplat" else "nerfacto"
-        out = work / f"nerfstudio_{PRESETS[preset]['method']}"
-        out.mkdir(parents=True, exist_ok=True)
-        argv = build_ns_train_argv(preset, str(work / "nerfstudio"), str(out), max_iters=500)
+        if argv_override is not None:
+            out = work / "nerfstudio-output"
+            out.mkdir(parents=True, exist_ok=True)
+            argv = argv_override
+        else:
+            from nerfstudio_configs import build_ns_train_argv, PRESETS
+            preset = "gsplat" if appearance == "gsplat" else "nerfacto"
+            out = work / f"nerfstudio_{PRESETS[preset]['method']}"
+            out.mkdir(parents=True, exist_ok=True)
+            argv = build_ns_train_argv(preset, str(work / "nerfstudio"), str(out), max_iters=500)
     except Exception:
         method = "splatfacto" if appearance == "gsplat" else "nerfacto"
         out = work / f"nerfstudio_{method}"
@@ -239,13 +295,19 @@ def run_appearance(work, appearance, timeout):
     return {"status": "TRAINED", "method": argv[1], "output": str(out), "log": log, "argv": argv}
 
 def run(images,workspace,kind,license_id,appearance="none",
-        min_registration=0.75,max_reprojection=2.0,timeout=7200,promote=False):
+        min_registration=0.75,max_reprojection=2.0,timeout=7200,promote=False,
+        appearance_profile=None,max_iterations=None,min_verified_inliers=15):
     if kind not in ("benchmark_photographs","rendered_game_asset","physical_landmark"):
         raise ValueError("Explicit evidence class required")
     if not license_id.strip():
         raise ValueError("License/right declaration required")
     if not 0<min_registration<=1 or max_reprojection<=0:
         raise ValueError("Invalid quality thresholds")
+    if appearance_profile:
+        if appearance_profile not in PROFILES or appearance not in ("nerfacto","gsplat"):
+            raise ValueError("Unknown or inapplicable Nerfstudio profile")
+        if (appearance=="nerfacto") != appearance_profile.startswith("nerfacto"):
+            raise ValueError("Nerfstudio profile does not match appearance engine")
     photos=image_inventory(images)
     installed=tools()
     if not installed.get("colmap"):
@@ -274,6 +336,19 @@ def run(images,workspace,kind,license_id,appearance="none",
     try:
         for i,argv in enumerate(commands(images,work),1):
             run_cmd(argv,work,logs,i,timeout)
+            if i == 2:
+                # SQLite reports feature and verified-match coverage, never
+                # actual registered camera poses or a geodetic alignment.
+                receipt["colmap_database_audit"] = audit_database(
+                    work/"database.db", expected_images=len(photos),
+                    min_verified_inliers=min_verified_inliers)
+                graph=receipt["colmap_database_audit"]
+                if graph["expected_image_coverage"] < 1:
+                    receipt["status"]="SOURCE_IMAGES_NOT_ALL_INDEXED"
+                    return receipt
+                if graph["largest_verified_component"] < 3:
+                    receipt["status"]="MATCH_GRAPH_INSUFFICIENT"
+                    return receipt
         candidates=[]
         for n,model in enumerate(sorted((work/"sparse").iterdir())):
             if not model.is_dir():
@@ -302,7 +377,13 @@ def run(images,workspace,kind,license_id,appearance="none",
         undistorted.mkdir()
         run_cmd(["colmap","model_converter","--input_path",str(dense/"sparse"),
                  "--output_path",str(undistorted),"--output_type","TXT"],work,logs,21,timeout)
-        nerfstudio_dataset(undistorted,dense/"images",work/"nerfstudio")
+        ns_path=nerfstudio_dataset(undistorted,dense/"images",work/"nerfstudio")
+        ns_meta=json.loads(ns_path.read_text())
+        receipt["nerfstudio_dataset"]={
+            "registered_frames":len(ns_meta["frames"]),
+            "sparse_points":ns_meta.get("sparse_initialization_points",0),
+            "sparse_init_available":bool(ns_meta.get("ply_file_path")),
+            "transforms_sha256":sha256(ns_path)}
         mvs=work/"openmvs"
         openmvs_available = all(installed.get(x) for x in (
             "InterfaceCOLMAP","DensifyPointCloud","ReconstructMesh",
@@ -331,7 +412,14 @@ def run(images,workspace,kind,license_id,appearance="none",
             receipt["status"]="SPARSE_CALIBRATED"
             receipt["openmvs"]="not_installed"
         if appearance in ("nerfacto","gsplat"):
-            receipt["appearance"]=run_appearance(work, appearance, timeout)
+            overrides=None
+            if appearance_profile:
+                overrides=training_command(work/"nerfstudio",work/"nerfstudio-output",
+                                            appearance_profile,max_iterations=max_iterations,
+                                            load_sparse_points=bool(ns_meta.get("ply_file_path")))
+                receipt["nerfstudio_profile"]={"profile":appearance_profile,
+                                               "command":overrides,"review_only":True}
+            receipt["appearance"]=run_appearance(work, appearance, timeout, argv_override=overrides)
         if appearance == "cpu" or (appearance in ("nerfacto","gsplat") and
                                    receipt.get("appearance",{}).get("status") == "SKIPPED"):
             from cpu_volume import train
@@ -349,6 +437,11 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     subs=parser.add_subparsers(dest="action",required=True)
     subs.add_parser("doctor")
+    subs.add_parser("profiles",help="List Nerfstudio headless profiles")
+    audit=subs.add_parser("db-audit",help="Read-only COLMAP SQLite feature/match audit")
+    audit.add_argument("--database",required=True,type=Path)
+    audit.add_argument("--expected-images",type=int)
+    audit.add_argument("--min-verified-inliers",type=int,default=15)
     for cmd in ("plan","run"):
         p=subs.add_parser(cmd)
         p.add_argument("--images",required=True,type=Path)
@@ -358,6 +451,9 @@ def main():
         p.add_argument("--license-id",required=True)
         p.add_argument("--appearance",default="none",
                        choices=("none","cpu","nerfacto","gsplat"))
+        p.add_argument("--appearance-profile",choices=sorted(PROFILES))
+        p.add_argument("--max-iterations",type=int)
+        p.add_argument("--min-verified-inliers",type=int,default=15)
         p.add_argument("--min-registration",type=float,default=.75)
         p.add_argument("--max-reprojection",type=float,default=2.)
         p.add_argument("--timeout",type=int,default=7200)
@@ -372,6 +468,12 @@ def main():
                           "toolchain":"applied_production"},indent=2));return
     if options.action=="inspect-glb":
         print(json.dumps(inspect_glb(options.path),indent=2));return
+    if options.action=="profiles":
+        print(json.dumps(describe_profiles(),indent=2));return
+    if options.action=="db-audit":
+        print(json.dumps(audit_database(options.database,
+                          expected_images=options.expected_images,
+                          min_verified_inliers=options.min_verified_inliers),indent=2));return
     if options.action=="plan":
         photos=image_inventory(options.images)
         try:
@@ -383,10 +485,17 @@ def main():
                           "source_class":options.kind,"license":options.license_id,
                           "inputs":photos,"native_toolchain":tools(),
                           "colmap_commands":commands(options.images,options.workspace),
+                          "database_audit_stage":"after matching, before mapping",
+                          "nerfstudio_profile":options.appearance_profile,
+                          "nerfstudio_command":training_command(
+                             options.workspace/"nerfstudio",options.workspace/"nerfstudio-output",
+                             options.appearance_profile,max_iterations=options.max_iterations
+                          ) if options.appearance_profile else None,
                           "status":"PLAN_READY_FOR_EXECUTION"},indent=2));return
     result=run(options.images,options.workspace,options.kind,options.license_id,
                options.appearance,options.min_registration,options.max_reprojection,
-               options.timeout,getattr(options,"promote",False))
+               options.timeout,getattr(options,"promote",False),
+               options.appearance_profile,options.max_iterations,options.min_verified_inliers)
     print(json.dumps(result,indent=2))
 
 if __name__=="__main__":

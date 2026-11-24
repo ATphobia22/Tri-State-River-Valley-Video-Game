@@ -4,7 +4,7 @@
 
 # River Valley — Game Architecture and Release Guide
 
-[**Courthouse mesh and character source gate**](docs/POSEY_COURTHOUSE_AND_CHARACTER_SOURCE_GATE_20261123.md) · [**Cinematic photorealism and look development**](docs/CINEMATIC_ART_LOOKDEV_20261123.md) · [**COLMAP/OpenMVS/Nerfstudio reconstruction worker**](docs/COURTHOUSE_PHOTOGRAMMETRY_PIPELINE_20261123.md) · [**2025 Posey aerial source audit**](docs/MOUNT_VERNON_2025_LEAFON.md) · [**Play the game**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Repository overview](../README.md) · [Offline HTML download](River_Valley_Family_Adventure_OFFLINE.html) · [**Mount Vernon map links**](docs/MOUNT_VERNON_47620_MAP_LINKS.md) · [GitHub Actions](../.github/workflows/game-ci.yml)
+[**Courthouse mesh and character source gate**](docs/POSEY_COURTHOUSE_AND_CHARACTER_SOURCE_GATE_20261123.md) · [**Cinematic photorealism and look development**](docs/CINEMATIC_ART_LOOKDEV_20261123.md) · [**COLMAP/OpenMVS/Nerfstudio reconstruction worker**](docs/COURTHOUSE_PHOTOGRAMMETRY_PIPELINE_20261123.md) · [**Nerfstudio profile and COLMAP DB audit**](docs/NERFSTUDIO_COLMAP_DATABASE_AUDIT_20261123.md) · [**2025 Posey aerial source audit**](docs/MOUNT_VERNON_2025_LEAFON.md) · [**Play the game**](https://atphobia22.github.io/Tri-State-River-Valley-Video-Game/) · [Repository overview](../README.md) · [Offline HTML download](River_Valley_Family_Adventure_OFFLINE.html) · [**Mount Vernon map links**](docs/MOUNT_VERNON_47620_MAP_LINKS.md) · [GitHub Actions](../.github/workflows/game-ci.yml)
 
 **Version 1.13.0** · Online website plus standalone offline download · Original Three.js/WebGL world · Three local save slots · No account or server required.
 
