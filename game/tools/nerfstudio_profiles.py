@@ -44,7 +44,8 @@ def profile_for_appearance(appearance):
 
 def training_command(dataset, output_dir, profile,
                      *, max_iterations=None, eval_mode="fraction",
-                     train_split_fraction=0.9, eval_interval=8):
+                     train_split_fraction=0.9, eval_interval=8,
+                     load_sparse_points=False):
     if profile not in PROFILES:
         raise ValueError(f"Unknown Nerfstudio profile: {profile}")
     p = PROFILES[profile]
@@ -76,6 +77,8 @@ def training_command(dataset, output_dir, profile,
         args += ["--train-split-fraction", format(float(train_split_fraction), ".3g")]
     elif eval_mode == "interval":
         args += ["--eval-interval", str(eval_interval)]
+    if load_sparse_points and p["method"].startswith("splatfacto"):
+        args += ["--load-3D-points", "True"]
     return args
 
 
