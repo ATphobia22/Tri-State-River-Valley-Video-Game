@@ -14,10 +14,10 @@
  const PROFILE=Object.freeze({
   id:'river-explorer',
   displayName:'River — Explorer',
-  version:'2.0-cinematic',
+  version:'2.1-detail',
   features:Object.freeze([
    'curly-hair','glasses','skull-gaiter','black-shirt','gold-chain',
-   'cargo-pants','adventure-boots','backpack','fingerless-gloves','articulated-fingers'
+   'cargo-pants','adventure-boots','backpack','fingerless-gloves','articulated-fingers','collar','watch','radio-pouch','boot-tread','ears','shirt-seams','pack-stitches'
   ]),
   palette:Object.freeze({
    fabric:0x1e2226,boots:0x161b1e,skin:0xc08a62,hair:0x2c1f18,
@@ -62,6 +62,7 @@
   }else if(state==='idle'){
    p.torso=Math.sin(t*1.4)*.017;p.headTurn=Math.sin(t*.45)*.09;
    p.bodyY=Math.sin(t*1.5)*.045;p.pack=Math.sin(t*1.25)*.01;
+   p.leftArm=Math.sin(t*1.1)*.04;p.rightArm=Math.sin(t*1.1+.7)*.04;
   }else if(state==='jump'){
    p.torso=.13;p.leftArm=-.9;p.rightArm=-.9;p.leftLeg=-.55;p.rightLeg=-.55;
    p.leftKnee=.7;p.rightKnee=.7;p.bodyY=1.1;p.leftElbow=-.4;p.rightElbow=-.4;
@@ -119,11 +120,12 @@
 
   const rootGroup=new THREE.Group();
   rootGroup.name='River Explorer';
-  rootGroup.userData.asset='procedural-cinematic-v2';
+  rootGroup.userData.asset='procedural-cinematic-v2.1';
   rootGroup.userData.fallback=true;
   rootGroup.userData.heroId=PROFILE.id;
   rootGroup.userData.heroVersion=PROFILE.version;
   rootGroup.userData.photogrammetry=PROFILE.photogrammetry;
+  rootGroup.userData.microDetails=true;
 
   const joints={};
   function group(parent,name,x=0,y=0,z=0){
@@ -141,7 +143,10 @@
   const dark=pbr(THREE,0x121416,{roughness:.9});
   const white=pbr(THREE,0xe4e2d8,{roughness:.82});
   const pack=pbr(THREE,PROFILE.palette.pack,{roughness:.93});
-  const shared=[cloth,pants,cargo,skin,hair,boot,trim,gold,glass,dark,white,pack];
+  const stitch=pbr(THREE,0x2a2e32,{roughness:.95});
+  const rubber=pbr(THREE,0x0e1012,{roughness:.96});
+  const accent=pbr(THREE,0x5c6b52,{roughness:.8,metalness:.05});
+  const shared=[cloth,pants,cargo,skin,hair,boot,trim,gold,glass,dark,white,pack,stitch,rubber,accent];
   const geometry=[];
 
   function mesh(parent,geo,material,name,position,feature){
@@ -168,13 +173,28 @@
    box(joints.torso,[.95,2.05,.9],cargo,'utility-pocket',[side*2.5,.35,.55]);
    box(joints.torso,[.72,2.75,.38],trim,'backpack-strap',[side*2.05,2.9,-1.42]);
    sphere(joints.torso,.58,cloth,'shoulder',[side*2.75,4.5,0]);
+   box(joints.torso,[.12,3.2,.08],stitch,'shirt-seam',[side*1.55,2.4,-1.55],'shirt-seams');
+   box(joints.torso,[.85,.22,.55],trim,'epaulette',[side*2.55,4.85,-.15]);
   }
+  box(joints.torso,[3.4,.35,1.9],cloth,'collar',[0,4.85,-.15],'collar');
+  box(joints.torso,[3.55,.12,2.05],stitch,'collar-edge',[0,5.05,-.1],'collar');
+  box(joints.torso,[.18,3.4,.12],dark,'center-zip',[0,2.5,-1.58]);
+  for(let i=0;i<5;i++)box(joints.torso,[.28,.12,.14],gold,'zip-pull',[0,1.2+i*.55,-1.62]);
+  box(joints.torso,[1.15,1.35,.7],cargo,'radio-pouch',[-2.9,-.15,.9],'radio-pouch');
+  box(joints.torso,[.35,.35,.2],dark,'radio-antenna',[-2.9,.55,.95]);
+  for(const bx of [-2.2,-1.1,0,1.1,2.2])box(joints.torso,[.22,.55,.35],dark,'belt-loop',[bx,.05,-1.45]);
 
   joints.pack=group(joints.torso,'pack',0,2.7,0);
   box(joints.pack,[4.5,5.5,2.55],pack,'adventure-backpack',[0,0,2.75],'backpack');
   box(joints.pack,[3.2,2.1,.58],cargo,'backpack-front-pocket',[0,-1,4.25]);
   box(joints.pack,[4.15,.52,3.05],trim,'backpack-roll-top',[0,2.35,2.8]);
   box(joints.pack,[.78,.48,.42],gold,'pack-buckle',[0,-.24,4.4]);
+  for(const side of [-1,1]){
+   box(joints.pack,[.08,4.8,.08],stitch,'pack-stitch',[side*2.15,0,2.9],'pack-stitches');
+   box(joints.pack,[1.1,2.4,1.1],cargo,'bottle-pocket',[side*2.7,-.6,2.4]);
+  }
+  box(joints.pack,[1.6,.35,2.2],trim,'pack-compression-strap',[0,1.2,3.9]);
+  sphere(joints.pack,.22,accent,'hydration-valve',[1.6,2.8,1.2]);
 
   if(THREE.CatmullRomCurve3&&THREE.TubeGeometry){
    const pts=[
@@ -191,10 +211,17 @@
   box(joints.head,[2.8,1.55,.2],dark,'face-gaiter-front',[0,-.78,-1.68]);
   sphere(joints.head,.28,white,'skull-nose',[0,-.42,-1.82]);
   for(let i=0;i<6;i++)box(joints.head,[.3,.5,.11],white,'gaiter-tooth',[(i-2.5)*.38,-1.14,-1.8]);
+  for(let r=0;r<3;r++)for(let c=0;c<4;c++)
+   box(joints.head,[.35,.28,.06],stitch,'gaiter-print',[(c-1.5)*.55,-.55-r*.35,-1.72]);
+  for(const sign of [-1,1]){
+   const ear=sphere(joints.head,.42,skin,'ear',[sign*1.85,.05,-.15],'ears');
+   ear.scale.set(.45,1.05,.7);
+  }
 
   for(const sign of [-1,1]){
    sphere(joints.head,.42,white,'eye',[sign*.76,.44,-1.62]);
    sphere(joints.head,.2,hair,'iris',[sign*.76,.44,-1.8]);
+   sphere(joints.head,.08,dark,'pupil',[sign*.76,.44,-1.92]);
    box(joints.head,[1.4,.11,.15],dark,'eyeglass-frame',[sign*.8,.42+0.4,-1.9],'glasses');
    box(joints.head,[1.4,.11,.15],dark,'eyeglass-frame-b',[sign*.8,.42-0.4,-1.9],'glasses');
    box(joints.head,[.11,.78,.15],dark,'eyeglass-rim',[sign*.8+.64,.42,-1.9]);
@@ -235,6 +262,12 @@
    const hand=group(elbow,key+'Hand',0,-2.2,0);
    joints[key+'Hand']=hand;joints[Side+'Hand']=hand;
    box(hand,[1.3,.88,1.15],dark,key+'Glove',[0,0,0],'gloves');
+   for(let k=0;k<4;k++)box(hand,[.22,.18,.2],rubber,key+'Knuckle',[(k-1.5)*.28,.35,-.45]);
+   if(side<0){
+    cylinder(elbow,.72,.72,.28,dark,key+'WatchBand',[0,-1.85,0],'watch');
+    box(elbow,[.85,.15,.85],trim,key+'WatchFace',[0,-1.85,-.55],'watch');
+    box(elbow,[.55,.08,.08],gold,key+'WatchHand',[0,-1.85,-.95],'watch');
+   }
    FINGERS.forEach((f,i)=>{
     const fx=(i-2)*.22;
     const finger=group(hand,Side+f,fx,-.42,-.15);
@@ -251,8 +284,12 @@
    const knee=group(leg,key+'Knee',0,-3.72,0);joints[key+'Knee']=knee;
    cylinder(knee,1.02,.84,2.75,pants,key+'Shin',[0,-1.4,0]);
    box(knee,[2.15,1.55,2.55],boot,key+'AdventureBoot',[0,-3.15,-.42],'boots');
-   box(knee,[2.25,.44,3.05],dark,key+'BootSole',[0,-3.85,-.2]);
-   for(let j=0;j<3;j++)box(knee,[.55,.12,.17],trim,key+'BootLace',[0,-2.9+j*.32,-1.76]);
+   box(knee,[2.25,.44,3.05],rubber,key+'BootSole',[0,-3.85,-.2],'boot-tread');
+   for(let tix=0;tix<3;tix++)for(const tz of [-.9,0,.9])
+    box(knee,[.55,.18,.55],dark,key+'Tread',[(tix-1)*.65,-4.05,tz-.2],'boot-tread');
+   for(let j=0;j<4;j++)box(knee,[.55,.12,.17],trim,key+'BootLace',[0,-2.95+j*.28,-1.76]);
+   cylinder(knee,1.05,1.15,.55,cargo,key+'AnkleGaiter',[0,-2.35,0]);
+   box(knee,[1.6,.9,.35],trim,key+'KneePad',[0,-.15,.85]);
   }
 
   const props={};
