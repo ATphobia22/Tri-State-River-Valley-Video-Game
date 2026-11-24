@@ -6,10 +6,9 @@
   const api=factory();
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.ValleyStreamingPolicy=api;
-  // Hosted multi-file pages: load companion roadmap modules without editing the large index.html blob.
   if(typeof document!=='undefined'){
-    const companions=['physics-bakeoff.js','maplibre-reference.js','hand-ik-validation.js','gpu-evidence.js','cinema-particles.js','hero-pbr.js'];
-    const base=(document.currentScript&&document.currentScript.src||'').replace(/streaming-policy\.js.*$/,'');
+    const companions=['physics-bakeoff.js','maplibre-reference.js','hand-ik-validation.js','gpu-evidence.js','cinema-particles.js','hero-pbr.js','hero-micro-details.js'];
+    const base=(document.currentScript&&document.currentScript.src||'').replace(/streaming-policy\\.js.*$/,'');
     companions.forEach(function(name){
       if(document.querySelector('script[src*="'+name+'"]'))return;
       const s=document.createElement('script');
@@ -22,12 +21,10 @@
   'use strict';
   const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
   const TARGETS=Object.freeze({desktop:30,mobile:30});
-
   function isOnline(){
     try{return typeof navigator!=='undefined'&&navigator.onLine===true;}
     catch(_){return false;}
   }
-
   function lookAheadDistance(speed,estimatedPrepMs=600,nearDistance=80){
     const v=Number.isFinite(speed)?clamp(speed,0,450):0;
     const prep=Number.isFinite(estimatedPrepMs)?clamp(estimatedPrepMs,0,1400):600;
@@ -35,7 +32,6 @@
     const boost=isOnline()?1.55:1;
     return Math.min(420,(near+v*prep/1000)*boost);
   }
-
   function createGovernor({maxTiles=200,minTiles=80,targetFPS=30,preferOnline=true}={}){
     if(!(Number.isFinite(maxTiles)&&Number.isFinite(minTiles)&&minTiles>=24&&maxTiles>=minTiles&&maxTiles<=500))
       throw new RangeError('Invalid terrain tile budget limits');
@@ -75,6 +71,5 @@
       })
     });
   }
-
   return Object.freeze({TARGETS,createGovernor,lookAheadDistance,isOnline});
 });
