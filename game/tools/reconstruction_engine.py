@@ -350,7 +350,13 @@ def run(images,workspace,kind,license_id,appearance="none",
         undistorted.mkdir()
         run_cmd(["colmap","model_converter","--input_path",str(dense/"sparse"),
                  "--output_path",str(undistorted),"--output_type","TXT"],work,logs,21,timeout)
-        nerfstudio_dataset(undistorted,dense/"images",work/"nerfstudio")
+        ns_transforms=nerfstudio_dataset(undistorted,dense/"images",work/"nerfstudio")
+        ns_meta=json.loads(ns_transforms.read_text())
+        receipt["nerfstudio_dataset"]={
+            "registered_frames":len(ns_meta["frames"]),
+            "sparse_initialization_points":ns_meta.get("sparse_initialization_points",0),
+            "sparse_initialization_available":bool(ns_meta.get("ply_file_path")),
+            "transforms_sha256":sha256(ns_transforms)}
         mvs=work/"openmvs"
         phases=[
             ["InterfaceCOLMAP","-i",str(dense),"-o","scene.mvs",
@@ -377,7 +383,8 @@ def run(images,workspace,kind,license_id,appearance="none",
         if appearance in ("nerfacto","gsplat"):
             profile=appearance_profile or profile_for_appearance(appearance)
             command=training_command(work/"nerfstudio",work/"nerfstudio-output",
-                                     profile,max_iterations=max_iterations)
+                                     profile,max_iterations=max_iterations,
+                                     load_sparse_points=bool(ns_meta.get("ply_file_path")))
             receipt["appearance_plan"]={"profile":profile,"command":command,
                                         "automatic_game_promotion":False}
             run_cmd(command,work,logs,40,timeout)
