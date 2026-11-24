@@ -5559,7 +5559,6 @@ function cleanSettings(v){v=v&&typeof v==='object'?v:{};return {
  strength:Number.isFinite(v.strength)?clamp(v.strength,0,1):.72,
  grain:!!v.grain,showStats:!!v.showStats};}
 function rgba(r,g,b,a){return `rgba(${r},${g},${b},${clamp(a,0,1).toFixed(3)})`;}
-// Self-contained overlay fallback: renders even when the browser has no WebGL context.
 function draw2D(canvas,settings,frame,{weather='clear',time=17.5,season='summer',width,height}={}){
  if(!canvas)return 0;const s=cleanSettings(settings),budget=pickQuality(s.quality),w=Math.max(1,Math.floor(width||canvas.clientWidth||960)),h=Math.max(1,Math.floor(height||canvas.clientHeight||540));
  const ratio=Math.min(budget.pixelRatio,typeof devicePixelRatio!=='undefined'?devicePixelRatio:1);
@@ -5592,7 +5591,6 @@ function draw2D(canvas,settings,frame,{weather='clear',time=17.5,season='summer'
  }
  return count;
 }
-// One draw call for floating firefly/pollen motes, a second for clustered riverside reeds.
 function makeWorldFX(THREE,scene,ground,limit,seed=3751){
  let n=seed>>>0;const rnd=()=>((n=(Math.imul(n,1664525)+1013904223)>>>0)/4294967296);
  const max=180,position=new Float32Array(max*3),base=new Float32Array(max*3);
@@ -5611,17 +5609,33 @@ function makeWorldFX(THREE,scene,ground,limit,seed=3751){
   const y=ground(x,z);dummy.position.set(x,y+2.3,z);dummy.rotation.y=rnd()*6.283;dummy.rotation.z=(rnd()-.5)*.19;dummy.scale.set(.7+rnd()*.9,.6+rnd()*1.25,.7+rnd()*.9);dummy.updateMatrix();reeds.setMatrixAt(i,dummy.matrix);
  }
  reeds.instanceMatrix.needsUpdate=true;reeds.frustumCulled=true;scene.add(reeds);
- function update(now,time,weather,strength,quality){
+ function qBudget(q){return q===QUALITY.cinematic?220:q===QUALITY.balanced?90:40;}
+ const CP=typeof ValleyCinemaParticles!=='undefined'?ValleyCinemaParticles:null;
+ let rainMist=null;
+ if(CP&&CP.create){
+  try{rainMist=CP.create(THREE,scene,{maxParticles:qBudget(QUALITY.cinematic)});}catch(_){rainMist=null;}
+ }
+ let lastNow=null;
+ function update(now,time,weather,strength,quality,anchor){
   const q=pickQuality(quality);const night=time>=20||time<5;
-  points.visible=quality!=='lite'&&weather!=='rain';reeds.visible=true;
+  points.visible=quality!=='lite'&&weather!=='rain'&&weather!=='mist';reeds.visible=true;
   pointsMaterial.opacity=(night?.67:.13)*clamp(strength,0,1);
   pointsMaterial.color.set(night?'#ffeb9d':'#f8edd2');
   if(points.visible){const t=now*.001;for(let i=0;i<max;i++){const k=i*3;position[k]=base[k]+Math.sin(t*.65+i*11.3)*4;position[k+1]=base[k+1]+Math.cos(t*.9+i*7.1)*3;position[k+2]=base[k+2]+Math.sin(t*.38+i*5.7)*4;}
    pointsGeo.attributes.position.needsUpdate=true;}
   pointsMaterial.size=q===QUALITY.cinematic?5:q===QUALITY.balanced?3.5:2;
+  if(rainMist){
+   const dt=lastNow==null?0.016:Math.min(0.05,Math.max(0.001,(now-lastNow)/1000));
+   lastNow=now;
+   const a=anchor&&Number.isFinite(anchor.x)?anchor:{x:0,z:0};
+   rainMist.update(dt,weather,a,quality||'balanced');
+  }
  }
- function dispose(){scene.remove(points,reeds);pointsGeo.dispose();pointsMaterial.dispose();reedGeo.dispose();reedMaterial.dispose();}
- return {points,reeds,update,dispose,counts:{motes:max,reeds:reedsCount}};
+ function dispose(){
+  scene.remove(points,reeds);pointsGeo.dispose();pointsMaterial.dispose();reedGeo.dispose();reedMaterial.dispose();
+  if(rainMist&&rainMist.dispose)rainMist.dispose();
+ }
+ return {points,reeds,rainMist,update,dispose,counts:{motes:max,reeds:reedsCount},webgpuParticles:!!(rainMist&&rainMist.hasWebGPU)};
 }
 return {LOOKS,QUALITY,pickLook,pickQuality,cleanSettings,draw2D,makeWorldFX};
 });
