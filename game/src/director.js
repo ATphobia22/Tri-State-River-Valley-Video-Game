@@ -70,12 +70,13 @@ function makeWorldFX(THREE,scene,ground,limit,seed=3751){
  }
  reeds.instanceMatrix.needsUpdate=true;reeds.frustumCulled=true;scene.add(reeds);
  function qBudget(q){return q===QUALITY.cinematic?220:q===QUALITY.balanced?90:40;}
- const CP=typeof ValleyCinemaParticles!=='undefined'?ValleyCinemaParticles:null;
- let rainMist=null;
- if(CP&&CP.create){
-  try{rainMist=CP.create(THREE,scene,{maxParticles:qBudget(QUALITY.cinematic)});}catch(_){rainMist=null;}
+ let rainMist=null,rainMistTried=false,lastNow=null;
+ function ensureRainMist(){
+  if(rainMist)return;
+  const CP=typeof ValleyCinemaParticles!=='undefined'?ValleyCinemaParticles:null;
+  if(!CP||!CP.create)return;
+  try{rainMist=CP.create(THREE,scene,{maxParticles:qBudget(QUALITY.cinematic)});rainMistTried=true;}catch(_){rainMistTried=true;rainMist=null;}
  }
- let lastNow=null;
  function update(now,time,weather,strength,quality,anchor){
   const q=pickQuality(quality);const night=time>=20||time<5;
   points.visible=quality!=='lite'&&weather!=='rain'&&weather!=='mist';reeds.visible=true;
@@ -84,6 +85,7 @@ function makeWorldFX(THREE,scene,ground,limit,seed=3751){
   if(points.visible){const t=now*.001;for(let i=0;i<max;i++){const k=i*3;position[k]=base[k]+Math.sin(t*.65+i*11.3)*4;position[k+1]=base[k+1]+Math.cos(t*.9+i*7.1)*3;position[k+2]=base[k+2]+Math.sin(t*.38+i*5.7)*4;}
    pointsGeo.attributes.position.needsUpdate=true;}
   pointsMaterial.size=q===QUALITY.cinematic?5:q===QUALITY.balanced?3.5:2;
+  if(weather==='rain'||weather==='mist')ensureRainMist();
   if(rainMist){
    const dt=lastNow==null?0.016:Math.min(0.05,Math.max(0.001,(now-lastNow)/1000));
    lastNow=now;
