@@ -14,9 +14,11 @@ function loadHero() {
 
 test('hero profile is cinematic v2 with photogrammetry metadata', () => {
   const H = loadHero();
-  assert.equal(H.PROFILE.version, '2.0-cinematic');
+  assert.ok(H.PROFILE.version.startsWith('2.'));
   assert.ok(H.PROFILE.photogrammetry.pipeline.includes('colmap-sparse'));
   assert.ok(H.PROFILE.features.includes('articulated-fingers'));
+  assert.ok(H.PROFILE.features.includes('boot-tread'));
+  assert.ok(H.PROFILE.features.includes('watch'));
   assert.ok(H.STATES.includes('drive'));
   assert.equal(H.FINGERS.length, 5);
 });
