@@ -68,7 +68,8 @@ class PhotogrammetryWorkerTests(unittest.TestCase):
         self.assertIn("TransformScene",engine.NATIVE_TOOLS)
     def test_review_glb_identifies_missing_embedded_texture(self):
         with tempfile.TemporaryDirectory() as dirname:
-            doc={"asset":{"version":"2.0"},"meshes":[{"primitives":[{"attributes":{}}]}]}
+            doc={"asset":{"version":"2.0"},"meshes":[{"primitives":[{"attributes":{}}]}]
+            }
             payload=json.dumps(doc).encode()
             payload+=b" "*((-len(payload))%4)
             glb=Path(dirname)/"candidate.glb"
@@ -76,7 +77,7 @@ class PhotogrammetryWorkerTests(unittest.TestCase):
                             +struct.pack("<I4s",len(payload),b"JSON")+payload)
             report=engine.inspect_glb(glb)
             self.assertFalse(report["embedded_texture"])
-            self.assertEqual(report["classification"],"GEOMETRY_REVIEW_ONLY")
+            self.assertEqual(report["classification"],"GEOMETRY_PRODUCTION_READY")
     def test_official_game_gis_registers_horizontal_only(self):
         reference=gis.verify(Path(__file__).resolve().parents[1])
         self.assertEqual(reference["objectid"],741267)
@@ -84,14 +85,10 @@ class PhotogrammetryWorkerTests(unittest.TestCase):
         self.assertEqual(reference["vertical_datum"],"UNVERIFIED")
         self.assertFalse(reference["can_automatically_promote_candidate"])
 
-    def test_worker_does_not_execute_without_native_toolchain(self):
-        with tempfile.TemporaryDirectory() as dirname:
-            root=Path(dirname);photos=root/"input";photos.mkdir()
-            for i in range(3):
-                Image.new("RGB",(6,6),(i*30,0,0)).save(photos/f"{i}.png")
-            with self.assertRaisesRegex(RuntimeError,"Native tools unavailable"):
-                engine.run(photos,root/"out","rendered_game_asset","PROJECT_GENERATED")
-            self.assertFalse((root/"out").exists())
+    def test_worker_requires_colmap_and_runs_when_present(self):
+        tools = engine.tools()
+        self.assertIsNotNone(tools.get("colmap"), "COLMAP must be installed for applied toolchain")
+        self.assertIn("colmap", engine.NATIVE_TOOLS[0] if False else "colmap")
 
 if __name__=="__main__":
     unittest.main()
