@@ -160,6 +160,31 @@ class NerfstudioProfileTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             profiles.training_command("/tmp/a", "/tmp/out", "nerfacto-preview", train_split_fraction=1.0)
 
+    def test_colmap_sparse_points_are_preserved_for_gaussian_initialization(self):
+        from PIL import Image
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            model = root / "sparse"; model.mkdir()
+            photos = root / "photos"; photos.mkdir()
+            (model / "cameras.txt").write_text("1 PINHOLE 16 16 12 12 8 8\n")
+            (model / "images.txt").write_text("".join(
+                f"{i} 1 0 0 0 0 0 0 1 view{i}.png\n\n" for i in range(1, 4)
+            ))
+            (model / "points3D.txt").write_text(
+                "1 0 1 2 255 0 0 0.4 1 0\n"
+                "2 2 3 4 0 255 0 0.5 2 0\n"
+                "3 4 5 6 0 0 255 0.6 3 0\n"
+            )
+            for i in range(1,4):
+                Image.new("RGB", (16,16), (20*i,30,40)).save(photos/f"view{i}.png")
+            output = worker.nerfstudio_dataset(model, photos, root / "ns")
+            payload = json.loads(output.read_text())
+            self.assertEqual(payload["ply_file_path"], "sparse_points.ply")
+            data = (root / "ns" / "sparse_points.ply").read_text()
+            self.assertIn("element vertex 3", data)
+            self.assertIn("0 1 2 255 0 0", data)
+            self.assertEqual(len(payload["frames"]), 3)
+
     def test_worker_exposes_db_audit_and_profile_selection(self):
         import inspect
         code = inspect.getsource(worker.run)
