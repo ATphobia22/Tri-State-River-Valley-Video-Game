@@ -109,6 +109,46 @@ def rotation(q):
                      [2*x*y+2*w*z,1-2*x*x-2*z*z,2*y*z-2*w*x],
                      [2*x*z-2*w*y,2*y*z+2*w*x,1-2*x*x-2*y*y]])
 
+def export_sparse_ply(model, destination, *, max_points=1_000_000):
+    """Preserve original COLMAP world coordinates and colors for Splatfacto.
+
+    The Nerfstudio dataparser applies the same orientation/scale transform to
+    the cameras and this point cloud. These are not surveyed world coordinates.
+    """
+    source=Path(model)/"points3D.txt"
+    if not source.is_file():
+        return 0
+    points=[]
+    for line in lines(source):
+        fields=line.split()
+        if len(fields)<8:
+            raise ValueError("Malformed COLMAP points3D row")
+        xyz=[float(v) for v in fields[1:4]]
+        rgb=[int(v) for v in fields[4:7]]
+        error=float(fields[7])
+        if not all(math.isfinite(v) for v in xyz+[error]):
+            raise ValueError("Nonfinite COLMAP sparse points")
+        if not all(0<=v<=255 for v in rgb) or error<0:
+            raise ValueError("Invalid COLMAP sparse point colors/reprojection")
+        if error<=4.0:
+            points.append((xyz,rgb))
+        if len(points)>max_points:
+            raise ValueError("Sparse point count exceeds bounded PLY budget")
+    if len(points)<3:
+        return 0
+    target=Path(destination)
+    with target.open("w",encoding="ascii") as output:
+        output.write("ply\nformat ascii 1.0\n")
+        output.write(f"element vertex {len(points)}\n")
+        output.write("property float x\nproperty float y\nproperty float z\n")
+        output.write("property uchar red\nproperty uchar green\nproperty uchar blue\n")
+        output.write("end_header\n")
+        for xyz,rgb in points:
+            output.write(" ".join(format(v,".9g") for v in xyz)
+                         +" "+" ".join(str(v) for v in rgb)+"\n")
+    return len(points)
+
+
 def nerfstudio_dataset(model, images, destination):
     import numpy as np
     model, images, destination = Path(model),Path(images),Path(destination)
@@ -152,8 +192,13 @@ def nerfstudio_dataset(model, images, destination):
         dst=destination/"images"/rel
         dst.parent.mkdir(parents=True,exist_ok=True)
         shutil.copy2(images/rel,dst)
+    payload={"camera_model":"OPENCV","frames":frames}
+    sparse_count=export_sparse_ply(model,destination/"sparse_points.ply")
+    if sparse_count>=3:
+        payload["ply_file_path"]="sparse_points.ply"
+        payload["sparse_initialization_points"]=sparse_count
     output=destination/"transforms.json"
-    output.write_text(json.dumps({"camera_model":"OPENCV","frames":frames},indent=2))
+    output.write_text(json.dumps(payload,indent=2))
     return output
 
 def inspect_glb(path):
@@ -328,7 +373,13 @@ def run(images,workspace,kind,license_id,appearance="none",
         undistorted.mkdir()
         run_cmd(["colmap","model_converter","--input_path",str(dense/"sparse"),
                  "--output_path",str(undistorted),"--output_type","TXT"],work,logs,21,timeout)
-        nerfstudio_dataset(undistorted,dense/"images",work/"nerfstudio")
+        ns_path=nerfstudio_dataset(undistorted,dense/"images",work/"nerfstudio")
+        ns_meta=json.loads(ns_path.read_text())
+        receipt["nerfstudio_dataset"]={
+            "registered_frames":len(ns_meta["frames"]),
+            "sparse_points":ns_meta.get("sparse_initialization_points",0),
+            "sparse_init_available":bool(ns_meta.get("ply_file_path")),
+            "transforms_sha256":sha256(ns_path)}
         mvs=work/"openmvs"
         openmvs_available = all(installed.get(x) for x in (
             "InterfaceCOLMAP","DensifyPointCloud","ReconstructMesh",
