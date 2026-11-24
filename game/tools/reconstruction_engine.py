@@ -20,6 +20,8 @@ from pathlib import Path
 import shutil
 import struct
 import subprocess
+from colmap_database_audit import inspect as audit_database
+from nerfstudio_profiles import PROFILES, describe_profiles, profile_for_appearance, training_command
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".tif", ".tiff"}
 NATIVE_TOOLS = ("colmap", "InterfaceCOLMAP", "DensifyPointCloud",
@@ -211,7 +213,7 @@ def run_cmd(argv,cwd,logs,index,timeout):
         raise RuntimeError(f"{argv[0]} failed with exit={completed.returncode}; inspect {output}")
     return str(output)
 
-def run_appearance(work, appearance, timeout):
+def run_appearance(work, appearance, timeout, argv_override=None):
     ns = shutil.which("ns-train")
     if not ns:
         return {"status": "SKIPPED", "reason": "ns-train not installed"}
@@ -222,11 +224,16 @@ def run_appearance(work, appearance, timeout):
     except ImportError:
         return {"status": "SKIPPED", "reason": "PyTorch not available"}
     try:
-        from nerfstudio_configs import build_ns_train_argv, PRESETS
-        preset = "gsplat" if appearance == "gsplat" else "nerfacto"
-        out = work / f"nerfstudio_{PRESETS[preset]['method']}"
-        out.mkdir(parents=True, exist_ok=True)
-        argv = build_ns_train_argv(preset, str(work / "nerfstudio"), str(out), max_iters=500)
+        if argv_override is not None:
+            out = work / "nerfstudio-output"
+            out.mkdir(parents=True, exist_ok=True)
+            argv = argv_override
+        else:
+            from nerfstudio_configs import build_ns_train_argv, PRESETS
+            preset = "gsplat" if appearance == "gsplat" else "nerfacto"
+            out = work / f"nerfstudio_{PRESETS[preset]['method']}"
+            out.mkdir(parents=True, exist_ok=True)
+            argv = build_ns_train_argv(preset, str(work / "nerfstudio"), str(out), max_iters=500)
     except Exception:
         method = "splatfacto" if appearance == "gsplat" else "nerfacto"
         out = work / f"nerfstudio_{method}"
@@ -239,13 +246,19 @@ def run_appearance(work, appearance, timeout):
     return {"status": "TRAINED", "method": argv[1], "output": str(out), "log": log, "argv": argv}
 
 def run(images,workspace,kind,license_id,appearance="none",
-        min_registration=0.75,max_reprojection=2.0,timeout=7200,promote=False):
+        min_registration=0.75,max_reprojection=2.0,timeout=7200,promote=False,
+        appearance_profile=None,max_iterations=None,min_verified_inliers=15):
     if kind not in ("benchmark_photographs","rendered_game_asset","physical_landmark"):
         raise ValueError("Explicit evidence class required")
     if not license_id.strip():
         raise ValueError("License/right declaration required")
     if not 0<min_registration<=1 or max_reprojection<=0:
         raise ValueError("Invalid quality thresholds")
+    if appearance_profile:
+        if appearance_profile not in PROFILES or appearance not in ("nerfacto","gsplat"):
+            raise ValueError("Unknown or inapplicable Nerfstudio profile")
+        if (appearance=="nerfacto") != appearance_profile.startswith("nerfacto"):
+            raise ValueError("Nerfstudio profile does not match appearance engine")
     photos=image_inventory(images)
     installed=tools()
     if not installed.get("colmap"):
@@ -274,6 +287,19 @@ def run(images,workspace,kind,license_id,appearance="none",
     try:
         for i,argv in enumerate(commands(images,work),1):
             run_cmd(argv,work,logs,i,timeout)
+            if i == 2:
+                # SQLite reports feature and verified-match coverage, never
+                # actual registered camera poses or a geodetic alignment.
+                receipt["colmap_database_audit"] = audit_database(
+                    work/"database.db", expected_images=len(photos),
+                    min_verified_inliers=min_verified_inliers)
+                graph=receipt["colmap_database_audit"]
+                if graph["expected_image_coverage"] < 1:
+                    receipt["status"]="SOURCE_IMAGES_NOT_ALL_INDEXED"
+                    return receipt
+                if graph["largest_verified_component"] < 3:
+                    receipt["status"]="MATCH_GRAPH_INSUFFICIENT"
+                    return receipt
         candidates=[]
         for n,model in enumerate(sorted((work/"sparse").iterdir())):
             if not model.is_dir():
@@ -331,7 +357,14 @@ def run(images,workspace,kind,license_id,appearance="none",
             receipt["status"]="SPARSE_CALIBRATED"
             receipt["openmvs"]="not_installed"
         if appearance in ("nerfacto","gsplat"):
-            receipt["appearance"]=run_appearance(work, appearance, timeout)
+            overrides=None
+            if appearance_profile:
+                overrides=training_command(work/"nerfstudio",work/"nerfstudio-output",
+                                            appearance_profile,max_iterations=max_iterations,
+                                            load_sparse_points=bool(ns_meta.get("ply_file_path")))
+                receipt["nerfstudio_profile"]={"profile":appearance_profile,
+                                               "command":overrides,"review_only":True}
+            receipt["appearance"]=run_appearance(work, appearance, timeout, argv_override=overrides)
         if appearance == "cpu" or (appearance in ("nerfacto","gsplat") and
                                    receipt.get("appearance",{}).get("status") == "SKIPPED"):
             from cpu_volume import train
