@@ -7696,9 +7696,8 @@ return Object.freeze({create});
   else root.ValleyRenderWorkers = api;
 })(globalThis);
 </script><script>/* Deterministic, frame-budgeted foliage CELLS for the fictional River Valley.
- * No network, no geodata dependency, no per-frame geometry allocation.
+ * Online-first denser streaming; offline backup uses tighter budgets.
  * The game renders active descriptors with a fixed number of InstancedMesh batches.
- * Online (navigator.onLine) raises load/unload radii and tree capacity for denser cinematic foliage.
  */
 (function(root,factory){
  const api=factory();
@@ -7739,7 +7738,7 @@ return Object.freeze({create});
   }
   return out;
  }
- function create({cellSize=240,loadRadius=(typeof navigator!=='undefined'&&navigator.onLine)?1100:860,unloadRadius=(typeof navigator!=='undefined'&&navigator.onLine)?1400:1060,maxTrees=(typeof navigator!=='undefined'&&navigator.onLine)?1200:800,limit=2200,stops=[],seed=47620}={}){
+ function create({cellSize=240,loadRadius=(typeof navigator!=='undefined'&&navigator.onLine)?1400:720,unloadRadius=(typeof navigator!=='undefined'&&navigator.onLine)?1800:900,maxTrees=(typeof navigator!=='undefined'&&navigator.onLine)?1600:640,limit=2200,stops=[],seed=47620}={}){
   if(!(Number.isFinite(cellSize)&&cellSize>=100&&cellSize<=700))throw new RangeError('invalid cellSize');
   if(!(loadRadius>=cellSize&&unloadRadius>=loadRadius&&unloadRadius<=2500))throw new RangeError('invalid radii');
   if(!(Number.isInteger(maxTrees)&&maxTrees>=16&&maxTrees<=5000))throw new RangeError('invalid tree capacity');
