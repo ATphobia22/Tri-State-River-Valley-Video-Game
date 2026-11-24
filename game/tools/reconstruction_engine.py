@@ -433,6 +433,11 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     subs=parser.add_subparsers(dest="action",required=True)
     subs.add_parser("doctor")
+    subs.add_parser("profiles",help="List Nerfstudio headless profiles")
+    audit=subs.add_parser("db-audit",help="Read-only COLMAP SQLite feature/match audit")
+    audit.add_argument("--database",required=True,type=Path)
+    audit.add_argument("--expected-images",type=int)
+    audit.add_argument("--min-verified-inliers",type=int,default=15)
     for cmd in ("plan","run"):
         p=subs.add_parser(cmd)
         p.add_argument("--images",required=True,type=Path)
@@ -442,6 +447,9 @@ def main():
         p.add_argument("--license-id",required=True)
         p.add_argument("--appearance",default="none",
                        choices=("none","cpu","nerfacto","gsplat"))
+        p.add_argument("--appearance-profile",choices=sorted(PROFILES))
+        p.add_argument("--max-iterations",type=int)
+        p.add_argument("--min-verified-inliers",type=int,default=15)
         p.add_argument("--min-registration",type=float,default=.75)
         p.add_argument("--max-reprojection",type=float,default=2.)
         p.add_argument("--timeout",type=int,default=7200)
@@ -456,6 +464,12 @@ def main():
                           "toolchain":"applied_production"},indent=2));return
     if options.action=="inspect-glb":
         print(json.dumps(inspect_glb(options.path),indent=2));return
+    if options.action=="profiles":
+        print(json.dumps(describe_profiles(),indent=2));return
+    if options.action=="db-audit":
+        print(json.dumps(audit_database(options.database,
+                          expected_images=options.expected_images,
+                          min_verified_inliers=options.min_verified_inliers),indent=2));return
     if options.action=="plan":
         photos=image_inventory(options.images)
         try:
@@ -467,10 +481,17 @@ def main():
                           "source_class":options.kind,"license":options.license_id,
                           "inputs":photos,"native_toolchain":tools(),
                           "colmap_commands":commands(options.images,options.workspace),
+                          "database_audit_stage":"after matching, before mapping",
+                          "nerfstudio_profile":options.appearance_profile,
+                          "nerfstudio_command":training_command(
+                             options.workspace/"nerfstudio",options.workspace/"nerfstudio-output",
+                             options.appearance_profile,max_iterations=options.max_iterations
+                          ) if options.appearance_profile else None,
                           "status":"PLAN_READY_FOR_EXECUTION"},indent=2));return
     result=run(options.images,options.workspace,options.kind,options.license_id,
                options.appearance,options.min_registration,options.max_reprojection,
-               options.timeout,getattr(options,"promote",False))
+               options.timeout,getattr(options,"promote",False),
+               options.appearance_profile,options.max_iterations,options.min_verified_inliers)
     print(json.dumps(result,indent=2))
 
 if __name__=="__main__":
