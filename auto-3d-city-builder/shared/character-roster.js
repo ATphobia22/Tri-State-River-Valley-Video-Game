@@ -30,8 +30,9 @@
       tags: ['hunt-mentor', 'camo'], miniGame: 'mg-hunt', spawnHint: 'Hovey Lake bottoms'
     },
     'pete-yeida': {
-      id: 'pete-yeida', displayName: 'Pete Yeida', role: 'npc',
-      tags: ['orange-beanie'], miniGame: 'mg-farm', spawnHint: 'Farm market'
+      id: 'pete-yeida', displayName: 'Pete Yeida', nickname: 'Uncle Pete',
+      title: 'Leader of the Catfish Cartel', role: 'npc',
+      tags: ['orange-beanie', 'fish-mentor'], miniGame: 'mg-fish', spawnHint: 'Slim Pond mud bank'
     },
     'roy-tenney': {
       id: 'roy-tenney', displayName: 'Roy Tenney', role: 'npc',
