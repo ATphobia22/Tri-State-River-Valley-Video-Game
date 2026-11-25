@@ -1,0 +1,8 @@
+# Geographic archive admission — River Valley
+The bundled Mount Vernon reference remains authoritative for gameplay geography. The Florence PMTiles URL is retained only for explicit style demonstration tests; it must never be selected as the game's project archive. A configured HTTPS PMTiles source must pass a 127-byte PMTiles v3 header probe: exact HTTP 206 Content-Range, MVT type, detailed zoom, and bounding box containing the entire existing game reference. The probe cancels unexpected full-file bodies and caps streaming bytes. The mount receipt is tied to the URL and issued internally, not a caller-authored boolean. This is a header preflight, not proof of complete tile coverage, licensing, layer schema, or renderer compatibility.
+ 
+Before activation: produce a real local PMTiles archive with attribution and schema validation, host on a range-capable origin with CORS and Content-Range exposed, pin data version, test actual tile decoding, and wire the adapter to a dedicated map view. Do not replace existing offline imagery or introduce a second full-time renderer.
+ 
+Separate 3D Tiles intake finding: the repository's slim Mount Vernon manifest declares b_0000.glb and tree_instanced.glb but its directory contains only JSON files. The provided mount-vernon-tiles-2.4.0.zip has 128 ZIP entries including GLBs, however its content is tagged footprint-extrude / QL-D and local-frame placement, not verified surveyed buildings. Do not publish this as georeferenced truth without validation, correct transform, and full-content packaging.
+ 
+References: https://github.com/protomaps/PMTiles/blob/main/spec/v3/spec.md ; https://docs.protomaps.com/pmtiles/cloud-storage ; https://cesium.com/learn/cesiumjs/ref-doc/Cesium3DTileset.html .
