@@ -37,3 +37,10 @@ test('explicit raw mip payload cannot undercount known float RGBA dimensions',()
  const t={isTexture:true,type:1015,mipmaps:[{width:4,height:4,data:new Uint8Array(16)}]};
  assert.equal(P.estimateGpuResources({active:[{material:{map:t}}]}).textureBytes,256);
 });
+test('game applies the adaptive scale without replacing the WebGL renderer',()=>{
+ const fs=require('node:fs'),source=fs.readFileSync(__dirname+'/../src/game.js','utf8');
+ assert.ok(source.includes('resolutionGovernor.observe({fps:perf.meanFPS,hidden:document.hidden})'));
+ assert.ok(source.includes('Math.min(1.25,devicePixelRatio||1)*scale'));
+ assert.ok(source.includes('resolution:resolutionGovernor.snapshot()'));
+ assert.ok(source.includes('new G.WebGLRenderer'));
+});
