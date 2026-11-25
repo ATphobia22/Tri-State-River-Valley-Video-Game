@@ -21,6 +21,19 @@
     const boost=isOnline()?1.55:1;
     return Math.min(420,(near+v*prep/1000)*boost);
   }
+  // Conservative geometry-only upper bound for the current terrain layout:
+  // float32 position, normal, color, UV; uint16/32 triangle index; four
+  // non-indexed skirts with position and normal. Shared textures excluded.
+  function terrainTileBytes(segments=16){
+    if(!Number.isInteger(segments)||segments<1||segments>512)throw new RangeError('Invalid terrain segments');
+    const vertices=(segments+1)**2,indexBytes=vertices>65535?4:2;
+    return vertices*44+segments*segments*6*indexBytes+4*segments*6*24;
+  }
+  function terrainByteTileCap({budgetBytes,segments=16,generations=3}={}){
+    if(!Number.isSafeInteger(budgetBytes)||budgetBytes<0||!Number.isSafeInteger(generations)||generations<1)
+      throw new RangeError('Invalid terrain geometry budget');
+    return Math.floor(budgetBytes/(terrainTileBytes(segments)*generations));
+  }
   function createGovernor({maxTiles=200,minTiles=80,targetFPS=30,preferOnline=true}={}){
     if(!(Number.isFinite(maxTiles)&&Number.isFinite(minTiles)&&minTiles>=24&&maxTiles>=minTiles&&maxTiles<=500))
       throw new RangeError('Invalid terrain tile budget limits');
@@ -63,5 +76,5 @@
       })
     });
   }
-  return Object.freeze({TARGETS,createGovernor,lookAheadDistance,isOnline});
+  return Object.freeze({TARGETS,createGovernor,lookAheadDistance,isOnline,terrainTileBytes,terrainByteTileCap});
 });
