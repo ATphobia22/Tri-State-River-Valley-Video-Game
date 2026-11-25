@@ -22,3 +22,8 @@ test('insufficient coverage budget is distributed breadth-first and deterministi
  assert.ok(a.every(t=>t.depth>=1&&t.depth<=2));
  assert.deepEqual(a,QT.selectTiles({...opts,maxTiles:7}));
 });
+test('identical spatial coverage retains the same tile order across camera motion',()=>{
+ const full={...opts,maxDepth:3,maxTiles:64};
+ const ids=tiles=>tiles.map(t=>QT.key(t.depth,t.ix,t.iz));
+ assert.deepEqual(ids(QT.selectTiles({...full,cameraX:-900,cameraZ:-900})),ids(QT.selectTiles({...full,cameraX:900,cameraZ:900})));
+});
