@@ -27,3 +27,18 @@ test('invalid simulation state is repaired without trusting unbounded event inpu
  const s=C.validateSave({weather:'mist',season:'autumn',worldSimulation:{version:1,day:-1,elapsedSeconds:Infinity,weather:'bad',events:[{seq:1,weather:'bad'}]}});
  assert.equal(s.worldSimulation.day,0);assert.equal(s.worldSimulation.elapsedSeconds,0);assert.equal(s.worldSimulation.weather,'mist');assert.deepEqual(s.worldSimulation.events,[]);
 });
+
+test('wildlife activity is reproducible after restoring the simulation clock',()=>{
+ const skills=require('../src/gameplay-skills.js');
+ let s=C.freshSave('Wildlife');
+ let advanced=C.advanceWorldClock(s.worldSimulation,s.time,123);
+ s.time=advanced.time;s.worldSimulation=advanced.world;
+ const player={x:-1000,z:-1000},site={x:0,z:0};
+ const before=skills.sampleWildlife(s.worldSimulation.elapsedSeconds*1000,player,site);
+ const restored=C.validateSave(JSON.parse(JSON.stringify(s)));
+ assert.deepEqual(skills.sampleWildlife(restored.worldSimulation.elapsedSeconds*1000,player,site),before);
+ const after=C.advanceWorldClock(restored.worldSimulation,restored.time,1);
+ assert.notDeepEqual(skills.sampleWildlife(after.world.elapsedSeconds*1000,player,site),before);
+ const source=require('node:fs').readFileSync(__dirname+'/../src/game.js','utf8');
+ assert.ok(source.includes('worldGame.update({stamp:save.worldSimulation.elapsedSeconds*1000'));
+});
