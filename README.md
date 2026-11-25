@@ -10,6 +10,46 @@
 
 > **Project boundary:** This is the **standalone video game**, not Tri-State Systems Manager's scientific, municipal, or flood-engineering digital twin. The terrain and additional town scenes are artistic game environments, not certified spatial or hydraulic models.
 
+## Repository status — 2026-11-24
+
+**Default branch:** `main` @ `7286edf4` (playable v1.13.0 line).
+
+### Pull requests
+
+| PR | Title | State |
+| --- | --- | --- |
+| [#46](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/pull/46) | Feature/applied photogrammetry toolchain | **Open — merge blocked** (`mergeable_state: dirty`). Auto-update against `main` failed with conflicts. Rebase required before squash-merge. |
+| [#48](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/pull/48) | COLMAP matching DB + Nerfstudio cinematic profiles | Merged |
+| [#45](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/pull/45) | Reject unsafe GLB / invalid COLMAP cameras | Merged |
+| [#43](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/pull/43) | Creatures main wiring | Merged |
+| Earlier gameplay/art PRs (#4–#42) | Character, world, Posey atlas, workers, cinematics | Merged or intentionally closed |
+
+Legacy **PTDT EnKF/Bishop Evidence Graph** draft ([PR #2](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/pull/2)) remains intentionally separate from the playable game.
+
+### Feature branches still on the remote
+
+Remote tips such as `feat/visual-workers-wind-foam-20261123`, `feat/full-3d-creatures-layers-20261123`, `feature/applied-photogrammetry-toolchain`, and related `fix/*` / `perf/*` branches are retained for provenance. Content that already landed via squash-merge lives on `main`; do not re-merge those tips without a fresh rebase.
+
+To finish #46:
+
+```bash
+git fetch origin
+git checkout feature/applied-photogrammetry-toolchain
+git rebase origin/main
+# resolve conflicts, then:
+git push --force-with-lease
+```
+
+### Sparse-matrix research (performance track)
+
+Investigated for future building-visibility / nearest-neighbor / terrain graphs (not yet shipped in the playable client):
+
+- [MathWorks sparse matrices](https://www.mathworks.com/help/matlab/sparse-matrices.html) — storage formats and when densify vs stay sparse
+- [GeeksforGeeks sparse representation](https://www.geeksforgeeks.org/dsa/sparse-matrix-representation/) — triplet / CSR / CSC patterns
+- [CS 357 sparse notes (Illinois)](https://cs357.cs.illinois.edu/textbook/notes/sparse.html) — algorithms and complexity
+
+Intended use if adopted: CSR-style adjacency for offline building nearest-search budgets and foliage culling (same problem space as the existing render workers), never inventing surveyed city geometry.
+
 ## What you can play
 
 - **Explore:** Navigate the Mount Vernon-area 3D scene, follow six discovery stops, drive, take photographs, build a family cottage, and change weather, season and time of day. A 2D illustrated gameplay fallback is provided when WebGL is unavailable.
@@ -47,7 +87,6 @@
 ## Geographic truth versus game art
 
 **Source-anchored courthouse upgrade:** A higher-detail original Italianate courthouse GLB is rebuilt from project source, registered to the 2020 Indiana GIO footprint OID 741267 and USGS 3DEP game terrain. Downtown cone roof stand-ins are replaced with game-art gables. **Actual roof/FFE elevations remain unmeasured; no inaccurate LiDAR roof claim is made.** The existing 27-bone/13-action River character remains active because the uploaded 17-bone/1-clip v2 binaries do not meet runtime, animation or PBR requirements. See [the source and character intake record](game/docs/POSEY_COURTHOUSE_AND_CHARACTER_SOURCE_GATE_20261123.md).
-
 
 **2025 Posey County aerial now source-derived:** The 2025 Indiana GIO leaf-on orthophotography is acquired from an IGIO-linked verified ImageServer and integrated as a 2048 × 1393 offline RGBA overlay above the preserved 2023 aerial. The recorded source-aligned overlay has **98.5361% opaque-pixel coverage** of the local Mount Vernon image rectangle; the uncovered remainder retains older imagery and must not be labeled 2025. Original state acquisition resolution is six inches; the game overlay is downsampled. Source checksums, capture timestamps, WGS84 bounds, and validity limits are in [2025 source provenance](game/docs/MOUNT_VERNON_2025_LEAFON.md).
 
@@ -126,8 +165,9 @@ The existing skinned 27-joint River Explorer now excludes generated zero-area tr
 - **Physics:** Polygon-aware 2.5D collision and four-wheel kinematic suspension are **not** full triangle-mesh/rigid-body vehicle simulation.
 - **Characters and sound:** Procedural animation and synthesized ambient audio are shipped; independently licensed recorded performance/audio libraries have not been admitted.
 - **Hardware:** Actual iPhone Safari FPS/thermal evidence, real Windows offline-launch acceptance and hardware GPU profiling remain pending. The in-game **Export iPhone FPS** option supports gathering these measurements.
+- **Open merge:** Photogrammetry toolchain PR #46 needs a manual rebase onto `main` before it can land.
 
-For engineering details, visit the [game guide](game/README.md), [November 22 repository reconciliation audit](game/docs/REPOSITORY_RECONCILIATION_2026-11-22.md) and [open gameplay roadmap](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/issues/6). Unmerged legacy **PTDT EnKF/Bishop Evidence Graph** draft work in [PR #2](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/pull/2) is intentionally separate from the playable game.
+For engineering details, visit the [game guide](game/README.md), [November 22 repository reconciliation audit](game/docs/REPOSITORY_RECONCILIATION_2026-11-22.md) and [open gameplay roadmap](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/issues/6).
 
 **License notice:** The game package currently identifies its project license as `UNLICENSED`. Public visibility is not permission to reuse its code or original assets. Third-party reference tools are not automatically installed or license-admitted.
 
