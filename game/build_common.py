@@ -16,6 +16,9 @@ def compile_source():
             raise RuntimeError(f'Unsafe inline close tag found in {path}')
         del tag['src']
         tag.string = raw
+    license_tag = soup.new_tag('script', attrs={'type': 'text/plain', 'id': 'h3-license'})
+    license_tag.string = '\n'.join((ROOT / 'vendor' / name).read_text(encoding='utf-8') for name in ('H3-LICENSE.txt', 'H3-NOTICE.txt'))
+    soup.head.append(license_tag)
     if 'serviceWorker.register(' in str(soup):
         raise RuntimeError('Service-worker registration is disabled')
     return soup

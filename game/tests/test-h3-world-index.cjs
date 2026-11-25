@@ -34,3 +34,15 @@ test('environment journal persists H3 region transitions independently of render
  assert.equal(restored.worldSimulation.cell,other);
  assert.deepEqual(restored.worldSimulation.events.map(e=>e.cell),[cell,other]);
 });
+
+test('source and offline build load the local H3 library before geographic runtime',()=>{
+ const root=path.join(__dirname,'..');
+ const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+ assert.ok(html.indexOf('vendor/h3-js.umd.js')>=0);
+ assert.ok(html.indexOf('vendor/h3-js.umd.js')<html.indexOf('src/reference-map.js'));
+ const game=fs.readFileSync(path.join(root,'src/game.js'),'utf8');
+ assert.ok(game.includes('updateGeographicState();'));
+ assert.ok(game.includes('geographicIndex:geographicSnapshot()'));
+ assert.ok(game.includes("id:'wildlife:'+id"));
+ assert.ok(fs.readFileSync(path.join(root,'build_common.py'),'utf8').includes('h3-license'));
+});
