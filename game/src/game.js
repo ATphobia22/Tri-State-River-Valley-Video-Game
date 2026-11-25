@@ -920,7 +920,7 @@ function updateVisuals(dt,stamp){
  if(facadePalette?.setWeather)facadePalette.setWeather(weather,roadMesh?.material);
  if(roadMesh?.material){roadMesh.material.color.setHex(weather==='rain'?0x3b464b:0x62686a);
   roadMesh.material.needsUpdate=false;}
- if(worldGame)worldGame.update({stamp,save,activity:worldActive,huntRound:worldHuntRound,fishRound:worldFishRound,aim:worldAim,weather,player,now:Date.now()});
+ if(worldGame)worldGame.update({stamp:save.worldSimulation.elapsedSeconds*1000,save,activity:worldActive,huntRound:worldHuntRound,fishRound:worldFishRound,aim:worldAim,weather,player,now:Date.now()});
  if(cinematicDressing)cinematicDressing.update(time,weather,cinemaPrefs.quality);
  if(atmosphere)atmosphere.update(camera,time,weather,season,stamp,cinematicFrame);if(director3D)director3D.update(stamp,time,weather,cinemaPrefs.strength,cinemaPrefs.quality);
  applyTerrainLOD();
