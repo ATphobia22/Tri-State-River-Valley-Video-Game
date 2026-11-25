@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import build_ktx2_pilot as pilot
 
 def glb(path, *, conflict=False, bad=False):
-    png=b'\x89PNG\r\n\x1a\n'+b'fixture'
+    png=b'\x89PNG\r\n\x1a\n'+struct.pack('>I4sIIBBBBB',13,b'IHDR',4,4,8,6,0,0,0)+b'\0'*4
     doc={'asset':{'version':'2.0'},'buffers':[{'byteLength':len(png)}],
          'bufferViews':[{'buffer':0,'byteOffset':0,'byteLength':len(png)+(100 if bad else 0)}],
          'images':[{'mimeType':'image/png','bufferView':0}],'textures':[{'source':0}],
