@@ -28,12 +28,26 @@ function safeName(v){
   return String(typeof v==='string'?v:'Family Explorer').replace(/[<>\x00-\x1f]/g,'').trim().slice(0,24)||'Family Explorer';
 }
 const WEATHER=new Set(['clear','rain','mist']),SEASONS=new Set(['spring','summer','autumn','winter']);
-const WORLD_EVENT_LIMIT=128;
+const WORLD_EVENT_LIMIT=128, WORLD_CELL_LIMIT=512;
 const cleanCell=v=>typeof v==='string'&&/^89[0-9a-f]{13}$/.test(v)?v:null;
 const safeDay=v=>Number.isSafeInteger(v)&&v>=0?v:0;
 const safeElapsed=v=>Number.isFinite(v)&&v>=0&&v<=Number.MAX_SAFE_INTEGER?v:0;
+// Compact summaries retain the latest observed state beyond the global journal.
+// Counts describe observed transitions, not a reconstruction of unobserved weather.
+function updateCellRecords(records,event,previousCell){
+ if(!event.cell||event.region!=='mount-vernon')return records;
+ const prior=records.find(c=>c.cell===event.cell);
+ if(prior&&prior.lastSeq>=event.seq)return records;
+ const entry={cell:event.cell,firstAt:prior?prior.firstAt:event.at,lastAt:event.at,lastSeq:event.seq,
+  visits:(prior?.visits||0)+Number(!prior||previousCell!==event.cell),
+  changes:(prior?.changes||0)+1,weather:event.weather,season:event.season};
+ return [...records.filter(c=>c.cell!==event.cell),entry].sort((a,b)=>a.lastSeq-b.lastSeq).slice(-WORLD_CELL_LIMIT);
+}
+function worldCell(world,cell){
+ const match=cleanCell(cell)&&world?.cells?.find(c=>c.cell===cell);return match?{...match}:null;
+}
 function cleanWorldSimulation(raw,weather='clear',season='summer',region='mount-vernon'){
- const base={version:1,day:0,elapsedSeconds:0,weather,season,region,cell:null,seq:0,events:[]};
+ const base={version:1,day:0,elapsedSeconds:0,weather,season,region,cell:null,seq:0,events:[],cells:[]};
  if(!raw||raw.version!==1)return base;
  base.cell=cleanCell(raw.cell);base.day=safeDay(raw.day);base.elapsedSeconds=safeElapsed(raw.elapsedSeconds);
  if(WEATHER.has(raw.weather))base.weather=raw.weather;
@@ -45,6 +59,18 @@ function cleanWorldSimulation(raw,weather='clear',season='summer',region='mount-
   base.events.push({seq:e.seq,type:'environment',at:e.at,weather:e.weather,season:e.season,region:e.region,cell:cleanCell(e.cell)});last=e.seq;
  }
  base.seq=Math.max(last,safeDay(raw.seq));
+ const seen=new Set();
+ for(const c of (Array.isArray(raw.cells)?raw.cells.slice(-WORLD_CELL_LIMIT):[])){
+  if(!c||!cleanCell(c.cell)||seen.has(c.cell)||!WEATHER.has(c.weather)||!SEASONS.has(c.season)||
+     !Number.isSafeInteger(c.lastSeq)||c.lastSeq<1||c.lastSeq>base.seq||
+     !Number.isFinite(c.firstAt)||!Number.isFinite(c.lastAt)||c.firstAt<0||c.lastAt<c.firstAt||c.lastAt>base.elapsedSeconds||
+     !Number.isSafeInteger(c.visits)||c.visits<1||!Number.isSafeInteger(c.changes)||c.changes<c.visits||c.changes>c.lastSeq)continue;
+  seen.add(c.cell);
+  base.cells.push({cell:c.cell,firstAt:c.firstAt,lastAt:c.lastAt,lastSeq:c.lastSeq,visits:c.visits,changes:c.changes,weather:c.weather,season:c.season});
+ }
+ base.cells.sort((a,b)=>a.lastSeq-b.lastSeq);
+ let previous=null;
+ for(const e of base.events){base.cells=updateCellRecords(base.cells,e,previous);previous=e.cell;}
  return base;
 }
 function advanceWorldClock(world,time,dt){
@@ -58,7 +84,7 @@ function recordEnvironment(world,{weather,season,region,cell=null}){
  if(!WEATHER.has(weather)||!SEASONS.has(season)||!VALID_REGIONS.has(region)||world.seq>=Number.MAX_SAFE_INTEGER)return world;
  if(world.weather===weather&&world.season===season&&world.region===region&&world.cell===cell)return world;
  const seq=world.seq+1,event={seq,type:'environment',at:world.elapsedSeconds,weather,season,region,cell};
- return {...world,weather,season,region,cell,seq,events:[...world.events,event].slice(-WORLD_EVENT_LIMIT)};
+ return {...world,weather,season,region,cell,seq,events:[...world.events,event].slice(-WORLD_EVENT_LIMIT),cells:updateCellRecords(world.cells||[],event,world.cell)};
 }
 function freshSave(name){return {
  version:3,name:safeName(name),coins:0,xp:0,level:1,completed:[],inventory:{corn:0,fish:0,game:0,meals:0},
@@ -187,5 +213,5 @@ function sampleGrid(g,values,u,v){
  return (h(x,y)*(1-a)+h(x1,y)*a)*(1-b)+(h(x,y1)*(1-a)+h(x1,y1)*a)*b;
 }
 function formatTime(h){const hh=Math.floor(((h%24)+24)%24), m=Math.floor((h-Math.floor(h))*60);return `${(hh%12)||12}:${String(m).padStart(2,'0')} ${hh>=12?'PM':'AM'}`;}
-return {LIMIT,STOPS,COUNTY_REGION_IDS,visitCountyRegion,clamp,clampPosition,safeName,freshSave,validateSave,advanceWorldClock,recordEnvironment,gainReward,completeStop,buildHomestead,farmAction,waterFarm,huntShot,fishReel,landFish,cookRecipe,RECIPES,sampleGrid,formatTime};
+return {LIMIT,STOPS,COUNTY_REGION_IDS,visitCountyRegion,clamp,clampPosition,safeName,freshSave,validateSave,advanceWorldClock,recordEnvironment,worldCell,gainReward,completeStop,buildHomestead,farmAction,waterFarm,huntShot,fishReel,landFish,cookRecipe,RECIPES,sampleGrid,formatTime};
 });
