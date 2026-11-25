@@ -4,7 +4,10 @@ on:
     branches: [main]
     paths:
       - 'game/**'
+      - 'auto-3d-city-builder/**'
       - '.github/workflows/deploy-pages.yml'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -48,6 +51,8 @@ jobs:
           npm --prefix game/valley-scene run build
       - name: Package playable game at website root
         run: python game/tools/build_pages.py --output _site
+      - name: Test online-first runtime contract
+        run: python -m unittest discover -s game/tests -p test_online_first.py -v
       - name: Verify deployed payload before publishing
         run: |
           python - <<'PY'
@@ -90,14 +95,17 @@ jobs:
           path: _site/
           include-hidden-files: true
           if-no-files-found: error
-      - uses: actions/configure-pages@v5
+      - if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
         with:
           enablement: true
-      - uses: actions/upload-pages-artifact@v3
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
   deploy:
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 12
