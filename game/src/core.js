@@ -27,9 +27,42 @@ function clampPosition(pos,limit=LIMIT){
 function safeName(v){
   return String(typeof v==='string'?v:'Family Explorer').replace(/[<>\x00-\x1f]/g,'').trim().slice(0,24)||'Family Explorer';
 }
+const WEATHER=new Set(['clear','rain','mist']),SEASONS=new Set(['spring','summer','autumn','winter']);
+const WORLD_EVENT_LIMIT=128;
+const cleanCell=v=>typeof v==='string'&&/^89[0-9a-f]{13}$/.test(v)?v:null;
+const safeDay=v=>Number.isSafeInteger(v)&&v>=0?v:0;
+const safeElapsed=v=>Number.isFinite(v)&&v>=0&&v<=Number.MAX_SAFE_INTEGER?v:0;
+function cleanWorldSimulation(raw,weather='clear',season='summer',region='mount-vernon'){
+ const base={version:1,day:0,elapsedSeconds:0,weather,season,region,cell:null,seq:0,events:[]};
+ if(!raw||raw.version!==1)return base;
+ base.cell=cleanCell(raw.cell);base.day=safeDay(raw.day);base.elapsedSeconds=safeElapsed(raw.elapsedSeconds);
+ if(WEATHER.has(raw.weather))base.weather=raw.weather;
+ if(SEASONS.has(raw.season))base.season=raw.season;
+ if(VALID_REGIONS.has(raw.region))base.region=raw.region;
+ let last=0;
+ for(const e of (Array.isArray(raw.events)?raw.events.slice(-WORLD_EVENT_LIMIT):[])){
+  if(!e||!Number.isSafeInteger(e.seq)||e.seq<=last||e.type!=='environment'||!WEATHER.has(e.weather)||!SEASONS.has(e.season)||!VALID_REGIONS.has(e.region)||!Number.isFinite(e.at)||e.at<0||e.at>base.elapsedSeconds)continue;
+  base.events.push({seq:e.seq,type:'environment',at:e.at,weather:e.weather,season:e.season,region:e.region,cell:cleanCell(e.cell)});last=e.seq;
+ }
+ base.seq=Math.max(last,safeDay(raw.seq));
+ return base;
+}
+function advanceWorldClock(world,time,dt){
+ if(!Number.isFinite(dt)||dt<=0||!Number.isFinite(time)||time<0||time>24)return {world,time};
+ const hours=time+dt*.003,days=Math.floor(hours/24);
+ if(!Number.isSafeInteger(world.day+days)||!Number.isFinite(world.elapsedSeconds+dt)||world.elapsedSeconds+dt>Number.MAX_SAFE_INTEGER)return {world,time};
+ return {world:{...world,day:world.day+days,elapsedSeconds:world.elapsedSeconds+dt},time:hours%24};
+}
+function recordEnvironment(world,{weather,season,region,cell=null}){
+ cell=cleanCell(cell);
+ if(!WEATHER.has(weather)||!SEASONS.has(season)||!VALID_REGIONS.has(region)||world.seq>=Number.MAX_SAFE_INTEGER)return world;
+ if(world.weather===weather&&world.season===season&&world.region===region&&world.cell===cell)return world;
+ const seq=world.seq+1,event={seq,type:'environment',at:world.elapsedSeconds,weather,season,region,cell};
+ return {...world,weather,season,region,cell,seq,events:[...world.events,event].slice(-WORLD_EVENT_LIMIT)};
+}
 function freshSave(name){return {
  version:3,name:safeName(name),coins:0,xp:0,level:1,completed:[],inventory:{corn:0,fish:0,game:0,meals:0},
- position:{x:-30,z:503},farmPlots:Array(9).fill(0),homestead:false,mode:'walk',time:15.5,weather:'clear',season:'summer',pet:true,muted:false,scoutBond:0,scoutLastRewardAt:0,countyRegion:'mount-vernon',countyVisited:['mount-vernon'],lastMeal:null
+ position:{x:-30,z:503},farmPlots:Array(9).fill(0),homestead:false,mode:'walk',time:15.5,weather:'clear',season:'summer',pet:true,muted:false,scoutBond:0,scoutLastRewardAt:0,countyRegion:'mount-vernon',countyVisited:['mount-vernon'],lastMeal:null,worldSimulation:cleanWorldSimulation(null)
 };}
 function validateSave(raw){
  let base=freshSave(raw&&raw.name);
@@ -52,6 +85,7 @@ function validateSave(raw){
  base.countyVisited=Array.isArray(raw.countyVisited)?
   [...new Set(raw.countyVisited.filter(id=>VALID_REGIONS.has(id)))]:['mount-vernon'];
  if(!base.countyVisited.includes('mount-vernon'))base.countyVisited.unshift('mount-vernon');
+ base.worldSimulation=cleanWorldSimulation(raw.worldSimulation,base.weather,base.season,base.countyRegion);
  base.lastMeal=Object.prototype.hasOwnProperty.call(RECIPES,raw.lastMeal)?raw.lastMeal:null;
  return base;
 }
@@ -153,5 +187,5 @@ function sampleGrid(g,values,u,v){
  return (h(x,y)*(1-a)+h(x1,y)*a)*(1-b)+(h(x,y1)*(1-a)+h(x1,y1)*a)*b;
 }
 function formatTime(h){const hh=Math.floor(((h%24)+24)%24), m=Math.floor((h-Math.floor(h))*60);return `${(hh%12)||12}:${String(m).padStart(2,'0')} ${hh>=12?'PM':'AM'}`;}
-return {LIMIT,STOPS,COUNTY_REGION_IDS,visitCountyRegion,clamp,clampPosition,safeName,freshSave,validateSave,gainReward,completeStop,buildHomestead,farmAction,waterFarm,huntShot,fishReel,landFish,cookRecipe,RECIPES,sampleGrid,formatTime};
+return {LIMIT,STOPS,COUNTY_REGION_IDS,visitCountyRegion,clamp,clampPosition,safeName,freshSave,validateSave,advanceWorldClock,recordEnvironment,gainReward,completeStop,buildHomestead,farmAction,waterFarm,huntShot,fishReel,landFish,cookRecipe,RECIPES,sampleGrid,formatTime};
 });

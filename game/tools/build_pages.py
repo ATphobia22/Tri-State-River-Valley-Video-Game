@@ -48,7 +48,7 @@ def build(game_root: Path, destination: Path) -> None:
     shutil.copyfile(game_root / "courthouse-review.html", destination / "courthouse-review.html")
     vendor_destination = destination / "vendor"
     vendor_destination.mkdir(parents=True, exist_ok=True)
-    for vendor in ("three.js", "gltf-loader.js"):
+    for vendor in ("three.js", "gltf-loader.js", "h3-js.umd.js", "H3-LICENSE.txt", "H3-NOTICE.txt"):
         shutil.copyfile(game_root / "vendor" / vendor, vendor_destination / vendor)
 
 
