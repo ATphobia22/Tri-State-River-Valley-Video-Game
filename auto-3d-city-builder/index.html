@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Auto-3D City Builder · Mount Vernon</title>
+  <style>
+    :root { --navy:#020617; --sky:#38bdf8; --amber:#fbbf24; --text:#e2e8f0; }
+    * { box-sizing: border-box; }
+    body { margin:0; min-height:100vh; background:var(--navy); color:var(--text);
+      font-family: system-ui, -apple-system, sans-serif; padding: 28px 20px 48px; }
+    h1 { font-size: 1.4rem; margin: 0 0 8px; }
+    h1 span { color: var(--sky); }
+    p { opacity: 0.85; max-width: 52rem; line-height: 1.5; }
+    .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); margin-top: 24px; }
+    a.card {
+      display: block; padding: 16px 18px; border-radius: 12px; text-decoration: none; color: var(--text);
+      background: rgba(15,23,42,0.9); border: 1px solid rgba(56,189,248,0.3);
+    }
+    a.card:hover { border-color: var(--sky); }
+    a.card strong { display: block; color: var(--amber); margin-bottom: 6px; }
+    a.card span { font-size: 0.85rem; opacity: 0.8; }
+    footer { margin-top: 32px; font-size: 0.75rem; opacity: 0.55; }
+  </style>
+</head>
+<body>
+  <h1>River Valley · <span>Auto-3D City Builder</span></h1>
+  <p>Mount Vernon open-world viewer, LOD2 tiles pipeline, family mini-games, WebMCP tools, and WebM cutscene export. Shared progress key: <code>rv-family-progress-v1</code>.</p>
+  <div class="grid">
+    <a class="card" href="viewer/open_world.html"><strong>Open World</strong><span>3D hub · tiles · hero · tools</span></a>
+    <a class="card" href="minigames/mg-hunt/index.html"><strong>Hunt</strong><span>Deer track mini-game</span></a>
+    <a class="card" href="minigames/mg-fish/index.html"><strong>Fish</strong><span>Riverbank fishing</span></a>
+    <a class="card" href="minigames/mg-farm/index.html"><strong>Farm</strong><span>Crops &amp; harvest</span></a>
+    <a class="card" href="minigames/mg-artifact/index.html"><strong>Artifacts</strong><span>Find &amp; collect</span></a>
+    <a class="card" href="minigames/mg-historic/index.html"><strong>Historic</strong><span>Sites &amp; lore</span></a>
+    <a class="card" href="docs/WEBGL_LOD2_AND_THREE_GEOMETRY.md"><strong>LOD2 / WebGL notes</strong><span>Optimization contract</span></a>
+    <a class="card" href="docs/WEBMCP_AND_YUKIOS.md"><strong>WebMCP + YukiOS</strong><span>Agent &amp; desktop</span></a>
+  </div>
+  <footer>EPSG:26916 · NAVD88 · Never replace surveyed data · Auto-3D City Builder</footer>
+</body>
+</html>
