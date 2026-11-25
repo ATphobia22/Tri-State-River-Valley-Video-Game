@@ -1,0 +1,42 @@
+name: KTX2 asset conversion pilot
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'game/tools/build_ktx2_pilot.py'
+      - 'game/tests/test_ktx2_pilot.py'
+      - 'game/assets/models/river_explorer*.glb'
+      - '.github/workflows/ktx2-pilot.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ktx2-pilot-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test extraction and recipe safety
+        run: python -m unittest discover -s game/tests -p test_ktx2_pilot.py -v
+      - name: Install verified Khronos KTX 4.4.2 package
+        run: |
+          curl --fail --location --retry 3 -o /tmp/ktx.deb https://github.com/KhronosGroup/KTX-Software/releases/download/v4.4.2/KTX-Software-4.4.2-Linux-x86_64.deb
+          echo 'ca635ed489d8bf54fac8d7687056c651193de0740830a7738cc034adc63e3027  /tmp/ktx.deb' | sha256sum --check
+          sudo apt-get install -y /tmp/ktx.deb
+          ktx --version
+      - name: Convert and validate original character textures
+        run: |
+          python game/tools/build_ktx2_pilot.py game/assets/models/river_explorer_rigged.glb game/assets/models/river_explorer_lod1.glb game/assets/models/river_explorer_lod2.glb --output /tmp/river-ktx2
+          python -c "import json; m=json.load(open('/tmp/river-ktx2/manifest.json')); assert len(m['textures'])==24; assert not m['runtime_integration']"
+          git diff --exit-code -- game/assets/models
+      - uses: actions/upload-artifact@v4
+        with:
+          name: river-ktx2-pilot
+          path: /tmp/river-ktx2/
+          if-no-files-found: error
