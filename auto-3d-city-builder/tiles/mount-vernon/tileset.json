@@ -1,0 +1,62 @@
+{
+  "asset": {
+    "version": "1.1",
+    "tilesetVersion": "2.4.0-pages-slim",
+    "gltfUpAxis": "Y"
+  },
+  "geometricError": 400,
+  "root": {
+    "boundingVolume": {
+      "box": [0, 10, 0, 500, 0, 0, 0, 30, 0, 0, 0, 500]
+    },
+    "geometricError": 80,
+    "refine": "ADD",
+    "children": [
+      {
+        "boundingVolume": { "box": [0, 5, 0, 20, 0, 0, 0, 10, 0, 0, 0, 20] },
+        "geometricError": 2,
+        "content": { "uri": "b_0000.glb" },
+        "metadata": {
+          "class": "building",
+          "properties": {
+            "building_id": "MV_Core_000",
+            "roof_type": "hip",
+            "height_m": 13.85,
+            "ql_tag": "QL-D",
+            "source": "footprint-extrude"
+          }
+        }
+      },
+      {
+        "boundingVolume": { "box": [0, 5, 0, 400, 0, 0, 0, 15, 0, 0, 0, 400] },
+        "geometricError": 30,
+        "content": { "uri": "tree_instanced.glb" },
+        "metadata": {
+          "class": "vegetation_batch",
+          "properties": {
+            "count": 80,
+            "kind": "tree",
+            "extension": "EXT_mesh_gpu_instancing"
+          }
+        }
+      }
+    ]
+  },
+  "extensionsUsed": [
+    "EXT_structural_metadata",
+    "EXT_mesh_features",
+    "EXT_mesh_gpu_instancing",
+    "3DTILES_metadata"
+  ],
+  "extras": {
+    "batching": { "recommended": "BatchedTilesPlugin" },
+    "instancing": {
+      "vegetation": "tree_instances.json",
+      "extension": "EXT_mesh_gpu_instancing",
+      "prototypeGlb": "tree_instanced.glb"
+    },
+    "fullPackage": "mount-vernon-tiles-2.4.0.zip",
+    "srid": 26916,
+    "note": "Slim Pages tileset. Unzip full package for all 122 building GLBs."
+  }
+}
