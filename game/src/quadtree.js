@@ -17,18 +17,35 @@ function rawTileError(height,t){
 }
 function selectTiles({height,limit,cameraX=0,cameraZ=0,cameraAltitude=100,viewportHeight=720,fovDegrees=60,pixelError=18,maxDepth=5,minDepth=2,maxTiles=220,roughnessFloor=.01}){
  if(!(limit>0&&maxDepth>=minDepth&&maxDepth<12))throw new Error('Invalid terrain selection parameters');
- const leaves=[],queue=[{depth:0,ix:0,iz:0,x0:-limit,z0:-limit,width:limit*2}],focal=viewportHeight/(2*Math.tan(fovDegrees*Math.PI/360));
- let childAllowance=maxTiles-1;
- while(queue.length){
-  const t=queue.pop();const cx=clamp(cameraX,t.x0,t.x0+t.width),cz=clamp(cameraZ,t.z0,t.z0+t.width);
+ // Refine required coverage breadth-first, then spend remaining splits on
+ // the largest projected error. Each split costs exactly three leaf slots.
+ const focal=viewportHeight/(2*Math.tan(fovDegrees*Math.PI/360));
+ function evaluate(t){
+  const cx=clamp(cameraX,t.x0,t.x0+t.width),cz=clamp(cameraZ,t.z0,t.z0+t.width);
   const distance=Math.max(20,Math.hypot(cameraX-cx,cameraZ-cz,cameraAltitude));
-  const error=Math.max(rawTileError(height,t),t.width*roughnessFloor);
-  const sse=error*focal/distance;
-  const subdivide=t.depth<maxDepth&&(t.depth<minDepth||sse>pixelError)&&childAllowance>=3;
-  if(subdivide){const w=t.width/2,d=t.depth+1;for(let j=1;j>=0;j--)for(let i=1;i>=0;i--)queue.push({depth:d,ix:t.ix*2+i,iz:t.iz*2+j,x0:t.x0+i*w,z0:t.z0+j*w,width:w});childAllowance-=3;}
-  else leaves.push({...t,geometricError:error,screenError:sse});
+  const geometricError=Math.max(rawTileError(height,t),t.width*roughnessFloor);
+  return {...t,geometricError,screenError:geometricError*focal/distance};
  }
- return leaves;
+ const root=evaluate({depth:0,ix:0,iz:0,x0:-limit,z0:-limit,width:limit*2});
+ const leaves=new Map([[key(0,0,0),root]]),candidates=[];
+ function enqueue(t){if(t.depth<maxDepth&&(t.depth<minDepth||t.screenError>pixelError))candidates.push(t);}
+ function priority(a,b){
+  const requiredA=a.depth<minDepth,requiredB=b.depth<minDepth;
+  if(requiredA!==requiredB)return requiredA?-1:1;
+  if(requiredA&&a.depth!==b.depth)return a.depth-b.depth;
+  return b.screenError-a.screenError||a.depth-b.depth||a.iz-b.iz||a.ix-b.ix;
+ }
+ enqueue(root);
+ while(candidates.length&&leaves.size+3<=maxTiles){
+  candidates.sort(priority);
+  const t=candidates.shift(),w=t.width/2,d=t.depth+1;
+  leaves.delete(key(t.depth,t.ix,t.iz));
+  for(let j=0;j<2;j++)for(let i=0;i<2;i++){
+   const child=evaluate({depth:d,ix:t.ix*2+i,iz:t.iz*2+j,x0:t.x0+i*w,z0:t.z0+j*w,width:w});
+   leaves.set(key(d,child.ix,child.iz),child);enqueue(child);
+  }
+ }
+ return [...leaves.values()];
 }
 function tileAt(tiles,x,z){
  for(let d=tiles.maxDepth;d>=0;d--){let n=2**d;let ix=clamp(Math.floor((x+tiles.limit)/(tiles.limit*2)*n),0,n-1),iz=clamp(Math.floor((z+tiles.limit)/(tiles.limit*2)*n),0,n-1);let t=tiles.byKey.get(key(d,ix,iz));if(t)return t;}
