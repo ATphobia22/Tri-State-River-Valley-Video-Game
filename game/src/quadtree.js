@@ -45,7 +45,8 @@ function selectTiles({height,limit,cameraX=0,cameraZ=0,cameraAltitude=100,viewpo
    leaves.set(key(d,child.ix,child.iz),child);enqueue(child);
   }
  }
- return [...leaves.values()];
+ // Stable spatial order keeps the runtime LOD signature independent of split order.
+ return [...leaves.values()].sort((a,b)=>a.depth-b.depth||a.iz-b.iz||a.ix-b.ix);
 }
 function tileAt(tiles,x,z){
  for(let d=tiles.maxDepth;d>=0;d--){let n=2**d;let ix=clamp(Math.floor((x+tiles.limit)/(tiles.limit*2)*n),0,n-1),iz=clamp(Math.floor((z+tiles.limit)/(tiles.limit*2)*n),0,n-1);let t=tiles.byKey.get(key(d,ix,iz));if(t)return t;}
