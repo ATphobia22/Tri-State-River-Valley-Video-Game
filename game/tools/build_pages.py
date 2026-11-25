@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package the playable, offline-first family game at the root of GitHub Pages.
+"""Package the playable, online-first family game at the root of GitHub Pages.
 
 The built HTML includes the engine, models and imagery. Never publish a redirect
 or a nested source file as the site's homepage.
@@ -41,6 +41,9 @@ def build(game_root: Path, destination: Path) -> None:
         (destination / name).write_text(html, encoding="utf-8")
     shutil.copyfile(offline, destination / "offline.html")
 
+    # Publish runtime companions referenced by the inline application.
+    shutil.copytree(game_root / "src", destination / "src", dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     # Explicit local-only review surface. The live game never loads candidate GLBs.
     shutil.copyfile(game_root / "courthouse-review.html", destination / "courthouse-review.html")
     vendor_destination = destination / "vendor"
