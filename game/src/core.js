@@ -32,8 +32,33 @@ const WORLD_EVENT_LIMIT=128;
 const cleanCell=v=>typeof v==='string'&&/^89[0-9a-f]{13}$/.test(v)?v:null;
 const safeDay=v=>Number.isSafeInteger(v)&&v>=0?v:0;
 const safeElapsed=v=>Number.isFinite(v)&&v>=0&&v<=Number.MAX_SAFE_INTEGER?v:0;
+// Persist compact per-cell state separately from the rolling global journal.
+const WORLD_CELL_LIMIT=1024;
+function getWorldCell(world,cell){
+ const id=cleanCell(cell);if(!id)return null;
+ const entry=world?.cells?.find(c=>c.cell===id);
+ return entry?{...entry}:null;
+}
+function applyCellObservation(cells,event){
+ if(!event.cell||event.region!=='mount-vernon')return cells;
+ const i=cells.findIndex(c=>c.cell===event.cell),prev=cells[i];
+ if(prev&&prev.lastSeq>=event.seq)return cells;
+ if(i<0&&cells.length>=WORLD_CELL_LIMIT)return cells;
+ const next={cell:event.cell,weather:event.weather,season:event.season,firstAt:prev?prev.firstAt:event.at,lastAt:event.at,lastSeq:event.seq,observations:Math.min(Number.MAX_SAFE_INTEGER,(prev?.observations||0)+1)};
+ const out=cells.slice();if(i<0)out.push(next);else out[i]=next;
+ return out;
+}
+function cleanWorldCells(raw,elapsed,seq){
+ const out=[],seen=new Set();
+ for(const c of (Array.isArray(raw)?raw.slice(0,WORLD_CELL_LIMIT):[])){
+  const cell=cleanCell(c?.cell);
+  if(!cell||seen.has(cell)||!WEATHER.has(c.weather)||!SEASONS.has(c.season)||!Number.isFinite(c.firstAt)||!Number.isFinite(c.lastAt)||c.firstAt<0||c.lastAt<c.firstAt||c.lastAt>elapsed||!Number.isSafeInteger(c.lastSeq)||c.lastSeq<1||c.lastSeq>seq||!Number.isSafeInteger(c.observations)||c.observations<1||c.observations>c.lastSeq)continue;
+  seen.add(cell);out.push({cell,weather:c.weather,season:c.season,firstAt:c.firstAt,lastAt:c.lastAt,lastSeq:c.lastSeq,observations:c.observations});
+ }
+ return out;
+}
 function cleanWorldSimulation(raw,weather='clear',season='summer',region='mount-vernon'){
- const base={version:1,day:0,elapsedSeconds:0,weather,season,region,cell:null,seq:0,events:[]};
+ const base={version:1,day:0,elapsedSeconds:0,weather,season,region,cell:null,seq:0,events:[],cells:[]};
  if(!raw||raw.version!==1)return base;
  base.cell=cleanCell(raw.cell);base.day=safeDay(raw.day);base.elapsedSeconds=safeElapsed(raw.elapsedSeconds);
  if(WEATHER.has(raw.weather))base.weather=raw.weather;
@@ -45,6 +70,8 @@ function cleanWorldSimulation(raw,weather='clear',season='summer',region='mount-
   base.events.push({seq:e.seq,type:'environment',at:e.at,weather:e.weather,season:e.season,region:e.region,cell:cleanCell(e.cell)});last=e.seq;
  }
  base.seq=Math.max(last,safeDay(raw.seq));
+ base.cells=cleanWorldCells(raw.cells,base.elapsedSeconds,base.seq);
+ for(const e of base.events)base.cells=applyCellObservation(base.cells,e);
  return base;
 }
 function advanceWorldClock(world,time,dt){
@@ -58,7 +85,7 @@ function recordEnvironment(world,{weather,season,region,cell=null}){
  if(!WEATHER.has(weather)||!SEASONS.has(season)||!VALID_REGIONS.has(region)||world.seq>=Number.MAX_SAFE_INTEGER)return world;
  if(world.weather===weather&&world.season===season&&world.region===region&&world.cell===cell)return world;
  const seq=world.seq+1,event={seq,type:'environment',at:world.elapsedSeconds,weather,season,region,cell};
- return {...world,weather,season,region,cell,seq,events:[...world.events,event].slice(-WORLD_EVENT_LIMIT)};
+ return {...world,weather,season,region,cell,seq,events:[...world.events,event].slice(-WORLD_EVENT_LIMIT),cells:applyCellObservation(world.cells||[],event)};
 }
 function freshSave(name){return {
  version:3,name:safeName(name),coins:0,xp:0,level:1,completed:[],inventory:{corn:0,fish:0,game:0,meals:0},
@@ -187,5 +214,5 @@ function sampleGrid(g,values,u,v){
  return (h(x,y)*(1-a)+h(x1,y)*a)*(1-b)+(h(x,y1)*(1-a)+h(x1,y1)*a)*b;
 }
 function formatTime(h){const hh=Math.floor(((h%24)+24)%24), m=Math.floor((h-Math.floor(h))*60);return `${(hh%12)||12}:${String(m).padStart(2,'0')} ${hh>=12?'PM':'AM'}`;}
-return {LIMIT,STOPS,COUNTY_REGION_IDS,visitCountyRegion,clamp,clampPosition,safeName,freshSave,validateSave,advanceWorldClock,recordEnvironment,gainReward,completeStop,buildHomestead,farmAction,waterFarm,huntShot,fishReel,landFish,cookRecipe,RECIPES,sampleGrid,formatTime};
+return {LIMIT,STOPS,COUNTY_REGION_IDS,visitCountyRegion,clamp,clampPosition,safeName,freshSave,validateSave,advanceWorldClock,recordEnvironment,getWorldCell,gainReward,completeStop,buildHomestead,farmAction,waterFarm,huntShot,fishReel,landFish,cookRecipe,RECIPES,sampleGrid,formatTime};
 });

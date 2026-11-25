@@ -16,8 +16,9 @@ permissions:
   id-token: write
 
 concurrency:
-  group: river-valley-github-pages
-  cancel-in-progress: false
+  # Pull-request validation must never displace a queued production deployment.
+  group: river-valley-github-pages-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || 'production' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:

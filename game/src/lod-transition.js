@@ -8,10 +8,11 @@
  else root.ValleyLODTransition=api;
 })(typeof globalThis==='object'?globalThis:this,function(){
  'use strict';
- function create({makeMesh,commit,dispose,batchSize=12}={}){
+ function create({makeMesh,commit,dispose,batchSize=12,budgetMs=3,now=()=>globalThis.performance?.now?.()??Date.now()}={}){
   if(typeof makeMesh!=='function'||typeof commit!=='function'||typeof dispose!=='function')throw new TypeError('LOD transition callbacks required');
   if(!Number.isInteger(batchSize)||batchSize<1||batchSize>512)throw new RangeError('invalid mesh batch size');
-  let pending=null,activeSignature='',cancelled=0,swapped=0;
+  if(!Number.isFinite(budgetMs)||budgetMs<=0||typeof now!=='function')throw new RangeError('invalid terrain time budget');
+  let pending=null,activeSignature='',cancelled=0,swapped=0,deadlineYields=0;
   function cancel(){
    if(!pending)return false;
    dispose(pending.meshes);pending=null;cancelled++;return true;
@@ -21,20 +22,21 @@
    if(signature===activeSignature){cancel();return false;}
    if(pending&&signature===pending.signature){
     if(!immediate)return false;
-    while(pending)pump(512);
+    while(pending)pump(512,true);
     return true;
    }
    cancel();
    pending={signature,leaves,index,meshes:[],offset:0};
-   if(immediate)while(pending)pump(512);
+   if(immediate)while(pending)pump(512,true);
    return true;
   }
-  function pump(limit=batchSize){
+  function pump(limit=batchSize,immediate=false){
    if(!pending)return {built:0,complete:false};
    const job=pending,allowed=Number.isFinite(limit)?Math.min(512,Math.max(1,Math.floor(limit))):batchSize;
-   let built=0;
+   let built=0;const start=now();
    try{
     while(job.offset<job.leaves.length&&built<allowed){
+     if(!immediate&&built>0&&now()-start>=budgetMs){deadlineYields++;break;}
      job.meshes.push(makeMesh(job.leaves[job.offset],job.index));job.offset++;built++;
     }
    }catch(error){cancel();throw error;}
@@ -43,7 +45,7 @@
    commit(job);
    return {built,complete:true};
   }
-  function status(){return {pending:!!pending,queued:pending?pending.leaves.length-pending.offset:0,built:pending?pending.offset:0,swapped,cancelled,signature:activeSignature};}
+  function status(){return {pending:!!pending,queued:pending?pending.leaves.length-pending.offset:0,built:pending?pending.offset:0,swapped,cancelled,deadlineYields,signature:activeSignature};}
   return Object.freeze({cancel,schedule,pump,status,pendingMeshes:()=>pending?pending.meshes.slice():[]});
  }
  return Object.freeze({create});

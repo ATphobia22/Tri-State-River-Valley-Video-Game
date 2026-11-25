@@ -1,0 +1,17 @@
+# Streaming world scheduler and cell state
+
+## Implemented
+- Terrain mesh staging now has a cooperative 3 ms default time slice in addition to the existing mesh-count limit. It checks elapsed time between mesh jobs and guarantees at least one job per pump. Immediate initialization bypasses the deadline but retains bounded pump counts. Active terrain remains visible until the new generation commits. Single expensive mesh creation and final swap are not preemptible; this is not a hard frame-time cap. Tune on actual devices.
+- Existing environment events update compact H3 cell summaries in the version-1 world simulation state. Each stores first/last observation time, last sequence, observation count, weather and season. A 1,024-cell cap protects local saves; existing entries are not evicted, new entries beyond cap are not admitted. Old journals rebuild available summaries; expired historical events cannot be recovered. Cell observations are transition samples, not elapsed dwell time or full wildlife/entity history. Terrain and GPU resources remain outside saved state. Runtime already calls recordEnvironment and validateSave, so no extra boot scripts are required.
+- Pages workflow validation concurrency is now scoped per PR; production has its own serialized group. Prevent PRs from displacing pending production runs. Superseded production pushes can still be replaced by a newer pending production run; verify the latest deploy SHA.
+ 
+## Research and follow-on experiments
+- [Prioritized Task Scheduling API](https://developer.mozilla.org/en-US/docs/Web/API/Prioritized_Task_Scheduling_API): postTask for priority/cancellation, yield for cooperative chunks; feature detect and retain frame-loop fallback. Keep input and physics critical, visible mesh work bounded, prefetch background.
+- [Cesium RequestScheduler](https://cesium.com/learn/ion-sdk/ref-doc/RequestScheduler.html) and [Cesium3DTileset](https://cesium.com/learn/cesiumjs/ref-doc/Cesium3DTileset.html): use per-origin request caps, SSE priority, stale request cancellation, memory-adjusted error and parent coverage; model fetch, decode and upload as distinct queues with their own byte budgets.
+- [Khronos KTX developer guide](https://github.com/KhronosGroup/3D-Formats-Guidelines/blob/main/KTXDeveloperGuide.md): ETC1S for suitable color maps, UASTC for normals and sensitive materials; color space, mip chains, alpha and decoded format checks. Preserve source assets; select a small pilot and compare quality, transfer and resident bytes. No conversion claimed here.
+- [PMTiles storage](https://docs.protomaps.com/pmtiles/cloud-storage): require actual HTTP 206 range response, CORS and content stability before configuring external archive URLs. H3 is semantic indexing, not a 3D Tiles traversal hierarchy.
+- [Actions concurrency](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency): isolate validation and release queues.
+- Native WebGPU pilot: explicit adapter request, separate renderer test surface, feature-gated timestamp queries; validate parity and device loss without replacing WebGL. Keep AI PR #58 draft until actual model runs on target hardware.
+
+## Acceptance
+Full Node tests, hosted/offline browser tests, Pages deployment, save reload with older journals, scheduler deadline and cancellation regressions. Record p95/p99 frame time, deadline yields, mesh preparation/swap time, peak estimated graphics bytes, and platform/driver; do not infer physical VRAM. Production AI benchmarks remain outstanding.
