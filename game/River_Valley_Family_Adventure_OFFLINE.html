@@ -5292,7 +5292,8 @@ return Object.freeze({chooseGrid,validSource,FALLBACK_LABEL});
   const ATTRIBUTION='© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> · Protomaps';
 
   function protomapsStyle(pmtilesUrl){
-    const url=pmtilesUrl||PROJECT_PMTILES_URL||DEMO_PMTILES_URL;
+    const url=pmtilesUrl||PROJECT_PMTILES_URL;
+    if(!url)throw new Error('Explicit PMTiles archive required');
     return {
       version:8,
       name:'River Valley · Protomaps vector',
@@ -5408,8 +5409,62 @@ return Object.freeze({chooseGrid,validSource,FALLBACK_LABEL});
     }catch(_){return false;}
   }
 
-  function resolveUrl(opts){
-    return opts.pmtilesUrl||PROJECT_PMTILES_URL||DEMO_PMTILES_URL;
+  // No demonstration archive may serve as production geography.
+  const PROJECT_BOUNDS=Object.freeze([-87.928,37.909,-87.853,37.960]);
+  const verifiedArchives=new WeakSet();
+  function resolveArchive(opts={}){
+    const value=opts.pmtilesUrl||PROJECT_PMTILES_URL;
+    if(typeof value!=='string'||!value||value===DEMO_PMTILES_URL)return null;
+    try{
+      const url=new URL(value);
+      if(url.protocol!=='https:'||url.username||url.password||url.hash||!url.pathname.toLowerCase().endsWith('.pmtiles'))return null;
+      return url.href;
+    }catch(_){return null;}
+  }
+  function inspectArchiveHeader(buffer,bounds=PROJECT_BOUNDS){
+    if(!(buffer instanceof ArrayBuffer)||buffer.byteLength!==127)throw new Error('Invalid PMTiles v3 header length');
+    const v=new DataView(buffer);
+    if(String.fromCharCode(...new Uint8Array(buffer,0,7))!=='PMTiles'||v.getUint8(7)!==3)throw new Error('Invalid PMTiles v3 header');
+    if(v.getUint8(99)!==1)throw new Error('PMTiles archive must contain MVT vector tiles');
+    const minZoom=v.getUint8(100),maxZoom=v.getUint8(101);
+    if(minZoom>maxZoom||maxZoom<14||maxZoom>30)throw new Error('PMTiles archive lacks detailed zoom coverage');
+    const actual=[102,106,110,114].map(offset=>v.getInt32(offset,true)/1e7);
+    if(actual[0]<-180||actual[1]<-90||actual[2]>180||actual[3]>90||actual[0]>actual[2]||actual[1]>actual[3]||
+       !Array.isArray(bounds)||bounds.length!==4||!bounds.every(Number.isFinite)||bounds[0]>bounds[2]||bounds[1]>bounds[3]||
+       actual[0]>bounds[0]||actual[1]>bounds[1]||actual[2]<bounds[2]||actual[3]<bounds[3])throw new Error('PMTiles geographic coverage does not include requested region');
+    return {bounds:actual,minZoom,maxZoom,tileType:'MVT'};
+  }
+  async function preflightArchive(url,{fetcher=globalThis.fetch,timeoutMs=5000,bounds=PROJECT_BOUNDS}={}){
+    url=resolveArchive({pmtilesUrl:url});
+    if(!url||typeof fetcher!=='function')throw new Error('No approved project PMTiles archive');
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),Math.max(100,Math.min(15000,Number.isFinite(timeoutMs)?timeoutMs:5000)));
+    try{
+      const response=await fetcher(url,{headers:{Range:'bytes=0-126'},signal:controller.signal,credentials:'omit',redirect:'error'});
+      const range=response.headers?.get('Content-Range')||'';
+      const match=/^bytes 0-126\/([0-9]+)$/.exec(range);
+      if(response.status!==206||!match||!Number.isSafeInteger(Number(match[1]))||Number(match[1])<127){
+        try{await response.body?.cancel();}catch(_){}
+        throw new Error('PMTiles server must support exact HTTP byte range responses');
+      }
+      let buffer;
+      if(response.body?.getReader){
+        const reader=response.body.getReader(),bytes=new Uint8Array(127);let offset=0;
+        try{
+          while(true){
+            const {done,value}=await reader.read();if(done)break;
+            if(offset+value.byteLength>127)throw new Error('PMTiles range exceeded header length');
+            bytes.set(value,offset);offset+=value.byteLength;
+          }
+          if(offset!==127)throw new Error('PMTiles range truncated');
+          buffer=bytes.buffer;
+        }finally{try{await reader.cancel();}catch(_){}reader.releaseLock();}
+      }else buffer=await response.arrayBuffer();
+      const info=inspectArchiveHeader(buffer,bounds);
+      const receipt=Object.freeze({...info,bounds:Object.freeze(info.bounds),url,archiveBytes:Number(match[1])});
+      if(info.bounds[0]<=PROJECT_BOUNDS[0]&&info.bounds[1]<=PROJECT_BOUNDS[1]&&info.bounds[2]>=PROJECT_BOUNDS[2]&&info.bounds[3]>=PROJECT_BOUNDS[3])verifiedArchives.add(receipt);
+      return receipt;
+    }finally{clearTimeout(timeout);}
   }
 
   function mount(containerEl,opts={}){
@@ -5420,10 +5475,13 @@ return Object.freeze({chooseGrid,validSource,FALLBACK_LABEL});
     if(!libs.maplibre){
       return {status:'LIBS_MISSING',message:'MapLibre GL JS not loaded — keep offline raster reference.'};
     }
+    const pmUrl=resolveArchive(opts);
+    if(!pmUrl)return {status:'OFFLINE_BACKUP',message:'No verified regional archive configured; retain bundled reference.'};
+    if(!verifiedArchives.has(opts.archiveReceipt)||opts.archiveReceipt.url!==pmUrl)
+      return {status:'ARCHIVE_UNVERIFIED',message:'Run PMTiles coverage and HTTP range preflight before mounting.'};
     const hasPm=registerPmtilesProtocol(libs.maplibre,libs.pmtiles);
-    const pmUrl=resolveUrl(opts);
-    const style=opts.style
-      ||(hasPm?protomapsStyle(pmUrl):JSON.parse(JSON.stringify(RASTER_FALLBACK)));
+    if(!hasPm)return {status:'OFFLINE_BACKUP',message:'PMTiles protocol unavailable; retain bundled reference.'};
+    const style=protomapsStyle(pmUrl);
 
     const map=new libs.maplibre.Map({
       container:containerEl,
@@ -5444,6 +5502,14 @@ return Object.freeze({chooseGrid,validSource,FALLBACK_LABEL});
     };
   }
 
+  async function mountVerified(containerEl,opts={}){
+    const url=resolveArchive(opts);
+    if(!isOnline()||!url)return mount(containerEl,opts);
+    try{
+      const archiveReceipt=await preflightArchive(url);
+      return mount(containerEl,{...opts,archiveReceipt});
+    }catch(error){return {status:'OFFLINE_BACKUP',message:'PMTiles preflight failed: '+error.message};}
+  }
   function describe(){
     const libs=detectLibs();
     return {
@@ -5468,7 +5534,8 @@ return Object.freeze({chooseGrid,validSource,FALLBACK_LABEL});
     isOnline,
     detectLibs,
     registerPmtilesProtocol,
-    mount,
+    resolveArchive,inspectArchiveHeader,preflightArchive,
+    mount,mountVerified,
     describe
   });
 });
