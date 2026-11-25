@@ -1,9 +1,13 @@
 {
-  "assetId": null,
-  "name": "Mount Vernon LOD2 Tiles",
+  "assetId": 6204792,
+  "name": "Mount Vernon LOD2 Compressed",
   "type": "3DTILES",
-  "sourceType": "3DTILES",
+  "sourceType": "CITYGML",
+  "status": "COMPLETE",
+  "url": "https://assets.ion.cesium.com/6204792/tileset.json?v=1",
   "localTileset": "tiles/mount-vernon/tileset.json",
   "srid": 26916,
-  "note": "Set CESIUM_ION_TOKEN and run pipeline/cesium_ion_upload.sh to populate assetId"
+  "viewer": "Cesium3DTileset.fromIonAssetId(6204792)",
+  "bytes": 1597,
+  "note": "Ion-tiled from CityGML; set Cesium.Ion.defaultAccessToken at runtime"
 }

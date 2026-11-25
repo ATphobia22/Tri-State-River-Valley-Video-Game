@@ -14,7 +14,9 @@
       "id": "mv-ion",
       "name": "Mount Vernon (Cesium ion)",
       "type": "3dtiles-ion",
-      "assetId": null,
+      "assetId": 6204792,
+      "status": "COMPLETE",
+      "url": "https://assets.ion.cesium.com/6204792/tileset.json?v=1",
       "config": "./cesium_ion.json"
     },
     {
