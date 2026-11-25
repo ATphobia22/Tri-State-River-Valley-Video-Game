@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>River Valley · Train Scout</title>
+  <style>
+    :root { --navy:#020617; --sky:#38bdf8; --amber:#fbbf24; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html,body { width:100%; height:100%; overflow:hidden; background:var(--navy); color:#e2e8f0; font-family:system-ui,sans-serif; }
+    #c { position:fixed; inset:0; }
+    #hud { position:fixed; inset:0; pointer-events:none; display:flex; flex-direction:column; justify-content:space-between; padding:14px; z-index:5; }
+    .badge { background:rgba(15,23,42,.88); border:1px solid rgba(56,189,248,.4); border-radius:999px; padding:6px 14px; font-size:13px; display:inline-block; }
+    .badge strong { color:var(--amber); }
+    .cmds { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; pointer-events:auto; }
+    button { cursor:pointer; background:#0f172a; border:1px solid rgba(56,189,248,.45); color:#e2e8f0; border-radius:12px; padding:12px 18px; font-size:14px; min-width:72px; }
+    button.primary { border-color:var(--amber); color:var(--amber); }
+    button.go { border-color:#22c55e; color:#22c55e; transform:scale(1.05); }
+    #prompt { text-align:center; font-size:1.25rem; min-height:2em; }
+    #ring { width:64px; height:64px; border:3px solid var(--sky); border-radius:50%; margin:12px auto; opacity:0; transition:opacity .15s; }
+  </style>
+  <script src="../../shared/rv-family-progress.js"></script>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="hud">
+    <div><div class="badge">🐕 Scout · bond <strong id="bond">0</strong> · track Lv <strong id="track">1</strong></div></div>
+    <div><div id="prompt">Watch for the command…</div><div id="ring"></div></div>
+    <div>
+      <div class="cmds">
+        <button data-cmd="sit">Sit</button>
+        <button data-cmd="stay">Stay</button>
+        <button data-cmd="fetch">Fetch</button>
+        <button data-cmd="track">Track</button>
+      </div>
+      <div class="cmds" style="margin-top:10px"><button id="back">← Open world</button></div>
+    </div>
+  </div>
+  <script>
+    const returnUrl = new URLSearchParams(location.search).get('return') || '../../viewer/open_world.html';
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const cmds = ['sit', 'stay', 'fetch', 'track'];
+    let expect = null, windowOpen = false, bond = 0, trackLv = 1;
+    const state0 = RVFamilyProgress.loadProgress();
+    bond = state0.scout?.bond || 0; trackLv = state0.scout?.trackingLevel || 1;
+    document.getElementById('bond').textContent = bond;
+    document.getElementById('track').textContent = trackLv;
+    function resize() {
+      canvas.width = innerWidth * devicePixelRatio; canvas.height = innerHeight * devicePixelRatio;
+      canvas.style.width = innerWidth + 'px'; canvas.style.height = innerHeight + 'px';
+      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    }
+    addEventListener('resize', resize); resize();
+    document.getElementById('back').onclick = () => { location.href = returnUrl; };
+    function nextPrompt() {
+      expect = cmds[Math.floor(Math.random() * cmds.length)];
+      document.getElementById('prompt').textContent = expect.toUpperCase() + '!';
+      const ring = document.getElementById('ring'); ring.style.opacity = '1'; windowOpen = true;
+      document.querySelectorAll('[data-cmd]').forEach(b => b.classList.toggle('go', b.dataset.cmd === expect));
+      setTimeout(() => {
+        if (windowOpen) {
+          windowOpen = false;
+          document.getElementById('prompt').textContent = 'Missed — wait for next cue';
+          ring.style.opacity = '0';
+          document.querySelectorAll('[data-cmd]').forEach(b => b.classList.remove('go'));
+          setTimeout(nextPrompt, 900);
+        }
+      }, 1400);
+    }
+    document.querySelectorAll('[data-cmd]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!windowOpen) return;
+        const ok = btn.dataset.cmd === expect;
+        windowOpen = false;
+        document.getElementById('ring').style.opacity = '0';
+        document.querySelectorAll('[data-cmd]').forEach(b => b.classList.remove('go'));
+        if (ok) {
+          RVFamilyProgress.saveMiniGameReward(s => {
+            s.scout.bond = (s.scout.bond || 0) + 1;
+            s.scout.commands[btn.dataset.cmd] = (s.scout.commands[btn.dataset.cmd] || 0) + 1;
+            if (s.scout.bond > 0 && s.scout.bond % 5 === 0) {
+              s.scout.trackingLevel = (s.scout.trackingLevel || 1) + 1;
+              s.scout.relicSense = (s.scout.relicSense || 1) + 1;
+            }
+            s.stats.scoutSessions = (s.stats.scoutSessions || 0) + 1;
+            s.lastMiniGame = 'mg-scout';
+          });
+          const s = RVFamilyProgress.loadProgress();
+          bond = s.scout.bond; trackLv = s.scout.trackingLevel;
+          document.getElementById('bond').textContent = bond;
+          document.getElementById('track').textContent = trackLv;
+          document.getElementById('prompt').textContent = 'Good boy! +bond';
+        } else {
+          document.getElementById('prompt').textContent = 'Wrong cue — try next';
+        }
+        setTimeout(nextPrompt, 800);
+      });
+    });
+    function frame() {
+      const w = innerWidth, h = innerHeight;
+      ctx.fillStyle = '#0b1a12'; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#2d4a3e'; ctx.fillRect(0, h * 0.6, w, h * 0.4);
+      const dx = w * 0.5, dy = h * 0.58;
+      ctx.fillStyle = '#92400e';
+      ctx.beginPath(); ctx.ellipse(dx, dy, 28, 18, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(dx + 22, dy - 8, 12, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#0c4a6e'; ctx.fillRect(0, h * 0.72, w, h * 0.28);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    setTimeout(nextPrompt, 600);
+  </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>River Valley · Campfire Cooking</title>
+  <style>
+    :root { --navy:#020617; --amber:#fbbf24; --sky:#38bdf8; --ember:#ea580c; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html,body { width:100%; height:100%; overflow:hidden; background:var(--navy); color:#e2e8f0; font-family:system-ui,sans-serif; }
+    #c { position:fixed; inset:0; }
+    #hud { position:fixed; inset:0; pointer-events:none; display:flex; flex-direction:column; justify-content:space-between; padding:14px; z-index:5; }
+    .bar { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .badge { background:rgba(15,23,42,.88); border:1px solid rgba(251,191,36,.4); border-radius:999px; padding:6px 14px; font-size:13px; }
+    .badge strong { color:var(--amber); }
+    button { pointer-events:auto; cursor:pointer; background:#0f172a; border:1px solid rgba(56,189,248,.45); color:#e2e8f0; border-radius:12px; padding:10px 16px; font-size:14px; }
+    button.primary { border-color:var(--amber); color:var(--amber); }
+    #zone { height:10px; background:#1e293b; border-radius:5px; margin-top:8px; position:relative; max-width:280px; overflow:hidden; }
+    #zone .sweet { position:absolute; top:0; bottom:0; background:rgba(34,197,94,.45); }
+    #zone .needle { position:absolute; top:0; bottom:0; width:3px; background:var(--amber); }
+    #msg { text-align:center; opacity:.85; font-size:.9rem; max-width:360px; margin:0 auto; }
+  </style>
+  <script src="../../shared/rv-family-progress.js"></script>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="hud">
+    <div class="bar">
+      <div class="badge">🔥 Cook · <strong id="score">0</strong></div>
+      <div class="badge" id="recipe">Catfish skillet</div>
+    </div>
+    <div id="msg">Hold <strong>Space / tap</strong> to stoke. Keep the needle in the green zone. Flip when it flashes.</div>
+    <div>
+      <div id="zone"><div class="sweet" style="left:35%;width:30%"></div><div class="needle" id="needle" style="left:10%"></div></div>
+      <div class="bar" style="margin-top:12px">
+        <button id="back">← Open world</button>
+        <button class="primary" id="flip">Flip / Plate</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const returnUrl = new URLSearchParams(location.search).get('return') || '../../viewer/open_world.html';
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const recipes = [
+      { id: 'catfish', name: 'Pan-fried catfish', needs: { fish: 1 }, reward: 'meals' },
+      { id: 'stew', name: 'Venison stew', needs: { venison: 1, crops: 1 }, reward: 'meals' },
+      { id: 'corn', name: 'Roasted sweet corn', needs: { corn: 1 }, reward: 'meals' },
+      { id: 'cobbler', name: 'Campfire cobbler', needs: { crops: 1 }, reward: 'meals' },
+    ];
+    let ri = 0, heat = 0, heatVel = 40, stoking = false, flipReady = false, cooked = 0, t = 0;
+    const needle = document.getElementById('needle');
+    const scoreEl = document.getElementById('score');
+    const recipeEl = document.getElementById('recipe');
+    function resize() {
+      canvas.width = innerWidth * devicePixelRatio;
+      canvas.height = innerHeight * devicePixelRatio;
+      canvas.style.width = innerWidth + 'px';
+      canvas.style.height = innerHeight + 'px';
+      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    }
+    addEventListener('resize', resize); resize();
+    function setRecipe() { recipeEl.textContent = recipes[ri].name; }
+    setRecipe();
+    function onStoke(v) { stoking = v; }
+    addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); onStoke(true); }});
+    addEventListener('keyup', e => { if (e.code === 'Space') onStoke(false); });
+    canvas.addEventListener('pointerdown', () => onStoke(true));
+    canvas.addEventListener('pointerup', () => onStoke(false));
+    canvas.addEventListener('pointerleave', () => onStoke(false));
+    document.getElementById('back').onclick = () => { location.href = returnUrl; };
+    document.getElementById('flip').onclick = () => {
+      if (!flipReady) return;
+      RVFamilyProgress.saveMiniGameReward(s => {
+        s.inventory.meals = (s.inventory.meals || 0) + 1;
+        s.stats.dishesCooked = (s.stats.dishesCooked || 0) + 1;
+        s.lastMiniGame = 'mg-cook';
+      });
+      cooked++; scoreEl.textContent = cooked; flipReady = false; heat = 20;
+      ri = (ri + 1) % recipes.length; setRecipe();
+    };
+    function frame(now) {
+      const dt = Math.min(0.05, (now - (frame.t || now)) / 1000);
+      frame.t = now; t += dt;
+      heatVel += (stoking ? 80 : -35) * dt; heatVel *= 0.98;
+      heat = Math.max(0, Math.min(100, heat + heatVel * dt));
+      needle.style.left = heat + '%';
+      const inSweet = heat >= 35 && heat <= 65;
+      flipReady = inSweet && heat > 50;
+      document.getElementById('flip').style.opacity = flipReady ? '1' : '0.45';
+      const w = innerWidth, h = innerHeight;
+      ctx.fillStyle = '#0a1628'; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#1a2e1a'; ctx.fillRect(0, h * 0.55, w, h * 0.45);
+      const gx = w * 0.5, gy = h * 0.62;
+      const grd = ctx.createRadialGradient(gx, gy, 10, gx, gy, 120 + heat);
+      grd.addColorStop(0, `rgba(251,191,36,${0.35 + heat * 0.004})`);
+      grd.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(gx, gy, 140, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#3f2a14'; ctx.fillRect(gx - 40, gy + 10, 80, 12); ctx.fillRect(gx - 30, gy + 22, 60, 10);
+      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.ellipse(gx, gy - 8, 36, 14, 0, 0, Math.PI * 2); ctx.fill();
+      if (inSweet) { ctx.fillStyle = 'rgba(251,191,36,0.9)'; ctx.font = '14px system-ui'; ctx.textAlign = 'center'; ctx.fillText('Searing — Flip!', gx, gy - 40); }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
