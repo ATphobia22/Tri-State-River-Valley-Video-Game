@@ -10,43 +10,29 @@
 
 > **Project boundary:** This is the **standalone video game**, not Tri-State Systems Manager's scientific, municipal, or flood-engineering digital twin. The terrain and additional town scenes are artistic game environments, not certified spatial or hydraulic models.
 
-## Repository status — 2026-11-24
+## Repository status — 2026-11-25
 
-**Default branch:** `main` @ `7286edf4` (playable v1.13.0 line).
+**Default branch:** `main` @ latest · **Open pull requests: 0**
 
-### Pull requests
+| Check | Status |
+| --- | --- |
+| Open PRs | **None** — PR #46 (applied photogrammetry) closed as superseded; content already on `main` |
+| River Valley Game CI | **Success** on `main` (run #288+) |
+| Deploy GitHub Pages | Re-triggered on `main` |
+| Sync browser release | Re-triggered on `main` |
+| Reconstruction adapters | Re-triggered on `main` |
+| Applied photogrammetry | Wired: `reconstruction_engine.py`, `colmap_database.py`, `colmap_database_audit.py`, `nerfstudio_configs.py`, `nerfstudio_profiles.py`, COLMAP schema docs |
+| Hero | v2.1-detail micro-geometry on `main` |
 
-| PR | Title | State |
-| --- | --- | --- |
-| [#46](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/pull/46) | Feature/applied photogrammetry toolchain | **Open — merge blocked** (`mergeable_state: dirty`). Auto-update against `main` failed with conflicts. Rebase required before squash-merge. |
-| [#48](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/pull/48) | COLMAP matching DB + Nerfstudio cinematic profiles | Merged |
-| [#45](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/pull/45) | Reject unsafe GLB / invalid COLMAP cameras | Merged |
-| [#43](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/pull/43) | Creatures main wiring | Merged |
-| Earlier gameplay/art PRs (#4–#42) | Character, world, Posey atlas, workers, cinematics | Merged or intentionally closed |
-
-Legacy **PTDT EnKF/Bishop Evidence Graph** draft ([PR #2](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/pull/2)) remains intentionally separate from the playable game.
-
-### Feature branches still on the remote
-
-Remote tips such as `feat/visual-workers-wind-foam-20261123`, `feat/full-3d-creatures-layers-20261123`, `feature/applied-photogrammetry-toolchain`, and related `fix/*` / `perf/*` branches are retained for provenance. Content that already landed via squash-merge lives on `main`; do not re-merge those tips without a fresh rebase.
-
-To finish #46:
-
-```bash
-git fetch origin
-git checkout feature/applied-photogrammetry-toolchain
-git rebase origin/main
-# resolve conflicts, then:
-git push --force-with-lease
-```
+Stale remote feature-branch tips are retained for provenance only; do not re-merge without a fresh rebase onto current `main`.
 
 ### Sparse-matrix research (performance track)
 
 Investigated for future building-visibility / nearest-neighbor / terrain graphs (not yet shipped in the playable client):
 
-- [MathWorks sparse matrices](https://www.mathworks.com/help/matlab/sparse-matrices.html) — storage formats and when densify vs stay sparse
-- [GeeksforGeeks sparse representation](https://www.geeksforgeeks.org/dsa/sparse-matrix-representation/) — triplet / CSR / CSC patterns
-- [CS 357 sparse notes (Illinois)](https://cs357.cs.illinois.edu/textbook/notes/sparse.html) — algorithms and complexity
+- [MathWorks sparse matrices](https://www.mathworks.com/help/matlab/sparse-matrices.html)
+- [GeeksforGeeks sparse representation](https://www.geeksforgeeks.org/dsa/sparse-matrix-representation/)
+- [CS 357 sparse notes (Illinois)](https://cs357.cs.illinois.edu/textbook/notes/sparse.html)
 
 Intended use if adopted: CSR-style adjacency for offline building nearest-search budgets and foliage culling (same problem space as the existing render workers), never inventing surveyed city geometry.
 
@@ -82,7 +68,7 @@ Intended use if adopted: CSR-style adjacency for offline building nearest-search
 
 **Local progress:** Choose one of three save slots and use **Save** or **Resume**. Clearing the browser's site storage may remove local saves. Saves are not synchronized across devices.
 
-**Automated browser proof:** Chromium CI now verifies that the hosted and Pages-root game register no service workers, have no game-prefixed CacheStorage entries, and preserve New Harmony and Scout progress across an online page reload. The separately downloaded standalone HTML remains the offline play format; physical-device acceptance is separate.
+**Automated browser proof:** Chromium CI verifies that the hosted and Pages-root game register no service workers, have no game-prefixed CacheStorage entries, and preserve New Harmony and Scout progress across an online page reload. The separately downloaded standalone HTML remains the offline play format; physical-device acceptance is separate.
 
 ## Geographic truth versus game art
 
@@ -132,8 +118,7 @@ The build produces **`game/River_Valley_Family_Adventure_OFFLINE.html`**, **`gam
 | Node, source provenance, runtime graph, desktop/mobile viewport WebGL and no-service-worker browser smoke | [Game CI](.github/workflows/game-ci.yml) |
 | Generated offline/hosted release synchronization | [Release sync](.github/workflows/commit-browser-build.yml) |
 | Pages packaging, Chromium, network-disabled replay and deployment | [GitHub Pages](.github/workflows/deploy-pages.yml) |
-
-The v1.10.0 gameplay release and earlier **offline-replay gate hardening (PR #11)** passed on `main` on **November 22, 2026**. The hosted offline-replay behavior is intentionally retired by this later service-worker change and must not be described as a current capability. The local-browser test proves the tested Chromium build, **not** real iPhone or Windows hardware performance.
+| Courthouse reconstruction adapters (headless) | [Reconstruction adapters](.github/workflows/reconstruction-adapters.yml) |
 
 ## Project layout
 
@@ -147,25 +132,12 @@ The v1.10.0 gameplay release and earlier **offline-replay gate hardening (PR #11
 | [`game/tools/`](game/tools/) | Deterministic asset construction, packaging and audits |
 | [`game/docs/`](game/docs/) | Release notes, source provenance, graphics research and verification |
 
-## River Explorer playable model rebuild — v1.11.0
-
-The **existing 27-joint, 13-clip skinned GLB** is re-sculpted with organic round-toe boots, an oval shaped gear pack, curved translucent glasses, smaller more natural eyes, finer short curls, subtler printed gaiter and eight original PNG microtextures **embedded directly in the GLB**. Game materials also use local skin/cloth/nylon/leather bump detail. Character Studio provides front, three-quarter, side and rear views, improved neutral lighting, larger mobile framing and hideable controls. This is a substantial stylized 3D rebuild, **not** yet a photoreal recreation of the concept illustrations. [Mesh, texture, rig and visual QA evidence](game/docs/RIVER_MODEL_REBUILD_v1.11.0.md).
-
-## River Explorer reference art pass — v1.10.2
-
-The original **27-joint River Explorer** was refined using three supplied concept sheets. His short sleeves now expose skinned forearms, the skull gaiter print and translucent eyewear are finer, fingerless gloves have individual covered bases and exposed tips, and cargo/boot/pack straps have more readable finishing details. His idle arms rest closer to the body. Character Studio now supports a **Gaiter and glasses close-up** alongside hand grips and boots. All improvements use the original GLB generator and PBR material palette—**not** the old 17-bone upload. [Reference-based implementation and acceptance limits](game/docs/RIVER_ART_REFINEMENT_v1.10.2.md).
-
-## Mobile rendering and performance upgrade — v1.10.1
-
-The existing skinned 27-joint River Explorer now excludes generated zero-area triangles, with deterministic GLB/embedded-data/hash regeneration. Windows are batched per detailed building, and quadtree seam skirts are batched across the active terrain surface. Driving mode uses bounded high-detail building and terrain-tessellation budgets. The exportable frame report now includes event timestamps, positional scene labels, draw calls, P95/P99 cohorts, and slow-frame records. A scripted 24-condition desktop/mobile-friendly software-WebGL matrix is available; it is **not** a substitute for physical iPhone FPS testing. [Implementation, measured baseline and instructions](game/docs/MOBILE_PERFORMANCE_AND_RIG_v1.10.1.md).
-
 ## Known limitations and next work
 
 - **World coverage:** County navigation is source-based, but there is **no continuous full-county 3D environment** or countywide elevation/building/road asset streaming.
 - **Physics:** Polygon-aware 2.5D collision and four-wheel kinematic suspension are **not** full triangle-mesh/rigid-body vehicle simulation.
 - **Characters and sound:** Procedural animation and synthesized ambient audio are shipped; independently licensed recorded performance/audio libraries have not been admitted.
 - **Hardware:** Actual iPhone Safari FPS/thermal evidence, real Windows offline-launch acceptance and hardware GPU profiling remain pending. The in-game **Export iPhone FPS** option supports gathering these measurements.
-- **Open merge:** Photogrammetry toolchain PR #46 needs a manual rebase onto `main` before it can land.
 
 For engineering details, visit the [game guide](game/README.md), [November 22 repository reconciliation audit](game/docs/REPOSITORY_RECONCILIATION_2026-11-22.md) and [open gameplay roadmap](https://github.com/ATphobia22/Tri-State-River-Valley-Video-Game/issues/6).
 
