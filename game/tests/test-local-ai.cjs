@@ -41,3 +41,14 @@ test('input is bounded and invalid backend names are rejected',()=>{
  assert.equal(f.ai.start({question:'a'.repeat(1000),context:'b'.repeat(1000),device:'wasm'}),true);
  assert.equal(f.workers[0].messages[0].question.length,256);assert.equal(f.workers[0].messages[0].context.length,700);
 });
+
+test('hosted UI requires explicit consent before creating an inference worker',()=>{
+ const fs=require('node:fs'),root=__dirname+'/../';
+ const game=fs.readFileSync(root+'src/game.js','utf8'),html=fs.readFileSync(root+'index.html','utf8');
+ assert.ok(html.includes('id="localGuideConsent"'));
+ assert.ok(html.indexOf('src/local-ai.js')<html.indexOf('src/game.js'));
+ assert.ok(game.includes('if(!consent.checked)'));
+ assert.ok(game.includes('computeBusy:hybridBudget.snapshot().activeJobs>0'));
+ assert.ok(game.includes('if(memory.overBudget)localGuide?.cancel()'));
+ assert.ok(game.includes('status.textContent=s.text'));
+});
