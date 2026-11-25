@@ -6,6 +6,8 @@ on:
       - 'game/**'
       - 'auto-3d-city-builder/**'
       - '.github/workflows/deploy-pages.yml'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -93,14 +95,17 @@ jobs:
           path: _site/
           include-hidden-files: true
           if-no-files-found: error
-      - uses: actions/configure-pages@v5
+      - if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
         with:
           enablement: true
-      - uses: actions/upload-pages-artifact@v3
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
   deploy:
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 12
