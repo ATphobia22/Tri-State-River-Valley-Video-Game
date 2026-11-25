@@ -37,16 +37,20 @@
       throw new RangeError('Invalid terrain tile budget limits');
     if(!(Number.isFinite(targetFPS)&&targetFPS>=15&&targetFPS<=120))
       throw new RangeError('Invalid target frame rate');
-    const online=preferOnline&&isOnline();
-    const effectiveMax=online?Math.min(480,Math.floor(maxTiles*1.6)):Math.floor(maxTiles);
+    const limit=()=>preferOnline&&isOnline()?Math.max(Math.floor(minTiles),Math.min(480,Math.floor(maxTiles*1.6))):Math.floor(maxTiles);
+    let effectiveMax=limit();
     const effectiveMin=Math.floor(minTiles);
     const targetFrameMs=1000/targetFPS;
     let tiles=effectiveMax,ema=null,slow=0,fast=0,lastChangeAt=-Infinity,lastObservedAt=-Infinity,validFrames=0;
     function observe(frameMs,stampMs){
-      const unchanged=()=>({changed:false,budget:tiles,averageFrameMs:ema,online:isOnline()});
-      if(!Number.isFinite(frameMs)||frameMs<5||frameMs>125||!Number.isFinite(stampMs)||stampMs<=lastObservedAt)
+      const previous=tiles;
+      effectiveMax=limit();
+      tiles=Math.min(tiles,effectiveMax);
+      const unchanged=()=>({changed:tiles!==previous,budget:tiles,averageFrameMs:ema,online:isOnline()});
+      if(!Number.isFinite(frameMs)||frameMs<=0||!Number.isFinite(stampMs)||stampMs<=lastObservedAt)
         return unchanged();
       lastObservedAt=stampMs;
+      frameMs=Math.min(frameMs,1000);
       ema=ema===null?frameMs:ema*.88+frameMs*.12;
       validFrames++;
       slow=ema>targetFrameMs*1.18?slow+1:0;
