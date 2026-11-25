@@ -6,17 +6,6 @@
   const api=factory();
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.ValleyStreamingPolicy=api;
-  if(typeof document!=='undefined'){
-    const companions=['physics-bakeoff.js','maplibre-reference.js','hand-ik-validation.js','gpu-evidence.js','cinema-particles.js','hero-pbr.js','hero-micro-details.js'];
-    const base=(document.currentScript&&document.currentScript.src||'').replace(/streaming-policy\.js.*$/,'');
-    companions.forEach(function(name){
-      if(document.querySelector('script[src*="'+name+'"]'))return;
-      const s=document.createElement('script');
-      s.src=(base||'src/')+name;
-      s.async=true;
-      document.head.appendChild(s);
-    });
-  }
 })(typeof globalThis==='object'?globalThis:this,function(){
   'use strict';
   const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
