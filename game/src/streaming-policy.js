@@ -47,10 +47,9 @@
       effectiveMax=limit();
       tiles=Math.min(tiles,effectiveMax);
       const unchanged=()=>({changed:tiles!==previous,budget:tiles,averageFrameMs:ema,online:isOnline()});
-      if(!Number.isFinite(frameMs)||frameMs<=0||!Number.isFinite(stampMs)||stampMs<=lastObservedAt)
+      if((typeof document!=='undefined'&&document.hidden)||!Number.isFinite(frameMs)||frameMs<5||frameMs>=1000||!Number.isFinite(stampMs)||stampMs<=lastObservedAt)
         return unchanged();
       lastObservedAt=stampMs;
-      frameMs=Math.min(frameMs,1000);
       ema=ema===null?frameMs:ema*.88+frameMs*.12;
       validFrames++;
       slow=ema>targetFrameMs*1.18?slow+1:0;
