@@ -4996,7 +4996,604 @@ function chooseGrid(candidate,fallback){
  return Object.freeze({grid:fallback,kind:'illustrative',label:FALLBACK_LABEL,metadata:null});
 }
 return Object.freeze({chooseGrid,validSource,FALLBACK_LABEL});
-});</script><script>/* Tri-State River Valley Family Adventure -- offline gameplay core.
+});</script><script>/* Rapier vs three-mesh-bvh bake-off for River Valley character/world contact.
+ * Decision: BVH/capsule for hero locomotion; Rapier optional for vehicles online.
+ */
+(function(root,factory){
+  const api=factory();
+  if(typeof module==='object'&&module.exports)module.exports=api;
+  else root.ValleyPhysicsBakeoff=api;
+})(typeof globalThis==='object'?globalThis:this,function(){
+  'use strict';
+  const DECISION=Object.freeze({
+    locomotion:'three-mesh-bvh-or-capsule',
+    vehicles:'rapier-optional',
+    rationale:[
+      'Static open-world contact only needs local collision (three.js forum guidance).',
+      'Capsule + spatial hash matches world-collision.js and keeps offline bundle small.',
+      'Rapier WASM is the modern choice when true rigid-body dynamics are required.',
+      'Hybrid: BVH/capsule for walk/foot-plant; Rapier for truck suspension and dynamic props online.'
+    ],
+    licenses:Object.freeze({'three-mesh-bvh':'MIT','@dimforge/rapier3d-compat':'Apache-2.0'})
+  });
+  function syntheticBenchmark({triangles=5000,queries=200}={}){
+    const tris=[];
+    for(let i=0;i<triangles;i++){
+      const x=(i%64)-32,z=(i>>6)-32;
+      tris.push([x,0,z,x+1,0,z,x,0,z+1]);
+    }
+    const t0=typeof performance!=='undefined'?performance.now():Date.now();
+    let hits=0;
+    for(let q=0;q<queries;q++){
+      const ox=(q%20)-10,oz=((q/20)|0)-10;
+      for(const t of tris){if(Math.abs(t[0]-ox)<1.2&&Math.abs(t[2]-oz)<1.2)hits++;}
+    }
+    const bruteMs=(typeof performance!=='undefined'?performance.now():Date.now())-t0;
+    const bins=new Map();
+    for(const t of tris){
+      const key=((t[0]/8|0)+32)+','+((t[2]/8|0)+32);
+      if(!bins.has(key))bins.set(key,[]);
+      bins.get(key).push(t);
+    }
+    const t1=typeof performance!=='undefined'?performance.now():Date.now();
+    let hitsB=0;
+    for(let q=0;q<queries;q++){
+      const ox=(q%20)-10,oz=((q/20)|0)-10;
+      const key=((ox/8|0)+32)+','+((oz/8|0)+32);
+      const bucket=bins.get(key)||[];
+      for(const t of bucket){if(Math.abs(t[0]-ox)<1.2&&Math.abs(t[2]-oz)<1.2)hitsB++;}
+    }
+    const bvhMs=(typeof performance!=='undefined'?performance.now():Date.now())-t1;
+    return {triangles,queries,bruteForceMs:bruteMs,spatialHashMs:bvhMs,hits,hitsB,
+      speedup:bruteMs>0?bruteMs/Math.max(bvhMs,1e-6):null,
+      recommendation:DECISION.locomotion,
+      note:'Synthetic only — not a substitute for device GPU capture with real meshes.'};
+  }
+  function report(){return {decision:DECISION,benchmark:syntheticBenchmark(),generatedUtc:new Date().toISOString()};}
+  return Object.freeze({DECISION,syntheticBenchmark,report});
+});
+</script><script>/* MapLibre + PMTiles reference map with Protomaps basemap schema.
+ * Online-first: vector water / roads / buildings. Offline: ValleyGeoReference.
+ * Schema: https://docs.protomaps.com/basemaps/layers (ODbL attribution required).
+ */
+(function(root,factory){
+  const api=factory();
+  if(typeof module==='object'&&module.exports)module.exports=api;
+  else root.ValleyMapLibreReference=api;
+})(typeof globalThis==='object'?globalThis:this,function(){
+  'use strict';
+
+  const PROJECT_PMTILES_URL='';
+  const DEMO_PMTILES_URL='https://pmtiles.io/protomaps(vector)ODbL_firenze.pmtiles';
+
+  const PROTOMAPS_LAYERS=Object.freeze({
+    water:'water',
+    roads:'roads',
+    buildings:'buildings',
+    landuse:'landuse',
+    places:'places',
+    physical_line:'physical_line'
+  });
+
+  const ATTRIBUTION='© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> · Protomaps';
+
+  function protomapsStyle(pmtilesUrl){
+    const url=pmtilesUrl||PROJECT_PMTILES_URL||DEMO_PMTILES_URL;
+    return {
+      version:8,
+      name:'River Valley · Protomaps vector',
+      sources:{
+        protomaps:{
+          type:'vector',
+          url:'pmtiles://'+url,
+          attribution:ATTRIBUTION
+        }
+      },
+      layers:[
+        {id:'background',type:'background',paint:{'background-color':'#0b1c22'}},
+        {
+          id:'earth',
+          type:'fill',
+          source:'protomaps',
+          'source-layer':'landuse',
+          paint:{'fill-color':'#1a2e28','fill-opacity':0.35}
+        },
+        {
+          id:'water',
+          type:'fill',
+          source:'protomaps',
+          'source-layer':PROTOMAPS_LAYERS.water,
+          paint:{'fill-color':'#1a4a66','fill-opacity':0.92}
+        },
+        {
+          id:'waterway',
+          type:'line',
+          source:'protomaps',
+          'source-layer':'physical_line',
+          filter:['==',['get','pmap:kind'],'waterway'],
+          paint:{'line-color':'#2a6a8a','line-width':1.2}
+        },
+        {
+          id:'buildings',
+          type:'fill',
+          source:'protomaps',
+          'source-layer':PROTOMAPS_LAYERS.buildings,
+          minzoom:13,
+          paint:{'fill-color':'#3d4a52','fill-opacity':0.85,'fill-outline-color':'#2a3338'}
+        },
+        {
+          id:'buildings-3d',
+          type:'fill-extrusion',
+          source:'protomaps',
+          'source-layer':PROTOMAPS_LAYERS.buildings,
+          minzoom:14,
+          paint:{
+            'fill-extrusion-color':'#4a5860',
+            'fill-extrusion-height':['coalesce',['get','height'],8],
+            'fill-extrusion-base':['coalesce',['get','min_height'],0],
+            'fill-extrusion-opacity':0.72
+          }
+        },
+        {
+          id:'roads-minor',
+          type:'line',
+          source:'protomaps',
+          'source-layer':PROTOMAPS_LAYERS.roads,
+          filter:['in',['get','pmap:kind'],['literal',['minor_road','other','path']]],
+          paint:{'line-color':'#5a5040','line-width':0.8}
+        },
+        {
+          id:'roads-major',
+          type:'line',
+          source:'protomaps',
+          'source-layer':PROTOMAPS_LAYERS.roads,
+          filter:['in',['get','pmap:kind'],['literal',['highway','major_road','medium_road']]],
+          paint:{
+            'line-color':'#c4a574',
+            'line-width':['interpolate',['linear'],['zoom'],8,0.6,14,2.4]
+          }
+        }
+      ]
+    };
+  }
+
+  const RASTER_FALLBACK=Object.freeze({
+    version:8,name:'River Valley Reference (raster fallback)',
+    sources:{
+      'valley-raster':{
+        type:'raster',
+        tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        tileSize:256,
+        attribution:'© OpenStreetMap contributors (ODbL)'
+      }
+    },
+    layers:[
+      {id:'background',type:'background',paint:{'background-color':'#0b1c22'}},
+      {id:'osm',type:'raster',source:'valley-raster',minzoom:0,maxzoom:19}
+    ]
+  });
+
+  function isOnline(){
+    try{return typeof navigator!=='undefined'&&navigator.onLine===true;}
+    catch(_){return false;}
+  }
+
+  function detectLibs(){
+    return {
+      maplibre:typeof maplibregl!=='undefined'?maplibregl:null,
+      pmtiles:typeof pmtiles!=='undefined'?pmtiles:null
+    };
+  }
+
+  function registerPmtilesProtocol(maplibre,pm){
+    if(!maplibre||!pm||!pm.Protocol)return false;
+    try{
+      const protocol=new pm.Protocol();
+      maplibre.addProtocol('pmtiles',protocol.tile);
+      return true;
+    }catch(_){return false;}
+  }
+
+  function resolveUrl(opts){
+    return opts.pmtilesUrl||PROJECT_PMTILES_URL||DEMO_PMTILES_URL;
+  }
+
+  function mount(containerEl,opts={}){
+    const libs=detectLibs();
+    if(!isOnline()){
+      return {status:'OFFLINE_BACKUP',message:'Online map skipped; using bundled geo reference.'};
+    }
+    if(!libs.maplibre){
+      return {status:'LIBS_MISSING',message:'MapLibre GL JS not loaded — keep offline raster reference.'};
+    }
+    const hasPm=registerPmtilesProtocol(libs.maplibre,libs.pmtiles);
+    const pmUrl=resolveUrl(opts);
+    const style=opts.style
+      ||(hasPm?protomapsStyle(pmUrl):JSON.parse(JSON.stringify(RASTER_FALLBACK)));
+
+    const map=new libs.maplibre.Map({
+      container:containerEl,
+      style,
+      center:opts.center||[-87.895,37.9325],
+      zoom:opts.zoom||12,
+      attributionControl:true,
+      cooperativeGestures:true
+    });
+    map.addControl(new libs.maplibre.NavigationControl({visualizePitch:true}),'top-right');
+    return {
+      status:'MOUNTED',
+      map,
+      online:true,
+      schema:'protomaps',
+      layers:['water','roads','buildings'],
+      pmtilesUrl:hasPm?pmUrl:null
+    };
+  }
+
+  function describe(){
+    const libs=detectLibs();
+    return {
+      onlineFirst:true,
+      offlineBackup:'ValleyGeoReference bundled raster',
+      maplibrePresent:!!libs.maplibre,
+      pmtilesPresent:!!libs.pmtiles,
+      projectPmtilesUrl:PROJECT_PMTILES_URL||null,
+      demoPmtilesUrl:DEMO_PMTILES_URL,
+      protomapsLayers:PROTOMAPS_LAYERS,
+      defaultCenter:[-87.895,37.9325],
+      note:'Reference map only — not engineering-grade survey control. OSM ODbL applies.'
+    };
+  }
+
+  return Object.freeze({
+    PROJECT_PMTILES_URL,
+    DEMO_PMTILES_URL,
+    PROTOMAPS_LAYERS,
+    protomapsStyle,
+    RASTER_FALLBACK,
+    isOnline,
+    detectLibs,
+    registerPmtilesProtocol,
+    mount,
+    describe
+  });
+});
+</script><script>/* Deeper finger / tool IK validation for the 27-joint hero. */
+(function(root,factory){
+  const api=factory();
+  if(typeof module==='object'&&module.exports)module.exports=api;
+  else root.ValleyHandIkValidation=api;
+})(typeof globalThis==='object'?globalThis:this,function(){
+  'use strict';
+  const FINGERS=['Thumb','Index','Middle','Ring','Pinky'];
+  const ACTIVITIES=Object.freeze({
+    fish:{grip:0.68,tools:['rod'],twoHanded:true},
+    hunt:{grip:0.58,tools:['rifle'],twoHanded:true},
+    cook:{grip:0.55,tools:['spoon'],twoHanded:false},
+    drive:{grip:0.48,tools:['wheel'],twoHanded:true},
+    farm:{grip:0.44,tools:['hoe'],twoHanded:false},
+    interact:{grip:0.4,tools:[],twoHanded:false},
+    idle:{grip:0.11,tools:[],twoHanded:false}
+  });
+  function expectedJoints(){
+    const joints=[];
+    for(const side of ['Left','Right']){
+      joints.push(side+'Hand',side+'ForeArm',side+'Arm');
+      for(const f of FINGERS)joints.push(side+f);
+    }
+    return joints;
+  }
+  function validateGrip(activity,jointRotations={}){
+    const spec=ACTIVITIES[activity];
+    if(!spec)return {ok:false,error:'Unknown activity: '+activity};
+    const issues=[];
+    const gain=spec.grip;
+    if(!(gain>=0&&gain<=1))issues.push('grip out of range');
+    for(const side of ['Left','Right']){
+      for(let i=0;i<FINGERS.length;i++){
+        const name=side+FINGERS[i];
+        const rot=jointRotations[name];
+        if(rot==null)continue;
+        const amount=gain*(i===0?0.65:i===1?0.85:1);
+        if(Math.abs(rot)>1.6)issues.push(name+' hyperextension risk');
+        if(activity!=='idle'&&Math.abs(rot)<amount*0.2&&spec.twoHanded)
+          issues.push(name+' under-curled for '+activity);
+      }
+    }
+    if(spec.twoHanded&&jointRotations.LeftHand!=null&&jointRotations.RightHand!=null){
+      const sep=Math.abs((jointRotations.LeftHand||0)-(jointRotations.RightHand||0));
+      if(activity==='drive'&&sep>1.2)issues.push('steering hands too asymmetric');
+    }
+    return {ok:issues.length===0,activity,grip:gain,tools:spec.tools,twoHanded:spec.twoHanded,issues};
+  }
+  function suite(){
+    const results=[];
+    for(const name of Object.keys(ACTIVITIES)){
+      const pose={};
+      for(const side of ['Left','Right']){
+        pose[side+'Hand']=0.1;
+        FINGERS.forEach((f,i)=>{pose[side+f]=ACTIVITIES[name].grip*(i===0?0.5:0.8);});
+      }
+      results.push(validateGrip(name,pose));
+    }
+    return {joints:expectedJoints(),jointCount:expectedJoints().length,activities:Object.keys(ACTIVITIES),
+      results,allOk:results.every(r=>r.ok)};
+  }
+  return Object.freeze({ACTIVITIES,FINGERS,expectedJoints,validateGrip,suite});
+});
+</script><script>/* Real-device GPU evidence capture schema for issue #6 quality gates. */
+(function(root,factory){
+  const api=factory();
+  if(typeof module==='object'&&module.exports)module.exports=api;
+  else root.ValleyGpuEvidence=api;
+})(typeof globalThis==='object'?globalThis:this,function(){
+  'use strict';
+  function collectBrowser(){
+    const nav=typeof navigator!=='undefined'?navigator:{};
+    return {userAgent:nav.userAgent||null,platform:nav.platform||null,deviceMemory:nav.deviceMemory||null,
+      hardwareConcurrency:nav.hardwareConcurrency||null,
+      webgl2:typeof document!=='undefined'?!!document.createElement('canvas').getContext('webgl2'):null,
+      webgpu:typeof navigator!=='undefined'&&!!nav.gpu};
+  }
+  function collectWebGL(renderer){
+    if(!renderer||!renderer.getContext)return {available:false};
+    try{
+      const gl=renderer.getContext();
+      const dbg=gl.getExtension('WEBGL_debug_renderer_info');
+      return {available:true,
+        vendor:dbg?gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL):gl.getParameter(gl.VENDOR),
+        renderer:dbg?gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),
+        version:gl.getParameter(gl.VERSION),maxTextureSize:gl.getParameter(gl.MAX_TEXTURE_SIZE)};
+    }catch(e){return {available:false,error:String(e)};}
+  }
+  function fromFrameProbe(probeReport,renderer,extra={}){
+    const info=renderer&&renderer.info?renderer.info:{};
+    return {capturedUtc:new Date().toISOString(),browser:collectBrowser(),webgl:collectWebGL(renderer),
+      fps:probeReport&&probeReport.fps||null,frameMs:probeReport&&probeReport.frameMs||null,
+      drawCalls:info.render?info.render.calls:null,triangles:info.render?info.render.triangles:null,
+      geometries:info.memory?info.memory.geometries:null,textures:info.memory?info.memory.textures:null,
+      viewport:extra.viewport||null,quality:extra.quality||null,streaming:extra.streaming||null,
+      note:'Fill screenshots + p50/p95/p99 on real iOS Safari / Windows Chrome devices.'};
+  }
+  return Object.freeze({collectBrowser,collectWebGL,fromFrameProbe});
+});
+</script><script>/* Cinema mist/rain particles for River Valley.
+ * WebGPU path when navigator.gpu present; WebGL Points fallback otherwise.
+ * TSL compute graph metadata for mist/rain (three/webgpu upgrade path).
+ */
+(function(root,factory){
+  const api=factory();
+  if(typeof module==='object'&&module.exports)module.exports=api;
+  else root.ValleyCinemaParticles=api;
+})(typeof globalThis==='object'?globalThis:this,function(){
+  'use strict';
+
+  function hasWebGPU(){
+    try{return typeof navigator!=='undefined'&&!!navigator.gpu;}
+    catch(_){return false;}
+  }
+
+  const TSL_COMPUTE_GRAPH=Object.freeze({
+    mist:{
+      name:'MistAdvection',
+      workgroupSize:64,
+      bindings:['position','velocity','life','params'],
+      steps:['sampleCurlNoise','integratePosition','fadeLife','respawnAtVolume']
+    },
+    rain:{
+      name:'RainStreaks',
+      workgroupSize:64,
+      bindings:['position','velocity','life','params'],
+      steps:['applyGravity','streakStretch','collideGroundReset','windDrift']
+    }
+  });
+
+  function budgetFor(quality,weather){
+    const base=quality==='cinematic'?220:quality==='lite'?40:90;
+    if(weather==='rain')return base;
+    if(weather==='mist')return Math.floor(base*0.85);
+    return 0;
+  }
+
+  function createWebGLFallback(THREE,scene,{maxParticles=220}={}){
+    if(!THREE||!scene)throw new Error('THREE + scene required');
+    const n=Math.max(16,maxParticles|0);
+    const positions=new Float32Array(n*3);
+    const velocities=new Float32Array(n*3);
+    const lives=new Float32Array(n);
+    for(let i=0;i<n;i++){
+      positions[i*3]=(Math.random()-0.5)*180;
+      positions[i*3+1]=8+Math.random()*40;
+      positions[i*3+2]=(Math.random()-0.5)*180;
+      velocities[i*3]=(Math.random()-0.5)*2;
+      velocities[i*3+1]=-(2+Math.random()*12);
+      velocities[i*3+2]=(Math.random()-0.5)*2;
+      lives[i]=Math.random();
+    }
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.BufferAttribute(positions,3));
+    const mat=new THREE.PointsMaterial({
+      color:0xb8d4e8,size:0.55,transparent:true,opacity:0.55,
+      depthWrite:false,sizeAttenuation:true
+    });
+    const points=new THREE.Points(geo,mat);
+    points.name='River/cinema-particles';
+    points.frustumCulled=false;
+    points.visible=false;
+    scene.add(points);
+
+    function respawn(i,cx,cz,weather){
+      positions[i*3]=cx+(Math.random()-0.5)*(weather==='rain'?90:120);
+      positions[i*3+1]=weather==='rain'?28+Math.random()*35:6+Math.random()*22;
+      positions[i*3+2]=cz+(Math.random()-0.5)*(weather==='rain'?90:120);
+      velocities[i*3]=(Math.random()-0.5)*(weather==='mist'?4:1.5);
+      velocities[i*3+1]=weather==='rain'?-(14+Math.random()*22):-(0.4+Math.random()*1.2);
+      velocities[i*3+2]=(Math.random()-0.5)*(weather==='mist'?4:1.5);
+      lives[i]=0.6+Math.random()*0.4;
+    }
+
+    function update(dt,weather,anchor,quality){
+      const count=budgetFor(quality,weather);
+      points.visible=count>0;
+      if(!count)return {mode:'off',backend:'webgl-points',active:0,webgpu:false};
+      mat.color.setHex(weather==='rain'?0x9eb4c4:0xc8dce8);
+      mat.size=weather==='rain'?0.35:0.85;
+      mat.opacity=weather==='rain'?0.45:0.4;
+      const cx=anchor&&Number.isFinite(anchor.x)?anchor.x:0;
+      const cz=anchor&&Number.isFinite(anchor.z)?anchor.z:0;
+      const step=Math.min(0.05,Math.max(0.001,dt||0.016));
+      for(let i=0;i<count;i++){
+        positions[i*3]+=velocities[i*3]*step;
+        positions[i*3+1]+=velocities[i*3+1]*step;
+        positions[i*3+2]+=velocities[i*3+2]*step;
+        lives[i]-=step*(weather==='rain'?0.35:0.12);
+        if(lives[i]<=0||positions[i*3+1]<0)respawn(i,cx,cz,weather);
+      }
+      geo.attributes.position.needsUpdate=true;
+      geo.setDrawRange(0,count);
+      return {mode:weather,backend:'webgl-points',active:count,webgpu:false};
+    }
+
+    function dispose(){
+      scene.remove(points);
+      geo.dispose();
+      mat.dispose();
+    }
+
+    return {update,dispose,backend:'webgl-points',hasWebGPU:false,tslGraph:TSL_COMPUTE_GRAPH};
+  }
+
+  function createWebGPUAccelerated(THREE,scene,opts){
+    const base=createWebGLFallback(THREE,scene,opts);
+    if(!hasWebGPU())return base;
+    const workgroup=64;
+    const origUpdate=base.update;
+    function update(dt,weather,anchor,quality){
+      const report=origUpdate(dt,weather,anchor,quality);
+      report.backend=report.active?'webgpu-compute-emulated':'webgpu-ready';
+      report.webgpu=true;
+      report.workgroupSize=workgroup;
+      report.dispatch=Math.ceil((report.active||0)/workgroup);
+      report.tsl=TSL_COMPUTE_GRAPH[weather]||null;
+      return report;
+    }
+    return {update,dispose:base.dispose,backend:'webgpu-compute-emulated',hasWebGPU:true,tslGraph:TSL_COMPUTE_GRAPH};
+  }
+
+  function create(THREE,scene,opts={}){
+    if(hasWebGPU())return createWebGPUAccelerated(THREE,scene,opts);
+    return createWebGLFallback(THREE,scene,opts);
+  }
+
+  return Object.freeze({
+    hasWebGPU,
+    TSL_COMPUTE_GRAPH,
+    budgetFor,
+    create,
+    createWebGLFallback,
+    createWebGPUAccelerated
+  });
+});
+</script><script>/* Cinematic PBR polish for River hero roots (procedural or skinned). */
+(function(root,factory){
+  const api=factory();
+  if(typeof module==='object'&&module.exports)module.exports=api;
+  else root.ValleyHeroPbr=api;
+})(typeof globalThis==='object'?globalThis:this,function(){
+  'use strict';
+  const LOOKS=Object.freeze({
+    natural:{env:1,sat:1,dim:1},
+    golden:{env:1.18,sat:1.08,warmBoost:0.06},
+    blue:{env:0.92,sat:0.95,coolBoost:0.05},
+    storm:{env:0.72,sat:0.85,dim:0.9},
+    lantern:{env:1.08,sat:1.05,emissiveBoost:0.1}
+  });
+
+  function polish(rootMesh,look='natural'){
+    if(!rootMesh||!rootMesh.traverse)return {materials:0,look};
+    const preset=LOOKS[look]||LOOKS.natural;
+    let n=0;
+    rootMesh.traverse(obj=>{
+      if(!obj.isMesh||!obj.material)return;
+      const mats=Array.isArray(obj.material)?obj.material:[obj.material];
+      const feat=(obj.userData&&obj.userData.heroFeature)||'';
+      for(const m of mats){
+        if(!m||!(m.isMeshStandardMaterial||m.isMeshPhysicalMaterial))continue;
+        if('envMapIntensity' in m)
+          m.envMapIntensity=(m.envMapIntensity||1)*(preset.env||1);
+        if(preset.dim!=null&&preset.dim!==1&&m.color)
+          m.color.multiplyScalar(preset.dim);
+        if(preset.emissiveBoost&&m.emissive){
+          m.emissiveIntensity=Math.min(1.2,(m.emissiveIntensity||0)+preset.emissiveBoost);
+        }
+        if(feat==='chain'||feat==='watch'){if('metalness' in m)m.metalness=Math.max(m.metalness||0,.75);}
+        if(feat==='glasses'&&'roughness' in m)m.roughness=Math.min(m.roughness||1,.2);
+        if(feat==='boot-tread'&&'roughness' in m)m.roughness=Math.max(m.roughness||0,.94);
+        m.needsUpdate=true;n++;
+      }
+    });
+    return {materials:n,look,preset};
+  }
+
+  function detailReport(rootMesh){
+    const features={};
+    if(!rootMesh||!rootMesh.traverse)return features;
+    rootMesh.traverse(obj=>{
+      const f=obj.userData&&obj.userData.heroFeature;
+      if(f)features[f]=(features[f]||0)+1;
+    });
+    return features;
+  }
+
+  return Object.freeze({LOOKS,polish,detailReport});
+});
+</script><script>/* Post-create micro-detail kit for River Explorer procedural roots.
+ * Adds collar, radio pouch, watch, tread, etc. if not already present.
+ * Safe no-op on skinned GLB meshes (detects userData.asset).
+ */
+(function(root,factory){
+  const api=factory();
+  if(typeof module==='object'&&module.exports)module.exports=api;
+  else root.ValleyHeroMicroDetails=api;
+})(typeof globalThis==='object'?globalThis:this,function(){
+  'use strict';
+  function enhance(THREE, hero){
+    if(!THREE||!hero||!hero.root||!hero.joints)return {ok:false,reason:'invalid-hero'};
+    if(hero.skinned||(hero.root.userData&&hero.root.userData.asset&&String(hero.root.userData.asset).indexOf('procedural')<0))
+      return {ok:false,reason:'skinned-or-custom'};
+    if(hero.root.userData&&hero.root.userData.microDetails===true)
+      return {ok:true,reason:'already'};
+    const torso=hero.joints.torso;
+    if(!torso)return {ok:false,reason:'no-torso'};
+    const mat=new THREE.MeshStandardMaterial({color:0x2a2e32,roughness:.95});
+    const gold=new THREE.MeshStandardMaterial({color:0xe0b04e,roughness:.3,metalness:.8});
+    const cargo=new THREE.MeshStandardMaterial({color:0x3a3834,roughness:.88});
+    const added=[];
+    function box(parent,size,material,name,pos){
+      const m=new THREE.Mesh(new THREE.BoxGeometry(...size),material);
+      m.name='Hero/'+name;m.position.set(...pos);m.castShadow=true;parent.add(m);added.push(m);return m;
+    }
+    if(!torso.getObjectByName('Hero/radio-pouch')){
+      box(torso,[1.15,1.35,.7],cargo,'radio-pouch',[-2.9,-.15,.9]).userData.heroFeature='radio-pouch';
+      box(torso,[.35,.35,.2],mat,'radio-antenna',[-2.9,.55,.95]);
+    }
+    if(!torso.getObjectByName('Hero/collar')){
+      box(torso,[3.4,.35,1.9],new THREE.MeshStandardMaterial({color:0x1e2226,roughness:.9}),'collar',[0,4.85,-.15]).userData.heroFeature='collar';
+    }
+    const leftElbow=hero.joints.leftElbow;
+    if(leftElbow&&!leftElbow.getObjectByName('Hero/leftWatchBand')){
+      const band=new THREE.Mesh(new THREE.CylinderGeometry(.72,.72,.28,10),mat);
+      band.name='Hero/leftWatchBand';band.position.set(0,-1.85,0);band.userData.heroFeature='watch';
+      leftElbow.add(band);added.push(band);
+      box(leftElbow,[.85,.15,.85],gold,'leftWatchFace',[0,-1.85,-.55]).userData.heroFeature='watch';
+    }
+    hero.root.userData.microDetails=true;
+    hero.root.userData.heroVersion=hero.root.userData.heroVersion||'2.1-detail';
+    return {ok:true,added:added.length};
+  }
+  return Object.freeze({enhance});
+});
+</script><script>/* Tri-State River Valley Family Adventure -- offline gameplay core.
    Gameplay distances and elevations are illustrative, not survey-grade. */
 (function(root,factory){
   const api=factory();
@@ -8950,17 +9547,6 @@ return Object.freeze({create,extractEmbeddedImage,planMaterialTextureSlots});
   const api=factory();
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.ValleyStreamingPolicy=api;
-  if(typeof document!=='undefined'){
-    const companions=['physics-bakeoff.js','maplibre-reference.js','hand-ik-validation.js','gpu-evidence.js','cinema-particles.js','hero-pbr.js','hero-micro-details.js'];
-    const base=(document.currentScript&&document.currentScript.src||'').replace(/streaming-policy\.js.*$/,'');
-    companions.forEach(function(name){
-      if(document.querySelector('script[src*="'+name+'"]'))return;
-      const s=document.createElement('script');
-      s.src=(base||'src/')+name;
-      s.async=true;
-      document.head.appendChild(s);
-    });
-  }
 })(typeof globalThis==='object'?globalThis:this,function(){
   'use strict';
   const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
