@@ -2,10 +2,10 @@
   "name": "river-valley-family-adventure",
   "version": "1.13.0",
   "private": true,
-  "description": "Offline-first family 3D river valley adventure, independently developed from Tri-State Systems Manager",
+  "description": "Online-first family 3D river valley adventure, independently developed from Tri-State Systems Manager",
   "scripts": {
     "test": "node --test tests/test-*.cjs",
-    "build": "python3 build_offline.py && python3 build_hosted.py",
+    "build": "python3 build_hosted.py && python3 build_offline.py",
     "pretest": "python3 tools/build_character_lods.py",
     "prebuild": "python3 tools/build_character_lods.py"
   },
