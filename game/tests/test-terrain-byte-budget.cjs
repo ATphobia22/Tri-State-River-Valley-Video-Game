@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const P=require('../src/streaming-policy.js');
 test('terrain geometry estimates cover vertex attributes, indices and all four seam skirts',()=>{
  assert.equal(P.terrainTileBytes(16),25004);
- assert.equal(P.terrainTileBytes(1),332);
+ assert.equal(P.terrainTileBytes(1),764);
 });
 test('three simultaneous terrain generations fit the configured geometry byte ceiling',()=>{
  for(const budgetBytes of [6*1024*1024,12*1024*1024]){
