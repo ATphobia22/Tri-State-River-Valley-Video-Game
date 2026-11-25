@@ -1,0 +1,51 @@
+# Auto-3D City Builder — Mount Vernon / TSM
+# 3DCityDB v5 + optional Cesium web-map + WFS
+# Canonical SRID=26916 (UTM 16N NAD83). Never assume 4326 for engineering geometry.
+services:
+  citydb:
+    image: 3dcitydb/3dcitydb-pg:latest
+    container_name: mv-citydb
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${CITYDB_PASSWORD:-changeMe}
+      POSTGRES_DB: citydb
+      SRID: 26916
+      SRSNAME: urn:ogc:def:crs:EPSG::26916
+    volumes:
+      - citydb_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  webmap:
+    image: tumgis/3dcitydb-web-map:latest
+    container_name: mv-3dwebmap
+    ports:
+      - "8080:8000"
+    depends_on:
+      citydb:
+        condition: service_healthy
+    profiles: ["webmap"]
+
+  wfs:
+    image: tumgis/3dcitydb-wfs:latest
+    container_name: mv-wfs
+    ports:
+      - "8081:8080"
+    environment:
+      CITYDB_HOST: citydb
+      CITYDB_PORT: 5432
+      CITYDB_NAME: citydb
+      CITYDB_USERNAME: postgres
+      CITYDB_PASSWORD: ${CITYDB_PASSWORD:-changeMe}
+    depends_on:
+      citydb:
+        condition: service_healthy
+    profiles: ["wfs"]
+
+volumes:
+  citydb_data:
