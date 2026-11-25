@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Slim Pond Fishin · Uncle Pete · Catfish Cartel</title>
+  <style>
+    :root { --navy:#020617; --sky:#38bdf8; --amber:#fbbf24; --water:#0c4a6e; --fog:#94a3b8; --surge:#f87171; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html,body { width:100%; height:100%; overflow:hidden; background:var(--navy); color:#e2e8f0; font-family:system-ui,sans-serif; touch-action:none; }
+    #c { position:fixed; inset:0; }
+    #hud { position:fixed; inset:0; pointer-events:none; z-index:10; display:grid; grid-template-rows:auto 1fr auto; padding:12px 14px; }
+    .top-bar { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .badge { background:rgba(15,23,42,.88); border:1px solid rgba(56,189,248,.4); border-radius:999px; padding:6px 12px; font-size:12px; }
+    .badge strong { color:var(--amber); }
+    #mentor { max-width:min(420px,94vw); margin:0 auto; background:rgba(15,23,42,.94); border:1px solid rgba(56,189,248,.35); border-radius:14px; padding:12px 14px; pointer-events:auto; }
+    #mentor.hidden { display:none; }
+    #mentor .nick { color:var(--sky); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; }
+    #mentor h1 { font-size:1.05rem; margin:4px 0; }
+    #mentor p { font-size:.85rem; color:var(--fog); line-height:1.4; }
+    .meter-label { font-size:10px; letter-spacing:.06em; text-transform:uppercase; opacity:.75; margin-top:4px; }
+    .meter { height:10px; background:#1e293b; border-radius:5px; overflow:hidden; }
+    .meter > i { display:block; height:100%; width:0%; transition:width .06s linear; }
+    .meter.power > i { background:linear-gradient(90deg,var(--sky),var(--amber)); }
+    .meter.tension > i { background:linear-gradient(90deg,#22c55e,var(--amber),var(--surge)); }
+    .meter.tension.surge > i { background:var(--surge); }
+    #prompt { text-align:center; font-size:1rem; min-height:1.4em; }
+    #prompt.bite { color:var(--amber); font-weight:700; font-size:1.25rem; }
+    #prompt.surge { color:var(--surge); font-weight:700; }
+    .bottom-bar { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    button.action { pointer-events:auto; cursor:pointer; background:linear-gradient(180deg,#1e293b,#0f172a); border:1px solid rgba(56,189,248,.45); color:#e2e8f0; border-radius:12px; padding:11px 16px; font-size:14px; }
+    button.primary { border-color:var(--amber); color:var(--amber); }
+    #toast { position:fixed; left:50%; bottom:100px; transform:translateX(-50%); background:rgba(15,23,42,.95); border:1px solid rgba(56,189,248,.4); padding:10px 16px; border-radius:12px; opacity:0; transition:opacity .3s; z-index:15; max-width:90vw; text-align:center; pointer-events:none; }
+    #toast.show { opacity:1; }
+    #cutscene { position:fixed; inset:0; z-index:30; background:#020617; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; transition:opacity .9s; }
+    #cutscene.hidden { opacity:0; pointer-events:none; }
+    #cutscene .sub { color:var(--sky); font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; }
+    #cutscene .title { font-size:1.4rem; font-weight:700; }
+    #cutscene .line { color:var(--fog); font-size:.9rem; max-width:320px; text-align:center; line-height:1.45; }
+  </style>
+  <script src="../../shared/rv-family-progress.js"></script>
+  <script src="../../shared/character-roster.js"></script>
+</head>
+<body>
+  <div id="cutscene">
+    <div class="sub">Posey County · Slim Pond · Ohio bottoms</div>
+    <div class="title">Slim Pond Fishin</div>
+    <div class="line"><strong style="color:#38bdf8">Uncle Pete</strong> — Leader of the <strong style="color:#fbbf24">Catfish Cartel</strong> — sets you up on the mud bank before the bite turns on.</div>
+  </div>
+  <canvas id="c"></canvas>
+  <div id="toast"></div>
+  <div id="hud">
+    <div class="top-bar">
+      <div>
+        <div class="badge">🎣 Slim Pond · <strong id="score">0</strong></div>
+        <div class="badge" style="margin-top:6px" id="species">Channel cat waiting</div>
+      </div>
+      <div class="meters" style="min-width:150px">
+        <div class="meter-label">Cast power</div>
+        <div class="meter power"><i id="power-fill"></i></div>
+        <div class="meter-label">Line tension</div>
+        <div class="meter tension" id="tension-meter"><i id="tension-fill"></i></div>
+      </div>
+    </div>
+    <div id="mentor">
+      <div class="nick">Mentor · Pete Yeida · Uncle Pete · Catfish Cartel</div>
+      <h1>Hold, release, ease the surges</h1>
+      <p>Charge the cast (hold Space / finger), release to drop the bobber. When it plunges and you see <strong>!</strong>, set the hook. Reel on the green — <em>ease off</em> when the line goes red or she will snap.</p>
+      <div style="margin-top:10px"><button class="action primary" id="btn-start">Cast with Uncle Pete</button></div>
+    </div>
+    <div>
+      <div id="prompt">Hold to charge cast…</div>
+      <div class="bottom-bar" style="margin-top:12px">
+        <button class="action" id="btn-back">← Open world</button>
+        <button class="action primary" id="btn-cast">Hold to cast / reel</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const returnUrl = new URLSearchParams(location.search).get('return') || '../../viewer/open_world.html';
+    const RP = window.RVFamilyProgress;
+    const SPECIES = [
+      { id:'channel', name:'Channel catfish', weight:[2,8], tension:0.55, rarity:1 },
+      { id:'flathead', name:'Flathead catfish', weight:[4,14], tension:0.72, rarity:0.55 },
+      { id:'crappie', name:'White crappie', weight:[0.5,2], tension:0.35, rarity:1.1 },
+      { id:'bass', name:'Largemouth bass', weight:[1.5,6], tension:0.5, rarity:0.8 },
+      { id:'paddle', name:'Paddlefish (rare)', weight:[10,28], tension:0.88, rarity:0.12 },
+    ];
+    function toast(msg, ms){ ms=ms||2400; const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('show'), ms); }
+    function progress(){ return RP ? RP.loadProgress() : { inventory:{}, stats:{}, scout:{ bond:0 } }; }
+    function rewardCatch(sp, lbs){
+      if (!RP) return;
+      RP.saveMiniGameReward(s => {
+        s.inventory.fish = (s.inventory.fish||0)+1;
+        s.inventory.fishFillet = (s.inventory.fishFillet||0)+Math.max(1, Math.round(lbs/3));
+        s.stats.fishCaught = (s.stats.fishCaught||0)+1;
+        s.lastMiniGame = 'mg-fish';
+        s.party = s.party || {};
+        const u = new Set(s.party.unlocked||[]); u.add('pete-yeida'); s.party.unlocked=[...u];
+        if (sp.id==='paddle'){ s.lore=s.lore||[]; s.lore.push({ id:'paddlefish-slim-pond', at:new Date().toISOString() }); }
+      });
+    }
+    const p0=progress(); const scoutBond=(p0.scout&&p0.scout.bond)||0;
+    const HOOK_WINDOW=0.55+Math.min(0.35, scoutBond*0.02);
+    let caught=(p0.stats&&p0.stats.fishCaught)||0;
+    document.getElementById('score').textContent=String(caught);
+    const canvas=document.getElementById('c'); const ctx=canvas.getContext('2d');
+    function resize(){ canvas.width=innerWidth*devicePixelRatio; canvas.height=innerHeight*devicePixelRatio; canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px'; ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0); }
+    addEventListener('resize', resize); resize();
+    let phase='idle', power=0, tension=0, holding=false;
+    let bobber={x:0.5,y:0.62,depth:0}; let fish=null, biteTimer=0, surgeTimer=0, surgeActive=false, playing=false, t=0;
+    const promptEl=document.getElementById('prompt');
+    const powerFill=document.getElementById('power-fill');
+    const tensionFill=document.getElementById('tension-fill');
+    const tensionMeter=document.getElementById('tension-meter');
+    const speciesEl=document.getElementById('species');
+    setTimeout(()=>document.getElementById('cutscene').classList.add('hidden'), 2600);
+    document.getElementById('btn-start').onclick=()=>{ document.getElementById('mentor').classList.add('hidden'); playing=true; phase='idle'; toast('Uncle Pete: Soft hands on the surge, hard on the hookset.'); promptEl.textContent='Hold to charge cast…'; };
+    document.getElementById('btn-back').onclick=()=>{ location.href=returnUrl; };
+    function setHold(v){ holding=v; if(!playing)return; if(v&&phase==='idle'){ phase='charging'; power=0; } if(!v&&phase==='charging') cast(); if(v&&phase==='bite') setHook(); if(v&&phase==='waiting'){ phase='idle'; promptEl.textContent='Retrieved · hold to cast again'; } }
+    const castBtn=document.getElementById('btn-cast');
+    castBtn.addEventListener('pointerdown', e=>{ e.preventDefault(); setHold(true); });
+    castBtn.addEventListener('pointerup', ()=>setHold(false));
+    castBtn.addEventListener('pointerleave', ()=>setHold(false));
+    canvas.addEventListener('pointerdown', ()=>setHold(true));
+    canvas.addEventListener('pointerup', ()=>setHold(false));
+    addEventListener('keydown', e=>{ if(e.code==='Space'){ e.preventDefault(); setHold(true); } });
+    addEventListener('keyup', e=>{ if(e.code==='Space') setHold(false); });
+    function pickSpecies(){ const bag=[]; for(const s of SPECIES){ const n=Math.max(1,Math.round(s.rarity*10)); for(let i=0;i<n;i++) bag.push(s); } return bag[Math.floor(Math.random()*bag.length)]; }
+    function cast(){ const p=Math.max(0.2,Math.min(1,power)); phase='flying'; bobber.x=0.35+p*0.45; bobber.y=0.45; promptEl.textContent='Cast…'; setTimeout(()=>{ phase='waiting'; bobber.y=0.62+(1-p)*0.08; biteTimer=1.2+Math.random()*3.5; promptEl.textContent='Watch the bobber…'; speciesEl.textContent='Something under Slim Pond…'; }, 400+p*200); }
+    function setHook(){ fish=pickSpecies(); const lo=fish.weight[0], hi=fish.weight[1]; fish.lbs=+(lo+Math.random()*(hi-lo)).toFixed(1); fish._prog=0; tension=0.25; surgeTimer=0.8+Math.random()*1.2; surgeActive=false; phase='reeling'; promptEl.textContent='Hooked! Reel — ease on surges'; promptEl.className=''; speciesEl.textContent=fish.name+' · fight on'; toast('Uncle Pete: That is a '+fish.name+' — keep the tip up!'); }
+    function land(){ phase='landed'; caught++; document.getElementById('score').textContent=String(caught); rewardCatch(fish, fish.lbs); promptEl.textContent='Landed '+fish.lbs+' lb '+fish.name+'!'; promptEl.className='bite'; speciesEl.textContent=fish.name+' · '+fish.lbs+' lb'; toast('Catfish Cartel approves · +fish · +fillet'); setTimeout(()=>{ phase='idle'; fish=null; tension=0; power=0; promptEl.textContent='Hold to charge cast…'; promptEl.className=''; speciesEl.textContent='Channel cat waiting'; }, 2200); }
+    function snap(){ phase='snapped'; promptEl.textContent='Line snapped!'; promptEl.className='surge'; toast('Uncle Pete: Told you — ease the red.'); setTimeout(()=>{ phase='idle'; fish=null; tension=0; promptEl.textContent='Hold to charge cast…'; promptEl.className=''; }, 1600); }
+    let last=performance.now();
+    function frame(now){ const dt=Math.min(0.05,(now-last)/1000); last=now; t+=dt;
+      if(playing){
+        if(phase==='charging'&&holding){ power=Math.min(1,power+dt*0.85); powerFill.style.width=(power*100)+'%'; promptEl.textContent=power>0.85?'Release!':'Charging…'; }
+        else if(phase!=='charging') powerFill.style.width='0%';
+        if(phase==='waiting'){ biteTimer-=dt; if(biteTimer<0.8&&Math.sin(t*14)>0.92) bobber.y+=0.004; if(biteTimer<=0){ phase='bite'; biteTimer=HOOK_WINDOW; promptEl.textContent='!  SET THE HOOK'; promptEl.className='bite'; bobber.y+=0.03; } }
+        else if(phase==='bite'){ biteTimer-=dt; if(holding) setHook(); else if(biteTimer<=0){ phase='waiting'; biteTimer=1.5+Math.random()*2; promptEl.textContent='Missed the window… wait again'; promptEl.className=''; } }
+        else if(phase==='reeling'&&fish){ surgeTimer-=dt; if(surgeTimer<=0){ surgeActive=!surgeActive; surgeTimer=surgeActive?(0.45+Math.random()*0.55):(0.7+Math.random()*1.1); }
+          const pull=holding?0.55:-0.35; const fishPull=(surgeActive?0.9:0.25)*fish.tension;
+          tension=Math.max(0,Math.min(1.15,tension+(pull*0.5+fishPull*0.35-0.15)*dt));
+          tensionFill.style.width=(Math.min(1,tension)*100)+'%'; tensionMeter.classList.toggle('surge', surgeActive||tension>0.85);
+          if(surgeActive){ promptEl.textContent='SURGE — EASE OFF!'; promptEl.className='surge'; } else { promptEl.textContent=holding?'Reeling…':'Easing…'; promptEl.className=''; }
+          if(tension>=1.05) snap();
+          else if(holding&&!surgeActive){ fish._prog=(fish._prog||0)+dt*0.28*(1-tension*0.5); if(fish._prog>1) land(); }
+        }
+      }
+      const w=innerWidth, h=innerHeight;
+      const g=ctx.createLinearGradient(0,0,0,h); g.addColorStop(0,'#0b1a2e'); g.addColorStop(0.45,'#132a3a'); g.addColorStop(1,'#0a3a2a');
+      ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle='#0f2a18'; for(let i=0;i<12;i++){ const tx=(i/12)*w+Math.sin(t*0.2+i)*4; ctx.beginPath(); ctx.moveTo(tx,h*0.42); ctx.lineTo(tx+28,h*0.42); ctx.lineTo(tx+14,h*0.28); ctx.fill(); }
+      ctx.fillStyle='#0c4a6e'; ctx.beginPath(); ctx.ellipse(w*0.5,h*0.72,w*0.55,h*0.28,0,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='rgba(56,189,248,0.25)'; ctx.lineWidth=1;
+      for(let r=0;r<4;r++){ const rr=20+r*18+Math.sin(t*2+r)*3; ctx.beginPath(); ctx.ellipse(bobber.x*w,bobber.y*h,rr,rr*0.35,0,0,Math.PI*2); ctx.stroke(); }
+      ctx.fillStyle='#3d4a2e'; ctx.fillRect(0,h*0.78,w,h*0.22);
+      const px=w*0.18, py=h*0.76;
+      ctx.fillStyle='#4a5c3a'; ctx.fillRect(px-10,py-40,20,40);
+      ctx.beginPath(); ctx.arc(px,py-50,12,0,Math.PI*2); ctx.fillStyle='#c68642'; ctx.fill();
+      ctx.fillStyle='#ea580c'; ctx.beginPath(); ctx.arc(px,py-58,10,Math.PI,0); ctx.fill();
+      ctx.strokeStyle='#94a3b8'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(px+12,py-30); ctx.lineTo(bobber.x*w,bobber.y*h); ctx.stroke();
+      ctx.fillStyle=phase==='bite'?'#fbbf24':'#f87171'; ctx.beginPath(); ctx.arc(bobber.x*w,bobber.y*h,7,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(bobber.x*w,bobber.y*h-3,4,0,Math.PI*2); ctx.fill();
+      if(phase==='bite'){ ctx.fillStyle='#fbbf24'; ctx.font='bold 28px system-ui'; ctx.textAlign='center'; ctx.fillText('!', bobber.x*w, bobber.y*h-24); }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
