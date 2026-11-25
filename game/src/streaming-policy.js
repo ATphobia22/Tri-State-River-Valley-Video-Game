@@ -63,5 +63,21 @@
       })
     });
   }
-  return Object.freeze({TARGETS,createGovernor,lookAheadDistance,isOnline});
+  // Upper bound for the current PlaneGeometry attributes and batched seam mesh.
+  // Estimate buffer payload only, not driver allocations, textures or JS heap.
+  function terrainTileBytes(segments=16){
+    if(!Number.isInteger(segments)||segments<1||segments>254)throw new RangeError('Invalid terrain segments');
+    return (segments+1)**2*44+segments**2*6*2+4*segments*6*24;
+  }
+  function terrainByteCap({segments=16,maxBytes,generations=3}={}){
+    if(!Number.isSafeInteger(maxBytes)||maxBytes<0||!Number.isInteger(generations)||generations<1||generations>3)
+      throw new RangeError('Invalid terrain geometry budget');
+    return Math.floor(maxBytes/(terrainTileBytes(segments)*generations));
+  }
+  function terrainBudget({userCap,frameCap=userCap,maxBytes,segments=16}={}){
+    if(!Number.isSafeInteger(userCap)||userCap<0||!Number.isSafeInteger(frameCap)||frameCap<0)
+      throw new RangeError('Invalid terrain tile cap');
+    return Math.min(userCap,frameCap,terrainByteCap({segments,maxBytes}));
+  }
+  return Object.freeze({TARGETS,createGovernor,lookAheadDistance,isOnline,terrainTileBytes,terrainByteCap,terrainBudget});
 });
