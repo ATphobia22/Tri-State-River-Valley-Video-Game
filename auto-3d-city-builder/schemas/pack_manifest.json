@@ -1,0 +1,12 @@
+{
+  "package": "auto-3d-city-builder",
+  "tilesetVersion": "2.4.0-gpu-instancing-ion",
+  "features": [
+    "EXT_mesh_gpu_instancing tree_instanced.glb",
+    "EXT_structural_metadata property tables",
+    "feature/property textures",
+    "online-first streaming_policy",
+    "Cesium ion upload helper",
+    "WebGL2 multi-draw BatchedMesh"
+  ]
+}
