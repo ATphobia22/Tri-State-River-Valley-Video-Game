@@ -1,0 +1,9 @@
+{
+  "assetId": null,
+  "name": "Mount Vernon LOD2 Tiles",
+  "type": "3DTILES",
+  "sourceType": "3DTILES",
+  "localTileset": "tiles/mount-vernon/tileset.json",
+  "srid": 26916,
+  "note": "Set CESIUM_ION_TOKEN and run pipeline/cesium_ion_upload.sh to populate assetId"
+}

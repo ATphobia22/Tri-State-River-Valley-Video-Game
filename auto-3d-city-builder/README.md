@@ -1,43 +1,24 @@
-# Auto-3D City Builder — Mount Vernon / River Valley
+# Auto-3D City Builder — Mount Vernon / Tri-State Systems Manager
 
-Production scaffolding for CityGML → 3DCityDB → 3D Tiles → Three/Cesium/Unreal, plus game-facing open world, mini-games, WebMCP tools, and WebM cutscene export.
+Production template for semantic + photoreal 3D/4D digital twins.
 
-## Layout
+**Target:** Mount Vernon, Indiana (Posey County) + Ohio–Wabash River Valley  
+**CRS:** EPSG:26916 (UTM 16N NAD83) · **Vertical:** NAVD88 + GEOID18  
+**Mode:** **Online-first** streaming · offline diorama backup
 
-| Path | Role |
-|------|------|
-| `docker/` | 3DCityDB v5 compose (SRID 26916) |
-| `pipeline/` | CityGML import, LOD2 tiles builder, FZK smoke |
-| `data/` | Footprints GeoJSON, FZK Haus CityGML, river XYZ |
-| `tiles/` | 3D Tiles tileset JSON (GLBs in full zip) |
-| `viewer/` | `open_world.html`, WebMCP, USGS river HUD, hero P0 |
-| `minigames/` | hunt / fish / farm / artifact / historic |
-| `cutscenes/` | FFmpeg libvpx WebM export script |
-| `docs/` | ASCE/MUDDI/LOD2/IFC/HY-World/WebMCP notes |
-| `unreal/` | World Partition notes + GeoJSON spawner |
-| `schemas/city_manifest.json` | TSM CRS / evidence skeleton |
+---
 
 ## Quick start
 
 ```bash
-# optional DB
-cd docker && docker compose up -d
+bash pipeline/run_production_build.sh
+python3 pipeline/build_feature_textures_and_instances.py
 
-# regenerate LOD2 content tiles from footprints
-python3 pipeline/build_lod2_tiles.py
-
-# open world (tiles-first)
-# serve viewer/ over HTTP and open open_world.html
+# Optional Cesium ion
+export CESIUM_ION_TOKEN=your_token
+bash pipeline/cesium_ion_upload.sh
 ```
 
-## Full download package
+**tileset:** `2.4.0-gpu-instancing-ion` · EXT_mesh_gpu_instancing · structural metadata · feature textures
 
-The complete tree including 120 LOD2 GLB content tiles is packaged as:
-
-**`Auto-3D-City-Builder-Mount-Vernon.zip`** (project artifacts / release asset)
-
-Source scaffolding on `main` lives under `auto-3d-city-builder/` (text + data samples + tileset JSON). Run `python3 pipeline/build_lod2_tiles.py` to regenerate GLBs from footprints.
-
-## Policy
-
-Never replace surveyed CityGML / footprints / gage data with generative fill. Neighborhood height averaging is allowed when ≥3 neighbors exist.
+See full README in package; local artifacts/auto-3d-city-builder is source of truth for GLBs.

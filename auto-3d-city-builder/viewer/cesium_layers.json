@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "city": "mount-vernon-in",
+  "srid": 26916,
+  "layers": [
+    {
+      "id": "mv-lod2-local",
+      "name": "Mount Vernon LOD2 (local tiles)",
+      "type": "3dtiles",
+      "url": "../tiles/mount-vernon/tileset.json",
+      "onlineFirst": true
+    },
+    {
+      "id": "mv-ion",
+      "name": "Mount Vernon (Cesium ion)",
+      "type": "3dtiles-ion",
+      "assetId": null,
+      "config": "./cesium_ion.json"
+    },
+    {
+      "id": "osm-buildings",
+      "name": "Cesium OSM Buildings (context)",
+      "type": "3dtiles-ion",
+      "assetId": 96188,
+      "optional": true
+    }
+  ],
+  "terrain": { "provider": "cesium-world-terrain", "ionAssetId": 1 },
+  "viewerDefaults": {
+    "destination": [-87.896, 37.932, 400],
+    "orientation": { "heading": 0.0, "pitch": -0.55, "roll": 0 }
+  }
+}
