@@ -86,8 +86,11 @@
           return bytes(w)*bytes(h)*Math.max(1,bytes(i?.depth))*bpp;
         };
         let size=0;
-        if(t.mipmaps?.length){
-          for(const mip of t.mipmaps)size+=bytes(mip.data?.byteLength)||imageSize(mip);
+        const mipSize=mip=>t.isCompressedTexture?(bytes(mip.data?.byteLength)||imageSize(mip)):Math.max(bytes(mip.data?.byteLength),imageSize(mip));
+        if(t.isCompressedTexture&&images.some(i=>i?.mipmaps?.length)){
+          for(const i of images)for(const mip of i?.mipmaps||[])size+=mipSize(mip);
+        }else if(t.mipmaps?.length){
+          for(const mip of t.mipmaps)size+=mipSize(mip);
         }else{
           for(const i of images){
             let base=imageSize(i);
@@ -145,5 +148,47 @@
     // One root is mandatory even under pressure; callers can report overage.
     return Math.max(1,Math.min(maxTiles,Math.floor((budgetBytes-sharedBytes)/(generations*terrainTileBytes(segments)))));
   }
-  return Object.freeze({TARGETS,createGovernor,lookAheadDistance,isOnline,estimateGpuResources,terrainTileBytes,terrainTileCapacity});
+  // Planning estimates: actual packed layouts, alignment and temporary buffers
+  // must be measured for each inference backend before enabling it.
+  function estimateLocalModel({parameters,weightBits,groupSize=128,groupMetadataBytes=0,layers,kvHeads,headDim,contextTokens,keyBits=16,valueBits=16,scratchBytes=0}){
+    const integer=(n,min)=>Number.isSafeInteger(n)&&n>=min;
+    if(![parameters,groupSize,layers,kvHeads,headDim].every(n=>integer(n,1))||![contextTokens,groupMetadataBytes,scratchBytes].every(n=>integer(n,0))||![weightBits,keyBits,valueBits].every(n=>Number.isFinite(n)&&n>=1&&n<=32))throw new RangeError('invalid model layout');
+    const weightBytes=Math.ceil(parameters*weightBits/8)+Math.ceil(parameters/groupSize)*groupMetadataBytes;
+    const values=layers*kvHeads*headDim*contextTokens;
+    const kvBytes=Math.ceil(values*keyBits/8)+Math.ceil(values*valueBits/8);
+    const totalBytes=weightBytes+kvBytes+scratchBytes;
+    if(!Number.isSafeInteger(totalBytes))throw new RangeError('model estimate overflow');
+    return {weightBytes,kvBytes,scratchBytes,totalBytes};
+  }
+  function createWorkloadBudget({capacityBytes,graphicsReserveBytes}){
+    const valid=n=>Number.isSafeInteger(n)&&n>=0;
+    if(!valid(capacityBytes)||capacityBytes===0||!valid(graphicsReserveBytes)||graphicsReserveBytes>capacityBytes)throw new RangeError('invalid workload budget');
+    let graphicsBytes=0,highWaterBytes=0;
+    const jobs=new Map();
+    function snapshot(){
+      const computeBytes=[...jobs.values()].reduce((a,b)=>a+b,0);
+      const usedBytes=Math.max(graphicsBytes,graphicsReserveBytes)+computeBytes;
+      highWaterBytes=Math.max(highWaterBytes,usedBytes);
+      return {capacityBytes,graphicsReserveBytes,graphicsBytes,computeBytes,usedBytes,availableBytes:Math.max(0,capacityBytes-usedBytes),overBudget:usedBytes>capacityBytes,highWaterBytes,activeJobs:jobs.size};
+    }
+    return Object.freeze({
+      snapshot,setGraphicsBytes(n){if(!valid(n))throw new RangeError('invalid graphics bytes');graphicsBytes=n;return snapshot();},
+      reserve(id,n){if(typeof id!=='string'||!id||!valid(n)||n===0)throw new RangeError('invalid reservation');if(jobs.has(id)||n>snapshot().availableBytes)return false;jobs.set(id,n);snapshot();return true;},
+      release(id){return jobs.delete(id);}
+    });
+  }
+  function createResolutionGovernor({targetFPS=30,minScale=.5,maxScale=1}={}){
+    if(!Number.isFinite(targetFPS)||targetFPS<=0||!Number.isFinite(minScale)||!Number.isFinite(maxScale)||minScale<=0||maxScale>1||minScale>maxScale)throw new RangeError('invalid resolution limits');
+    let scale=maxScale,slow=0,fast=0;
+    const snapshot=()=>({scale,targetFPS,minScale,maxScale});
+    return Object.freeze({snapshot,observe({fps,computeBusy=false,hidden=false}={}){
+      if(hidden||!Number.isFinite(fps)||fps<=0)return snapshot();
+      slow=computeBusy||fps<targetFPS*.8?slow+1:0;
+      fast=!computeBusy&&fps>targetFPS*1.25?fast+1:0;
+      if(slow>=3){scale=Math.max(minScale,Math.round((scale-.1)*100)/100);slow=fast=0;}
+      else if(fast>=8){scale=Math.min(maxScale,Math.round((scale+.05)*100)/100);slow=fast=0;}
+      return snapshot();
+    }});
+  }
+  return Object.freeze({TARGETS,createGovernor,lookAheadDistance,isOnline,estimateGpuResources,terrainTileBytes,terrainTileCapacity,estimateLocalModel,createWorkloadBudget,createResolutionGovernor});
 });
