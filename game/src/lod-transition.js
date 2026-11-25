@@ -44,7 +44,7 @@
    return {built,complete:true};
   }
   function status(){return {pending:!!pending,queued:pending?pending.leaves.length-pending.offset:0,built:pending?pending.offset:0,swapped,cancelled,signature:activeSignature};}
-  return Object.freeze({cancel,schedule,pump,status});
+  return Object.freeze({cancel,schedule,pump,status,pendingMeshes:()=>pending?pending.meshes.slice():[]});
  }
  return Object.freeze({create});
 });
