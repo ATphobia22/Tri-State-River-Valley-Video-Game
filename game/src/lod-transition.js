@@ -19,10 +19,14 @@
   function schedule({signature,leaves,index},immediate=false){
    if(typeof signature!=='string'||!signature||!Array.isArray(leaves)||!leaves.length)throw new TypeError('Invalid LOD job');
    if(signature===activeSignature){cancel();return false;}
-   if(pending&&signature===pending.signature)return false;
+   if(pending&&signature===pending.signature){
+    if(!immediate)return false;
+    while(pending)pump(512);
+    return true;
+   }
    cancel();
    pending={signature,leaves,index,meshes:[],offset:0};
-   if(immediate)pump(Number.MAX_SAFE_INTEGER);
+   if(immediate)while(pending)pump(512);
    return true;
   }
   function pump(limit=batchSize){
