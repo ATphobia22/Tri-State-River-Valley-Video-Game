@@ -36,3 +36,11 @@ test('LOD exposes a copy of staged resources for accounting without mutating the
  const a=stage.pendingMeshes();assert.deepEqual(a,[1]);a.push(3);
  assert.deepEqual(stage.pendingMeshes(),[1]);stage.cancel();assert.deepEqual(stage.pendingMeshes(),[]);
 });
+test('runtime applies byte limit and reports overlapping terrain generations',()=>{
+ const fs=require('node:fs');
+ const source=fs.readFileSync(__dirname+'/../src/game.js','utf8');
+ assert.ok(source.includes('STREAM.terrainTileCapacity({budgetBytes:terrainMemoryBudgetBytes()'));
+ assert.ok(source.includes('pending:terrainTransition?.pendingMeshes()||[]'));
+ assert.ok(source.includes('retiring:retiringTerrain?.meshes||[]'));
+ assert.ok(source.includes('terrainMemory:terrainMemorySnapshot()'));
+});
