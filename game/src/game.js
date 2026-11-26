@@ -33,6 +33,8 @@ let referenceEnabled=Boolean(REF?.imageDataUrl&&GEOREF),referenceImage=null,refe
 const activeRoads=REF&&Array.isArray(REF.roadsPacked)&&REF.roadsPacked.length>400?REF.roadsPacked:DATA.roads;
 const activeBuildings=REF&&Array.isArray(REF.buildingsPacked)&&REF.buildingsPacked.length>1000?REF.buildingsPacked:DATA.buildings;
 const STREAM=window.ValleyStreamingPolicy;
+const hybridBudget=STREAM.createWorkloadBudget({capacityBytes:1024*1024*1024,graphicsReserveBytes:384*1024*1024});
+let localGuide=null;
 let geographicIndex=null;
 let resolutionGovernor=STREAM.createResolutionGovernor({targetFPS:30,minScale:.5,maxScale:1});
 const MOTION=window.ValleyMotion;
@@ -1451,7 +1453,8 @@ function loop(wallStamp){
    triangles:renderer?.info?.render?.triangles||0,x:player.x,z:player.z,scene:probeScene,mode:save.mode,
    quality:visualEffects,terrainTiles:terrainStats.tiles,terrainQueued:terrainTransition?.status().queued||0});
   if(renderer&&stamp-lastGpuTune>4000&&frameProbe.summary().samples>90){
-   const perf=frameProbe.summary(),{scale}=resolutionGovernor.observe({fps:perf.meanFPS,hidden:document.hidden});
+   if(hybridBudget.snapshot().activeJobs){const memory=hybridBudget.setGraphicsBytes(estimateGraphicsForInference());if(memory.overBudget)localGuide?.cancel();}
+    const perf=frameProbe.summary(),{scale}=resolutionGovernor.observe({fps:perf.meanFPS,hidden:document.hidden,computeBusy:hybridBudget.snapshot().activeJobs>0});
    const target=Math.min(1.25,devicePixelRatio||1)*scale;
    if(Math.abs(target-activePixelRatio)>.05){activePixelRatio=target;renderer.setPixelRatio(activePixelRatio);renderer.setSize(innerWidth,innerHeight,false);}
    lastGpuTune=stamp;
@@ -1509,7 +1512,35 @@ async function importRiggedHero(file){
   console.warn('Custom GLB rejected without replacing verified hero:',err);
  }
 }
+function estimateGraphicsForInference(){
+ const pixels=renderer?Math.ceil(innerWidth*activePixelRatio)*Math.ceil(innerHeight*activePixelRatio):0;
+ return Math.ceil(sceneMemorySnapshot().totalBytes+pixels*16);
+}
+function bindLocalGuide(){
+ const L=window.ValleyLocalAI,question=$('localGuideQuestion'),ask=$('localGuideAsk'),cancel=$('localGuideCancel'),status=$('localGuideStatus'),device=$('localGuideDevice'),consent=$('localGuideConsent');
+ if(!L||!question||!ask||!cancel||!status||!device||!consent)return;
+ const supported=window.isSecureContext&&location.protocol!=='file:'&&typeof Worker==='function';
+ device.querySelector('option[value="webgpu"]').disabled=!navigator.gpu;
+ ask.disabled=!supported;
+ if(!supported){status.textContent='Optional model loading requires a secure hosted browser. The offline game remains playable.';return;}
+ localGuide=L.create({budget:hybridBudget,getGraphicsBytes:estimateGraphicsForInference,workerFactory:L.createBrowserWorker,onChange:s=>{
+  const active=['loading','generating'].includes(s.phase);
+  ask.disabled=active;cancel.disabled=!active;status.textContent=s.text||'No model loaded.';
+ }});
+ ask.addEventListener('click',()=>{
+  if(!consent.checked){status.textContent='Enable the optional download consent first.';return;}
+  if(!question.value.trim()){status.textContent='Enter a question about the game.';return;}
+  if(!navigator.onLine){status.textContent='The model may require downloads. Play offline using the map and activity guide.';return;}
+  const backend=device.value;
+  if(backend==='webgpu'&&!navigator.gpu){status.textContent='WebGPU is unavailable. Select CPU / Wasm.';return;}
+  const context=C.STOPS.map(s=>s.title+': '+s.task).join(' ').slice(0,700);
+  localGuide.start({question:question.value,context,device:backend});
+ });
+ cancel.addEventListener('click',()=>localGuide.cancel());
+ window.addEventListener('pagehide',()=>localGuide?.cancel());
+}
 function bindUI(){
+ bindLocalGuide();
  $('pauseToggle').addEventListener('click',()=>setPaused(!paused));
  $('pauseResume').addEventListener('click',()=>setPaused(false));
  $('pauseSave').addEventListener('click',()=>{if(started){persist();toast('Progress saved on this device.');}});
@@ -1596,8 +1627,8 @@ function bindUI(){
    toast('Standalone offline HTML download started. Website play requires an internet connection.');
  });
  $('saveBtn').addEventListener('click',()=>toast(persist()?'💾 Adventure saved on this device.':'Local storage is blocked in this browser.'));
- $('newBtn').addEventListener('click',()=>{if(!confirm('Start a new adventure in this save slot? Your existing progress in this slot will be replaced.'))return;applyState(C.freshSave(save.name));persist();toast('🌿 New family adventure started.');});
- $('returnBtn').addEventListener('click',()=>{closeWorldActivity();closeActivity();persist();stopTour();started=false;$('start').classList.remove('hidden');$('panel').classList.remove('open');});
+ $('newBtn').addEventListener('click',()=>{if(!confirm('Start a new adventure in this save slot? Your existing progress in this slot will be replaced.'))return;localGuide?.cancel();applyState(C.freshSave(save.name));persist();toast('🌿 New family adventure started.');});
+ $('returnBtn').addEventListener('click',()=>{localGuide?.cancel();closeWorldActivity();closeActivity();persist();stopTour();started=false;$('start').classList.remove('hidden');$('panel').classList.remove('open');});
  $('interactBtn').addEventListener('click',interact);$('touchInteract').addEventListener('pointerdown',e=>{e.preventDefault();if(!worldPrimaryAction())interact();});
  $('farmGrid').addEventListener('click',e=>{const b=e.target.closest('button[data-plot]');if(!b)return;const action=C.farmAction(save,Number(b.dataset.plot),Date.now());save=action.save;const result=action.result;
  $('farmNotice').textContent=({'planted':'🌱 Planted! Come back when your corn is ripe.','growing':'🌿 Growing strong. Give it a moment.','harvested':'🌽 Harvest complete! +45 coins • +45 XP','needs-coins':'Collect a discovery stamp to earn seed money.','invalid':'That field is unavailable.'})[result]||result;
