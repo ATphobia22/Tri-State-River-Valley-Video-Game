@@ -51,6 +51,27 @@ with Server(("127.0.0.1", 0), Handler) as server:
                 for setting in ("low", "high", "cinematic"):
                     page.locator("#quality").select_option(setting)
                     assert setting in page.locator("#status").inner_text()
+                # Exercise the actual Babylon game loop, movement and day/night control.
+                page.wait_for_function("window.__RIVER_BABYLON_QA__?.playable === true && window.__RIVER_BABYLON_QA__?.playerPosition", timeout=30000)
+                start_x = page.evaluate("window.__RIVER_BABYLON_QA__.playerPosition.x")
+                if name == "desktop":
+                    page.locator("#babylon-world").click(position={"x": 700, "y": 500})
+                    page.keyboard.down("a")
+                    page.wait_for_timeout(1300)
+                    page.keyboard.up("a")
+                else:
+                    left = page.locator('[data-move="left"]')
+                    left.scroll_into_view_if_needed()
+                    bounds = left.bounding_box()
+                    page.mouse.move(bounds["x"] + bounds["width"]/2, bounds["y"] + bounds["height"]/2)
+                    page.mouse.down()
+                    page.wait_for_timeout(1300)
+                    page.mouse.up()
+                end_x = page.evaluate("window.__RIVER_BABYLON_QA__.playerPosition.x")
+                assert end_x < start_x - 0.1, {"viewport": name, "start": start_x, "end": end_x}
+                page.locator("#cycle-time").click()
+                page.wait_for_function("window.__RIVER_BABYLON_QA__.hour === 21", timeout=10000)
+                assert "night" in page.locator("#adventure-status").inner_text()
                 page.screenshot(path=str(out / f"{name}-webgl2.png"))
                 print(json.dumps({"viewport": name, "context": version, "status": "render-smoke-passed"}))
                 page.close()
