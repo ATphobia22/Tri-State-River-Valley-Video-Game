@@ -9,7 +9,7 @@ import tempfile
 import threading
 from playwright.sync_api import sync_playwright
 
-ROOT = Path(__file__).resolve().parents[1] / "dist-babylon"
+ROOT = Path(os.environ.get("BABYLON_SITE_DIR", Path(__file__).resolve().parents[1] / "dist-babylon"))
 assert (ROOT / "babylon-preview.html").exists(), "Build the Babylon preview before testing"
 
 class Handler(http.server.SimpleHTTPRequestHandler):
