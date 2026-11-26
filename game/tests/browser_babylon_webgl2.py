@@ -38,15 +38,15 @@ with Server(("127.0.0.1", 0), Handler) as server:
                 errors = []
                 page.on("pageerror", lambda err: errors.append(str(err)))
                 page.goto(url, wait_until="networkidle", timeout=60000)
-                page.wait_for_function("document.getElementById('status').textContent.includes('WebGL2')", timeout=30000)
+                page.wait_for_function("document.getElementById('status').textContent.includes('WebGL2') && window.__RIVER_BABYLON_QA__?.frames >= 3 && window.__RIVER_BABYLON_QA__?.activeMeshes > 0", timeout=30000)
                 version = page.evaluate("""() => {
                   const canvas = document.getElementById('babylon-world');
                   const gl = canvas.getContext('webgl2');
                   return {webgl2: gl instanceof WebGL2RenderingContext,
                           width: gl.drawingBufferWidth, height: gl.drawingBufferHeight,
-                          version: gl.getParameter(gl.VERSION)};
+                          version: gl.getParameter(gl.VERSION), render: window.__RIVER_BABYLON_QA__};
                 }""")
-                assert version["webgl2"] and version["width"] > 0 and version["height"] > 0, version
+                assert version["webgl2"] and version["width"] > 0 and version["height"] > 0 and version["render"]["frames"] >= 3 and version["render"]["meshCount"] >= 25 and version["render"]["activeMeshes"] > 0, version
                 assert not errors, errors
                 for setting in ("low", "high", "cinematic"):
                     page.locator("#quality").select_option(setting)
