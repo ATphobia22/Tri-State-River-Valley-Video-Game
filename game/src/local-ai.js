@@ -62,7 +62,7 @@
     const {question,context,device}=data;
     if(typeof question!=='string'||question.length>256||typeof context!=='string'||context.length>700||!['webgpu','wasm'].includes(device))throw Error('invalid request');
     self.postMessage({kind:'status',phase:'loading'});
-    const {pipeline,env}=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/dist/transformers.min.js');
+    const {pipeline,env}=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1');
     env.allowLocalModels=false;
     env.useBrowserCache=true;
     if(env.backends?.onnx?.wasm){
