@@ -1519,6 +1519,10 @@ function estimateGraphicsForInference(){
 function bindLocalGuide(){
  const L=window.ValleyLocalAI,question=$('localGuideQuestion'),ask=$('localGuideAsk'),cancel=$('localGuideCancel'),status=$('localGuideStatus'),device=$('localGuideDevice'),consent=$('localGuideConsent');
  if(!L||!question||!ask||!cancel||!status||!device||!consent)return;
+ const enabled=new URLSearchParams(location.search).get('localAiPilot')==='1';
+ const pilotPanel=question.closest('.field');
+ if(pilotPanel)pilotPanel.hidden=!enabled;
+ if(!enabled)return; // Real-device and third-party asset verification are not yet release-gated.
  const supported=window.isSecureContext&&location.protocol!=='file:'&&typeof Worker==='function';
  device.querySelector('option[value="webgpu"]').disabled=!navigator.gpu;
  ask.disabled=!supported;
