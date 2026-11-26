@@ -42,23 +42,33 @@ export function createAssetTransport({origin=globalThis.location?.origin,fetchIm
   if(url.hash)throw Error('URL fragments not allowed');
   return url.href;
  }
- async function readRange(input,start,length,{signal}={}){
+ async function readRange(input,start,length,{signal,requireVersion=false,etag,totalBytes}={}){
   const url=urlFor(input);
   if(!Number.isSafeInteger(start)||start<0||!Number.isSafeInteger(length)||length<1||length>maxBytes||!Number.isSafeInteger(start+length-1))throw Error('invalid range or max byte budget');
   const end=start+length-1;
-  const response=await fetchImpl(url,{headers:{Range:'bytes='+start+'-'+end},signal});
+  const strong=value=>typeof value==='string'&&/^"[^"\r\n]*"$/.test(value);
+  if(etag!==undefined&&!strong(etag))throw Error('strong archive version required');
+  if(totalBytes!==undefined&&(!Number.isSafeInteger(totalBytes)||totalBytes<=end))throw Error('invalid archive total');
+  const headers={Range:'bytes='+start+'-'+end};
+  if(etag!==undefined)headers['If-Match']=etag;
+  const response=await fetchImpl(url,{headers,signal,redirect:'error'});
+  if(response.redirected||(response.url&&response.url!==url))throw Error('redirect prohibited');
   if(response.status!==206)throw Error('HTTP 206 required for byte range');
   const header=response.headers.get('Content-Range')||'';
   const m=/^bytes (\d+)-(\d+)\/(\d+|\*)$/.exec(header);
-  if(!m||Number(m[1])!==start||Number(m[2])!==end)throw Error('incorrect Content-Range');
+  if(!m||Number(m[1])!==start||Number(m[2])!==end||!Number.isSafeInteger(Number(m[3]))||Number(m[3])<=end)throw Error('incorrect Content-Range');
+  const total=Number(m[3]),version=response.headers.get('ETag');
+  if((requireVersion||etag!==undefined)&&!strong(version))throw Error('strong archive version required');
+  if((etag!==undefined&&version!==etag)||(totalBytes!==undefined&&total!==totalBytes))throw Error('archive version changed');
   const bytes=await limitedRead(response,length);
   if(bytes.length!==length)throw Error('incorrect range byte count');
-  return {url,bytes,byteLength:bytes.length,verified:false,trust:'UNVERIFIED_RANGE'};
+  return {url,bytes,byteLength:bytes.length,verified:false,trust:'UNVERIFIED_RANGE',etag:version,totalBytes:total};
  }
  async function fetchVerified(input,{sha256,expectedBytes,kind,signal}={}){
   const url=urlFor(input);
   if(!SHA_RE.test(sha256||'')||!Number.isSafeInteger(expectedBytes)||expectedBytes<1||expectedBytes>maxBytes)throw Error('sha256 digest and bounded expectedBytes required');
-  const response=await fetchImpl(url,{signal});
+  const response=await fetchImpl(url,{signal,redirect:'error'});
+  if(response.redirected||(response.url&&response.url!==url))throw Error('redirect prohibited');
   if(response.status!==200)throw Error('HTTP 200 required for complete asset');
   const bytes=await limitedRead(response,expectedBytes);
   if(bytes.length!==expectedBytes)throw Error('asset expected byte length mismatch');
