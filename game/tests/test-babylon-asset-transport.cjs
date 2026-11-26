@@ -31,3 +31,24 @@ test('bounded range reader reports unverified slice rather than trusted asset',a
  assert.equal(item.verified,false);assert.equal(item.byteLength,4);assert.equal(item.trust,'UNVERIFIED_RANGE');
  await assert.rejects(()=>t.readRange('/archive.pmtiles',0,17),/max/i);
 });
+
+test('rejects redirects and impossible archive totals',async()=>{
+ const {createAssetTransport}=await modulePromise;
+ const t=createAssetTransport({origin:'https://game.example',fetchImpl:async(url,options)=>{
+  assert.equal(options.redirect,'error');
+  return new Response(new Uint8Array(4),{status:206,headers:{'Content-Range':'bytes 0-3/3'}});
+ }});
+ await assert.rejects(()=>t.readRange('/a.pmtiles',0,4),/Content-Range/);
+});
+test('archive session requires a strong validator and rejects version changes',async()=>{
+ const {createAssetTransport}=await modulePromise;
+ let calls=0;
+ const t=createAssetTransport({origin:'https://game.example',fetchImpl:async(url,options)=>{
+  calls++;
+  if(calls===2)assert.equal(options.headers['If-Match'],'"v1"');
+  return new Response(new Uint8Array(4),{status:206,headers:{'Content-Range':'bytes 0-3/100','ETag':calls===1?'"v1"':'"v2"'}});
+ }});
+ const first=await t.readRange('/a.pmtiles',0,4,{requireVersion:true});
+ assert.equal(first.etag,'"v1"');assert.equal(first.totalBytes,100);
+ await assert.rejects(()=>t.readRange('/a.pmtiles',0,4,{requireVersion:true,etag:first.etag,totalBytes:first.totalBytes}),/version/i);
+});
