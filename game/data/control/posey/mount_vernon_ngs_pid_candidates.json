@@ -1,0 +1,73 @@
+{
+  "schema": "river-valley-ngs-candidate-inventory/v1",
+  "area": "Mount Vernon, Posey County, Indiana",
+  "gate_state": "REFERENCE_ONLY",
+  "modeling_eligible": false,
+  "source": "NOAA NGS Passive Mark Registry; individual datasheets require independent retrieval and review",
+  "retrieved_and_verified": false,
+  "candidate_pids": [
+    "HA1083",
+    "HA1080",
+    "HA1084",
+    "HA1085",
+    "AP2992"
+  ],
+  "records": [
+    {
+      "pid": "HA1083",
+      "datasheet_url": "https://geodesy.noaa.gov/datasheets/passive-marks/index.html?PID=HA1083",
+      "coordinates": null,
+      "orthometric_height_m": null,
+      "geoid_model": null,
+      "order_class": null,
+      "authority_status": "UNVERIFIED_CANDIDATE",
+      "modeling_eligible": false
+    },
+    {
+      "pid": "HA1080",
+      "datasheet_url": "https://geodesy.noaa.gov/datasheets/passive-marks/index.html?PID=HA1080",
+      "coordinates": null,
+      "orthometric_height_m": null,
+      "geoid_model": null,
+      "order_class": null,
+      "authority_status": "UNVERIFIED_CANDIDATE",
+      "modeling_eligible": false
+    },
+    {
+      "pid": "HA1084",
+      "datasheet_url": "https://geodesy.noaa.gov/datasheets/passive-marks/index.html?PID=HA1084",
+      "coordinates": null,
+      "orthometric_height_m": null,
+      "geoid_model": null,
+      "order_class": null,
+      "authority_status": "UNVERIFIED_CANDIDATE",
+      "modeling_eligible": false
+    },
+    {
+      "pid": "HA1085",
+      "datasheet_url": "https://geodesy.noaa.gov/datasheets/passive-marks/index.html?PID=HA1085",
+      "coordinates": null,
+      "orthometric_height_m": null,
+      "geoid_model": null,
+      "order_class": null,
+      "authority_status": "UNVERIFIED_CANDIDATE",
+      "modeling_eligible": false
+    },
+    {
+      "pid": "AP2992",
+      "datasheet_url": "https://geodesy.noaa.gov/datasheets/passive-marks/index.html?PID=AP2992",
+      "coordinates": null,
+      "orthometric_height_m": null,
+      "geoid_model": null,
+      "order_class": null,
+      "authority_status": "UNVERIFIED_CANDIDATE",
+      "modeling_eligible": false
+    }
+  ],
+  "notes": [
+    "PIDs supplied as candidates; NOT independently confirmed against full current NGS datasheets.",
+    "NOAA NGS level benchmarks may publish SCALED horizontal positions; reject them from horizontal control.",
+    "A datasheet URL alone is not proof of mark condition, an adjusted position, GNSS recovery or GEOID18 separation.",
+    "No invented coordinate or height values are included."
+  ]
+}
