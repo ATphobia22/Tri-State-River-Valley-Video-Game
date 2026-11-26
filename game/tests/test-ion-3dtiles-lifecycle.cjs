@@ -1,0 +1,55 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const {pathToFileURL}=require('node:url');
+const path=require('node:path');
+const adapter=import(pathToFileURL(path.resolve(__dirname,'../babylon-preview/ion-3dtiles-adapter.mjs')).href);
+const candidate={assetId:6204792,type:'3DTILES',status:'ION_COMPLETE_METADATA_ONLY'};
+const admission={admitted:true};
+const tick=()=>new Promise(resolve=>setImmediate(resolve));
+
+test('superseded in-flight tiles cannot replace the newer active generation',async()=>{
+ const {createTileController}=await adapter;
+ const requests=[];const disposed=[];
+ const controller=createTileController({loader:(_item,{signal})=>new Promise(resolve=>requests.push({resolve,signal}))});
+ const first=controller.load(candidate,{registration:admission});
+ await tick();
+ const second=controller.load(candidate,{registration:admission});
+ await tick();
+ assert.equal(requests.length,2);
+ assert.equal(requests[0].signal.aborted,true);
+ requests[1].resolve({dispose:()=>{disposed.push('new');}});
+ await second;
+ requests[0].resolve({dispose:()=>{disposed.push('stale');}});
+ await assert.rejects(first,/aborted|superseded/);
+ assert.deepEqual(disposed,['stale']);
+ assert.equal(controller.isLoaded,true);
+ await controller.unload();
+ assert.deepEqual(disposed,['stale','new']);
+});
+test('unload aborts pending network work and disposes late result',async()=>{
+ const {createTileController}=await adapter;
+ const requests=[];let disposed=0;
+ const controller=createTileController({loader:(_,{signal})=>new Promise(resolve=>requests.push({resolve,signal}))});
+ const loading=controller.load(candidate,{registration:admission});
+ await tick();
+ await controller.unload();
+ assert.equal(requests[0].signal.aborted,true);
+ requests[0].resolve({dispose:()=>{disposed++;}});
+ await assert.rejects(loading,/aborted|superseded/);
+ assert.equal(disposed,1);
+ assert.equal(controller.isLoaded,false);
+});
+test('caller abort after successful load releases the active resource',async()=>{
+ const {createTileController}=await adapter;
+ let disposed=0;
+ const signal=new AbortController();
+ const controller=createTileController({loader:async()=>({dispose:()=>{disposed++;}})});
+ await controller.load(candidate,{registration:admission,signal:signal.signal});
+ assert.equal(controller.isLoaded,true);
+ signal.abort();
+ await tick();
+ assert.equal(controller.isLoaded,false);
+ assert.equal(disposed,1);
+ await controller.unload();
+ assert.equal(disposed,1);
+});

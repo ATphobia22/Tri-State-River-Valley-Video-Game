@@ -8,6 +8,7 @@ on:
       - 'game/tests/test_pdal_ept_pipelines.py'
       - 'game/tests/test_verify_ion_assets.py'
       - 'game/tests/test-ion-3dtiles-adapter.cjs'
+      - 'game/tests/test-ion-3dtiles-lifecycle.cjs'
       - 'game/data/geographic/source-registry.json'
       - '.github/workflows/geographic-candidate-contracts.yml'
   pull_request:
@@ -31,6 +32,6 @@ jobs:
       - name: Python acquisition and ion contract tests
         run: python -m unittest discover -s tests -p 'test_pdal_ept_pipelines.py' -v && python -m unittest discover -s tests -p 'test_verify_ion_assets.py' -v
       - name: Babylon ion lifecycle tests
-        run: node --test tests/test-ion-3dtiles-adapter.cjs
+        run: node --test tests/test-ion-3dtiles-adapter.cjs tests/test-ion-3dtiles-lifecycle.cjs
       - name: Validate source registry
         run: python -m json.tool data/geographic/source-registry.json >/dev/null
