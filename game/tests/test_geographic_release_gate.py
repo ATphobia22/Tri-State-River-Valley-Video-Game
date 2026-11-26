@@ -35,7 +35,9 @@ class ReleaseGateTests(unittest.TestCase):
   self.assertFalse(validate_release(m,self.root)['publishable'])
  def test_missing_vertical_transform_rejected(self):
   m=self.manifest();del m['registration']['verticalTransformationReceipt']
-  self.assertFalse(validate_release(m,self.root)['publishable'])
+  report=validate_release(m,self.root)
+  self.assertFalse(report['evidence_screen_passed'])
+  self.assertTrue(any('verticalTransformationReceipt' in e for e in report['errors']))
  def test_missing_control_evidence_rejected(self):
   m=self.manifest();del m['registration']['controlPointReceipt']
   self.assertFalse(validate_release(m,self.root)['publishable'])
@@ -47,7 +49,9 @@ class ReleaseGateTests(unittest.TestCase):
   self.assertFalse(validate_release(m,self.root)['publishable'])
  def test_requires_complete_semantics_and_independent_review(self):
   m=self.manifest();m['semantic']['citydbMajor']=4;m['review']['independent']=False
-  self.assertFalse(validate_release(m,self.root)['publishable'])
+  report=validate_release(m,self.root)
+  self.assertFalse(report['evidence_screen_passed'])
+  self.assertTrue(any('semantic:' in e for e in report['errors']))
  def test_unsigned_or_missing_receipts_never_promote(self):
   self.assertFalse(validate_release(self.manifest(),self.root)['publishable'])
  def test_fully_present_synthetic_receipts_still_require_real_provenance(self):
@@ -55,6 +59,12 @@ class ReleaseGateTests(unittest.TestCase):
    (self.root/(p+'.json')).write_bytes(b'validated synthetic asset bytes')
   m=self.manifest()
   self.assertFalse(validate_release(m,self.root)['publishable'])
+ def test_malformed_manifest_never_crashes_or_promotes(self):
+  for name in (['sample.glb'],{'unexpected':'mapping'},17,None):
+   m=self.manifest();m['assets'][0]['path']=name
+   report=validate_release(m,self.root)
+   self.assertFalse(report['evidence_screen_passed'])
+   self.assertFalse(report['publishable'])
  def test_errors_are_returned_without_claiming_certification(self):
   x=validate_release({},self.root)
   self.assertEqual(x['status'],'BLOCKED')
