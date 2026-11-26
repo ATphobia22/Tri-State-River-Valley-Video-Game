@@ -3,6 +3,7 @@ import {
  DirectionalLight, MeshBuilder, PBRMaterial, ShadowGenerator
 } from '@babylonjs/core';
 import {resolve} from './quality.mjs';
+import {installPlayable} from './playable.mjs';
 const canvas=document.getElementById('babylon-world');
 const status=document.getElementById('status');
 const quality=document.getElementById('quality');
@@ -50,6 +51,8 @@ function applyQuality(name){
 quality.addEventListener('change',()=>applyQuality(quality.value));
 applyQuality(quality.value);
 const qa={frames:0,meshCount:scene.meshes.length,activeMeshes:0};
+const adventure=installPlayable({scene,engine,camera,qa});
+qa.meshCount=scene.meshes.length;
 window.__RIVER_BABYLON_QA__=qa;
 engine.runRenderLoop(()=>{
  scene.render();
