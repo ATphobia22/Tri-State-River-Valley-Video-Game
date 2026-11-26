@@ -61,3 +61,10 @@ test('worker construction failure releases its reservation and retains determini
  assert.equal(ai.snapshot().phase,'fallback');
  assert.ok(ai.snapshot().text.includes('Test scene'));
 });
+
+test('unverified model stays behind a developer-only pilot switch',()=>{
+ const fs=require('node:fs'),root=__dirname+'/../';
+ const source=fs.readFileSync(root+'src/game.js','utf8');
+ assert.ok(source.includes("new URLSearchParams(location.search).get('localAiPilot')==='1'"));
+ assert.ok(source.includes('pilotPanel.hidden=!enabled'));
+});
