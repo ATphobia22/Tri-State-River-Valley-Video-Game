@@ -1,0 +1,41 @@
+{
+  "schema": "river-valley-geodetic-gate-policy/v1",
+  "domain": "POSEY_GCP_GEOGRAPHIC_ADMISSION",
+  "enforcement": "HARD_BLOCK",
+  "allow_build_flag_bypass": false,
+  "modeling_requires_independently_verified_control": true,
+  "required_geoid": "GEOID18",
+  "horizontal_datum": "NAD83(2011)",
+  "engineering_projection_requires_separate_transform": "EPSG:2966",
+  "vertical_datum": "NAVD88",
+  "vertical_crs": "EPSG:5703",
+  "minimum_distinct_recovered_monuments": 3,
+  "forbidden_loc_methods": [
+    "NEAREST_ROAD",
+    "ROAD_CENTERLINE",
+    "GEOCODED_ADDRESS",
+    "DEM_EXTRACTED",
+    "TIGER",
+    "INTERPOLATED",
+    "SCALED_MAP"
+  ],
+  "routes": [
+    {
+      "source": "game/reference/mount-vernon/control-points.geojson",
+      "tier": "QUARANTINED",
+      "failure_class": "SUBSTANTIVE_PROVENANCE_DEFECT",
+      "modeling_eligible": false,
+      "allow_vertical_rmse": false,
+      "allow_3dtiles_registration": false
+    },
+    {
+      "source": "game/data/control/posey/mount_vernon_ngs_pid_candidates.json",
+      "tier": "REFERENCE_ONLY",
+      "modeling_eligible": false,
+      "allow_vertical_rmse": false,
+      "allow_3dtiles_registration": false
+    }
+  ],
+  "other_quadrangles": "EVALUATE_INDIVIDUALLY_NO_DEFAULT_PASSED",
+  "remediation": "Acquire current NGS/INDOT/IDNR/County Surveyor datasheets, official source bytes and SHA-256, order and class, adjusted NAD83(2011) epoch and NAVD88 leveling, compatible GEOID18 evidence, monument recovery, independently verified checkpoint residuals; then separately authorize downstream modeling."
+}
