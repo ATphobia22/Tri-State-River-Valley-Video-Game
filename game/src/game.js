@@ -52,7 +52,7 @@ const streamingGovernor=STREAM?STREAM.createGovernor({maxTiles:innerWidth<781?11
 let currentTravelSpeed=0;
 const G=window.THREE;
 const POLISH=window.ValleyVisualPolish,BIOME=window.ValleyBiomeStreamer,LODPLAN=window.ValleyLODTransition,GRAPHICS=window.ValleyGraphicsQuality,ASSET_CODEC=window.ValleyCompressedAssets;
-const RIVER_WATER=window.ValleyRiverWater,ROOFS=window.ValleyBuildingRoofs,LANDMARKS=window.ValleyLandmarkAnchors;
+const RIVER_WATER=window.ValleyRiverWater,ROOFS=window.ValleyBuildingRoofs,LANDMARKS=window.ValleyLandmarkAnchors,BUILDING_MATERIALS=window.ValleyBuildingMaterials;
 const CINEMATIC=window.ValleyCinematicLighting,DRESS=window.ValleyCinematicSetDressing,SKILLS=window.ValleyGameplaySkills,CREATURES=window.ValleyCreatures;
 const ACCESS=window.ValleyLandmarkAccess;
 const CUSTOM_HERO=window.ValleyCustomHero,CAST_WARDROBE=window.ValleyCastWardrobe;
@@ -450,7 +450,11 @@ const renderWorkers=window.ValleyRenderWorkers;
 function buildBuildings(){
  buildingItems=[];
  activeBuildings.forEach((b,i)=>{const footprint=GEO.buildingFootprint(b,LIMIT);if(footprint)buildingItems.push({...footprint,i});});
- buildingMesh=new G.InstancedMesh(new G.BoxGeometry(1,1,1),new G.MeshStandardMaterial({color:0xffffff,roughness:.89,metalness:0}),buildingItems.length);
+ const massingMaterial=BUILDING_MATERIALS.threeMaterial(G,'concrete');
+ // Per-instance facade palettes multiply the material's base color; keep it neutral.
+ massingMaterial.color.setHex(0xffffff);
+ massingMaterial.userData.colorProvenance='procedural-per-instance-palette';
+ buildingMesh=new G.InstancedMesh(new G.BoxGeometry(1,1,1),massingMaterial,buildingItems.length);
  const col=new G.Color(),colors=[0xdac5a5,0xb7afa2,0xb67861,0xbdb9ad,0x969f9a,0xd7b08a];
  buildingItems.forEach((b,i)=>buildingMesh.setColorAt(i,col.setHex(colors[b.i%colors.length])));
  // Packed footprint geometry lacks object IDs; match by the authoritative
