@@ -1,8 +1,8 @@
 import {
  Engine, Scene, ArcRotateCamera, Vector3, Color3, Color4, HemisphericLight,
- DirectionalLight, MeshBuilder, StandardMaterial, PBRMaterial, ShadowGenerator
+ DirectionalLight, MeshBuilder, PBRMaterial, ShadowGenerator
 } from '@babylonjs/core';
-import {SETTINGS,resolve} from './quality.mjs';
+import {resolve} from './quality.mjs';
 const canvas=document.getElementById('babylon-world');
 const status=document.getElementById('status');
 const quality=document.getElementById('quality');
@@ -21,7 +21,7 @@ camera.lowerRadiusLimit=12;camera.upperRadiusLimit=140;
 new HemisphericLight('ambient',new Vector3(0,1,0),scene).intensity=.75;
 const sun=new DirectionalLight('sun',new Vector3(-.5,-1,-.35),scene);
 sun.position=new Vector3(50,90,35);sun.intensity=2;
-const shadows=new ShadowGenerator(1024,sun);
+let shadows=new ShadowGenerator(1024,sun);
 shadows.usePercentageCloserFiltering=true;
 const ground=MeshBuilder.CreateGround('illustrative-ground',{width:120,height:120,subdivisions:4},scene);
 const soil=new PBRMaterial('soil',scene);soil.albedoColor=new Color3(.32,.43,.29);soil.roughness=.95;ground.material=soil;ground.receiveShadows=true;
@@ -37,7 +37,12 @@ for(let i=0;i<24;i++){
 function applyQuality(name){
  const p=resolve(name);
  engine.setHardwareScalingLevel(p.hardwareScaling);
- shadows.mapSize=p.shadowMap;
+ if(shadows.getShadowMap()?.getSize().width!==p.shadowMap){
+  shadows.dispose();
+  shadows=new ShadowGenerator(p.shadowMap,sun);
+  shadows.usePercentageCloserFiltering=true;
+  for(const mesh of scene.meshes) if(mesh.name.startsWith('illustrative-block-')) shadows.addShadowCaster(mesh);
+ }
  status.textContent='Babylon.js WebGL'+engine.webGLVersion+' · '+p.name+
   ' · illustrative demo only · registered tiles: 0';
  return p;
