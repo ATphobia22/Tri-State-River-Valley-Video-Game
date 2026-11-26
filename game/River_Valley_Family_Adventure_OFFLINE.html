@@ -342,7 +342,7 @@ limitations under the License.</script></head><body>
 <small>Scout follows your adventures; petting and completing fetch earn a small bonding reward with cooldowns.</small>
 </section>
 <section aria-label="Cinematic director" aria-modal="false" class="hud glass" id="cinemaPanel" role="dialog"><div class="cinemaHeading"><div><small class="eyebrow">VFX SUPERVISOR DESK</small><h2>Cinematic Director</h2></div><button aria-label="Close cinematic director" class="closeX" id="closeCinema">×</button></div><p>Choose a lighting look, layer atmospheric effects, and balance the device's performance.</p><div class="field"><label for="cineLook">Virtual environment / lighting look</label><select id="cineLook"><option value="natural">Natural Countryside</option><option value="golden">Golden Hour Riverfront</option><option value="blue">Blue Hour Reflections</option><option value="storm">Stormfront Over the Ohio</option><option value="lantern">Lanterns &amp; Fireflies</option></select></div><div class="field"><label for="cineQuality">Cinematic effect budget</label><select id="cineQuality"><option value="lite">Battery Saver · 16 effects</option><option value="balanced">Balanced · 55 effects</option><option value="cinematic">Showcase · 110 effects</option></select></div><div class="field"><label for="cineStrength">Atmosphere intensity <b id="cineStrengthLabel">72%</b></label><input id="cineStrength" max="100" min="0" step="1" type="range" value="72"/></div><div class="cinemaChecks"><label><input id="cineGrain" type="checkbox"/> Fine film grain (showcase)</label><label><input id="cineStats" type="checkbox"/> Live FPS and draw calls</label></div><div class="cinemaButtons"><button id="cineGolden">🌅 Sunset shot</button><button id="cineNight">✨ Night shot</button><button id="cineReset">↻ Reset grade</button><button id="cineFly">🎥 Play 3D cinematic tour</button><button id="openStage">🌄 Open scenic backdrop studio</button></div><p class="cinemaNote">Effects run in 2D even when 3D GPU graphics are unavailable. No cloud rendering or personal data is uploaded.</p></section>
-<section aria-label="Game settings" class="hud glass" id="panel"><div style="display:flex;align-items:center;justify-content:space-between"><h2>Adventure settings</h2><button class="closeX" id="closePanel">×</button></div><div class="field"><label for="weather">Weather</label><select id="weather"><option value="clear">☀️ Clear skies</option><option value="rain">🌧️ Summer rain</option><option value="mist">🌫️ River mist</option></select></div><div class="field"><label for="season">Season</label><select id="season"><option value="spring">🌷 Spring</option><option value="summer">🌾 Summer</option><option value="autumn">🍂 Autumn</option><option value="winter">❄️ Winter</option></select></div><div class="field"><label for="time">Time of day <span id="timeLabel">5:30 PM</span></label><input id="time" max="24" min="0" step="0.25" type="range" value="17.5"/></div><div class="field"><label for="quality">World view</label><select id="quality"><option value="3d">3D countryside</option><option value="2d">2D illustrated atlas</option></select></div><div class="field"><label for="referenceOverlay">Real Mount Vernon overhead reference</label><label style="display:flex;align-items:center;gap:10px"><input id="referenceOverlay" style="width:auto" type="checkbox"/> IGIO aerial + digitized roads (reference only)</label><small id="referenceStatus" style="display:block;color:var(--muted);margin-top:5px">Reference imagery loads when available; heights remain unverified.</small><p id="locationCode"></p></div><div class="field"><label for="terrainDetail">Terrain detail / LOD</label><select id="terrainDetail"><option value="auto">Adaptive · quadtree screen error</option><option value="high">High · detailed quadtree</option><option value="medium">Medium · balanced quadtree</option><option value="low">Low · performance quadtree</option></select></div><div class="field"><label for="visualEffects">World graphics quality</label><select id="visualEffects"><option value="lite">Battery Saver · fewer trees, no meadow</option><option value="full">Balanced · instanced meadow</option><option value="cinematic">Showcase · denser scenery</option></select><small id="graphicsQualityStatus" role="status">Offline instanced foliage · no extra model downloads</small></div><div class="field"><label for="slot">Family save slot</label><select id="slot"><option value="0">Adventure 1</option><option value="1">Adventure 2</option><option value="2">Adventure 3</option></select></div><div class="row"><button id="petBtn">🐕 Scout: ON</button><button id="soundBtn">🔊 Sound</button><button id="exportPerf">📊 Export iPhone FPS</button></div><div class="row" style="margin-top:9px"><button class="pill" id="installOfflineBtn">📲 Offline download / help</button><small id="offlineStatus">Web play needs internet · downloads work offline · saves are local</small><button id="saveBtn">💾 Save</button><button id="newBtn">↻ New game</button></div><div class="row" style="margin-top:9px"><button id="heroStudioOpen">👤 Inspect the Explorer</button><button id="openCinema">🎥 Open Cinematic Director</button></div><small aria-live="polite" id="heroRuntimeStatus" role="status" style="display:block;margin-top:7px;color:var(--muted)">Checking 3D character availability…</small><div class="row" style="margin-top:9px"><button id="returnBtn">🏠 Title screen</button></div><p style="font-size:10px;margin:12px 0 0">Saves live only in this browser on this device. The countryside is inspired by real places; this preview is a game, not a surveyed or navigational map.</p></section>
+<section aria-label="Game settings" class="hud glass" id="panel"><div style="display:flex;align-items:center;justify-content:space-between"><h2>Adventure settings</h2><button class="closeX" id="closePanel">×</button></div><div class="field"><label for="weather">Weather</label><select id="weather"><option value="clear">☀️ Clear skies</option><option value="rain">🌧️ Summer rain</option><option value="mist">🌫️ River mist</option></select></div><div class="field"><label for="season">Season</label><select id="season"><option value="spring">🌷 Spring</option><option value="summer">🌾 Summer</option><option value="autumn">🍂 Autumn</option><option value="winter">❄️ Winter</option></select></div><div class="field"><label for="time">Time of day <span id="timeLabel">5:30 PM</span></label><input id="time" max="24" min="0" step="0.25" type="range" value="17.5"/></div><div class="field"><label for="quality">World view</label><select id="quality"><option value="3d">3D countryside</option><option value="2d">2D illustrated atlas</option></select></div><div class="field"><label for="referenceOverlay">Real Mount Vernon overhead reference</label><label style="display:flex;align-items:center;gap:10px"><input id="referenceOverlay" style="width:auto" type="checkbox"/> IGIO aerial + digitized roads (reference only)</label><small id="referenceStatus" style="display:block;color:var(--muted);margin-top:5px">Reference imagery loads when available; heights remain unverified.</small><p id="locationCode"></p></div><div class="field"><label for="terrainDetail">Terrain detail / LOD</label><select id="terrainDetail"><option value="auto">Adaptive · quadtree screen error</option><option value="high">High · detailed quadtree</option><option value="medium">Medium · balanced quadtree</option><option value="low">Low · performance quadtree</option></select></div><div class="field"><label for="visualEffects">World graphics quality</label><select id="visualEffects"><option value="lite">Battery Saver · fewer trees, no meadow</option><option value="full">Balanced · instanced meadow</option><option value="cinematic">Showcase · denser scenery</option></select><small id="graphicsQualityStatus" role="status">Offline instanced foliage · no extra model downloads</small></div><div class="field" hidden=""><label for="localGuideQuestion">Optional local AI game guide · experimental</label><small>On request only: downloads a 181 MB model plus runtime from Hugging Face and jsDelivr. Answers may be inaccurate. No saved-game changes.</small><input id="localGuideQuestion" maxlength="256" placeholder="Ask about the game world" type="text"/><label for="localGuideDevice">Inference backend</label><select id="localGuideDevice"><option value="wasm">CPU / Wasm</option><option value="webgpu">WebGPU (supported devices only)</option></select><label><input id="localGuideConsent" type="checkbox"/> Allow optional model and runtime downloads</label><div class="row"><button id="localGuideAsk" type="button">Ask local guide</button><button disabled="" id="localGuideCancel" type="button">Cancel</button></div><p aria-live="polite" id="localGuideStatus" role="status">No model loaded.</p></div><div class="field"><label for="slot">Family save slot</label><select id="slot"><option value="0">Adventure 1</option><option value="1">Adventure 2</option><option value="2">Adventure 3</option></select></div><div class="row"><button id="petBtn">🐕 Scout: ON</button><button id="soundBtn">🔊 Sound</button><button id="exportPerf">📊 Export iPhone FPS</button></div><div class="row" style="margin-top:9px"><button class="pill" id="installOfflineBtn">📲 Offline download / help</button><small id="offlineStatus">Web play needs internet · downloads work offline · saves are local</small><button id="saveBtn">💾 Save</button><button id="newBtn">↻ New game</button></div><div class="row" style="margin-top:9px"><button id="heroStudioOpen">👤 Inspect the Explorer</button><button id="openCinema">🎥 Open Cinematic Director</button></div><small aria-live="polite" id="heroRuntimeStatus" role="status" style="display:block;margin-top:7px;color:var(--muted)">Checking 3D character availability…</small><div class="row" style="margin-top:9px"><button id="returnBtn">🏠 Title screen</button></div><p style="font-size:10px;margin:12px 0 0">Saves live only in this browser on this device. The countryside is inspired by real places; this preview is a game, not a surveyed or navigational map.</p></section>
 <section aria-label="Game paused and player settings" aria-modal="true" hidden="" id="pauseOverlay" role="dialog">
 <div class="pauseCard">
 <div class="eyebrow">River Valley · your adventure</div>
@@ -10132,6 +10132,95 @@ return Object.freeze({create,extractEmbeddedImage,planMaterialTextureSlots});
   }
   return Object.freeze({TARGETS,createGovernor,lookAheadDistance,isOnline,estimateGpuResources,terrainTileBytes,terrainTileCapacity,estimateLocalModel,createWorkloadBudget,createResolutionGovernor});
 });
+</script><script>/* Optional local-only NPC inference. No model is loaded during game boot.
+ * A user request starts one isolated worker; termination releases its reservation.
+ * Application accounting is a conservative planning estimate, not driver VRAM.
+ */
+(function(root,factory){
+ const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.ValleyLocalAI=api;
+})(typeof globalThis==='object'?globalThis:this,function(){
+ 'use strict';
+ const MODEL=Object.freeze({id:'onnx-community/SmolLM2-135M-Instruct-ONNX',revision:'b8a5c0f183b78c55955a5364f610c36668b5e681',dtype:'q4',weightBytes:180581125,reserveBytes:512*1024*1024});
+ const bounded=(value,max)=>typeof value==='string'?value.replace(/[\x00-\x08\x0b-\x1f]/g,'').trim().slice(0,max):'';
+ function fallback(context){return 'The local guide is unavailable. '+(bounded(context,700)||'Explore the marked landmarks and activities on your map.');}
+ function create({budget,modelBytes=MODEL.reserveBytes,getGraphicsBytes,workerFactory,onChange=()=>{},timeoutMs=240000,setTimer=setTimeout,clearTimer=clearTimeout}){
+  if(!budget||typeof getGraphicsBytes!=='function'||typeof workerFactory!=='function'||!Number.isSafeInteger(modelBytes)||modelBytes<=0)throw new TypeError('Invalid local AI controller');
+  let active=null,sequence=0,state={phase:'idle',text:'',device:null};
+  const snapshot=()=>({...state});
+  function publish(phase,text,device){state={phase,text,device};onChange(snapshot());}
+  function finish(job,phase,text){
+   if(active!==job)return;
+   active=null;
+   if(job.timer!==undefined)clearTimer(job.timer);
+   // Terminate the isolated runtime before removing its application reservation.
+   if(job.worker){job.worker.onmessage=null;job.worker.onerror=null;job.worker.onmessageerror=null;job.worker.terminate();}
+   budget.release(job.id);
+   publish(phase,text,job.device);
+  }
+  function start({question,context='',device='wasm'}={}){
+   question=bounded(question,256);context=bounded(context,700);
+   if(active||!question||!['webgpu','wasm'].includes(device))return false;
+   const id='npc-guide:'+ ++sequence;
+   try{
+    budget.setGraphicsBytes(Math.ceil(getGraphicsBytes()));
+    if(!budget.reserve(id,modelBytes)){publish('blocked','Insufficient estimated application memory headroom. '+fallback(context),device);return false;}
+   }catch(_){publish('blocked','Graphics allocation estimate unavailable. '+fallback(context),device);return false;}
+   const job={id,device,context,worker:null,timer:undefined};active=job;
+   try{
+    job.worker=workerFactory();
+    job.worker.onmessage=({data})=>{
+     if(active!==job)return;
+     if(data?.kind==='status'&&['loading','generating'].includes(data.phase))publish(data.phase,data.phase==='loading'?'Loading optional local model…':'Generating locally…',device);
+     else if(data?.kind==='result'){const answer=bounded(data.text,600);finish(job,answer?'ready':'fallback',answer||fallback(context));}
+     else if(data?.kind==='error')finish(job,'fallback',fallback(context));
+    };
+    job.worker.onerror=e=>{e?.preventDefault?.();finish(job,'fallback',fallback(context));};
+    job.worker.onmessageerror=()=>finish(job,'fallback',fallback(context));
+    job.timer=setTimer(()=>finish(job,'fallback',fallback(context)),timeoutMs);
+    publish('loading','Loading optional local model…',device);
+    job.worker.postMessage({question,context,device});
+    return true;
+   }catch(_){finish(job,'fallback',fallback(context));return false;}
+  }
+  function cancel(){if(!active)return false;finish(active,'cancelled','Local inference cancelled.');return true;}
+  return Object.freeze({start,cancel,snapshot});
+ }
+ // This body runs only in a separately created module Worker, after explicit opt-in.
+ // The pinned distribution and ONNX model are downloaded on demand. No remote
+ // inference endpoint is used. The worker cannot modify authoritative game state.
+ function inferenceWorker(){
+  let busy=false;
+  self.onmessage=async({data})=>{
+   if(busy)return;busy=true;
+   try{
+    const {question,context,device}=data;
+    if(typeof question!=='string'||question.length>256||typeof context!=='string'||context.length>700||!['webgpu','wasm'].includes(device))throw Error('invalid request');
+    self.postMessage({kind:'status',phase:'loading'});
+    const {pipeline,env}=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1');
+    env.allowLocalModels=false;
+    env.useBrowserCache=true;
+    if(env.backends?.onnx?.wasm){
+     env.backends.onnx.wasm.numThreads=1;
+     env.backends.onnx.wasm.wasmPaths='https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/dist/';
+    }
+    const generate=await pipeline('text-generation','onnx-community/SmolLM2-135M-Instruct-ONNX',{revision:'b8a5c0f183b78c55955a5364f610c36668b5e681',dtype:'q4',device});
+    self.postMessage({kind:'status',phase:'generating'});
+    const messages=[{role:'system',content:'You are a brief, family-friendly fictional River Valley game guide. Use only supplied game facts; if uncertain say so. Never claim real-world directions or change game state. Facts: '+context},{role:'user',content:question}];
+    const result=await generate(messages,{max_new_tokens:48,do_sample:false,return_full_text:false});
+    let value=result?.[0]?.generated_text;
+    if(Array.isArray(value))value=[...value].reverse().find(v=>v.role==='assistant')?.content;
+    if(typeof value!=='string'||!value.trim())throw Error('empty model response');
+    self.postMessage({kind:'result',text:value.slice(0,600)});
+    await generate.dispose?.();
+   }catch(_){self.postMessage({kind:'error'});}
+  };
+ }
+ function createBrowserWorker(){
+  const url=URL.createObjectURL(new Blob(['('+inferenceWorker.toString()+')()'],{type:'text/javascript'}));
+  try{return new Worker(url,{type:'module',name:'River Valley optional NPC inference'});}finally{URL.revokeObjectURL(url);}
+ }
+ return Object.freeze({MODEL,create,createBrowserWorker});
+});
 </script><script>/* River Valley original input-to-motion controller.
  * A small offline kinematic model: smooth horizontal acceleration/braking,
  * bounded turn rate, and a ballistic (non-rigid-body) jump on the gameplay rig.
@@ -10981,6 +11070,8 @@ let referenceEnabled=Boolean(REF?.imageDataUrl&&GEOREF),referenceImage=null,refe
 const activeRoads=REF&&Array.isArray(REF.roadsPacked)&&REF.roadsPacked.length>400?REF.roadsPacked:DATA.roads;
 const activeBuildings=REF&&Array.isArray(REF.buildingsPacked)&&REF.buildingsPacked.length>1000?REF.buildingsPacked:DATA.buildings;
 const STREAM=window.ValleyStreamingPolicy;
+const hybridBudget=STREAM.createWorkloadBudget({capacityBytes:1024*1024*1024,graphicsReserveBytes:384*1024*1024});
+let localGuide=null;
 let geographicIndex=null;
 let resolutionGovernor=STREAM.createResolutionGovernor({targetFPS:30,minScale:.5,maxScale:1});
 const MOTION=window.ValleyMotion;
@@ -12399,7 +12490,8 @@ function loop(wallStamp){
    triangles:renderer?.info?.render?.triangles||0,x:player.x,z:player.z,scene:probeScene,mode:save.mode,
    quality:visualEffects,terrainTiles:terrainStats.tiles,terrainQueued:terrainTransition?.status().queued||0});
   if(renderer&&stamp-lastGpuTune>4000&&frameProbe.summary().samples>90){
-   const perf=frameProbe.summary(),{scale}=resolutionGovernor.observe({fps:perf.meanFPS,hidden:document.hidden});
+   if(hybridBudget.snapshot().activeJobs){const memory=hybridBudget.setGraphicsBytes(estimateGraphicsForInference());if(memory.overBudget)localGuide?.cancel();}
+    const perf=frameProbe.summary(),{scale}=resolutionGovernor.observe({fps:perf.meanFPS,hidden:document.hidden,computeBusy:hybridBudget.snapshot().activeJobs>0});
    const target=Math.min(1.25,devicePixelRatio||1)*scale;
    if(Math.abs(target-activePixelRatio)>.05){activePixelRatio=target;renderer.setPixelRatio(activePixelRatio);renderer.setSize(innerWidth,innerHeight,false);}
    lastGpuTune=stamp;
@@ -12457,7 +12549,39 @@ async function importRiggedHero(file){
   console.warn('Custom GLB rejected without replacing verified hero:',err);
  }
 }
+function estimateGraphicsForInference(){
+ const pixels=renderer?Math.ceil(innerWidth*activePixelRatio)*Math.ceil(innerHeight*activePixelRatio):0;
+ return Math.ceil(sceneMemorySnapshot().totalBytes+pixels*16);
+}
+function bindLocalGuide(){
+ const L=window.ValleyLocalAI,question=$('localGuideQuestion'),ask=$('localGuideAsk'),cancel=$('localGuideCancel'),status=$('localGuideStatus'),device=$('localGuideDevice'),consent=$('localGuideConsent');
+ if(!L||!question||!ask||!cancel||!status||!device||!consent)return;
+ const enabled=new URLSearchParams(location.search).get('localAiPilot')==='1';
+ const pilotPanel=question.closest('.field');
+ if(pilotPanel)pilotPanel.hidden=!enabled;
+ if(!enabled)return; // Real-device and third-party asset verification are not yet release-gated.
+ const supported=window.isSecureContext&&location.protocol!=='file:'&&typeof Worker==='function';
+ device.querySelector('option[value="webgpu"]').disabled=!navigator.gpu;
+ ask.disabled=!supported;
+ if(!supported){status.textContent='Optional model loading requires a secure hosted browser. The offline game remains playable.';return;}
+ localGuide=L.create({budget:hybridBudget,getGraphicsBytes:estimateGraphicsForInference,workerFactory:L.createBrowserWorker,onChange:s=>{
+  const active=['loading','generating'].includes(s.phase);
+  ask.disabled=active;cancel.disabled=!active;status.textContent=s.text||'No model loaded.';
+ }});
+ ask.addEventListener('click',()=>{
+  if(!consent.checked){status.textContent='Enable the optional download consent first.';return;}
+  if(!question.value.trim()){status.textContent='Enter a question about the game.';return;}
+  if(!navigator.onLine){status.textContent='The model may require downloads. Play offline using the map and activity guide.';return;}
+  const backend=device.value;
+  if(backend==='webgpu'&&!navigator.gpu){status.textContent='WebGPU is unavailable. Select CPU / Wasm.';return;}
+  const context=C.STOPS.map(s=>s.title+': '+s.task).join(' ').slice(0,700);
+  localGuide.start({question:question.value,context,device:backend});
+ });
+ cancel.addEventListener('click',()=>localGuide.cancel());
+ window.addEventListener('pagehide',()=>localGuide?.cancel());
+}
 function bindUI(){
+ bindLocalGuide();
  $('pauseToggle').addEventListener('click',()=>setPaused(!paused));
  $('pauseResume').addEventListener('click',()=>setPaused(false));
  $('pauseSave').addEventListener('click',()=>{if(started){persist();toast('Progress saved on this device.');}});
@@ -12544,8 +12668,8 @@ function bindUI(){
    toast('Standalone offline HTML download started. Website play requires an internet connection.');
  });
  $('saveBtn').addEventListener('click',()=>toast(persist()?'💾 Adventure saved on this device.':'Local storage is blocked in this browser.'));
- $('newBtn').addEventListener('click',()=>{if(!confirm('Start a new adventure in this save slot? Your existing progress in this slot will be replaced.'))return;applyState(C.freshSave(save.name));persist();toast('🌿 New family adventure started.');});
- $('returnBtn').addEventListener('click',()=>{closeWorldActivity();closeActivity();persist();stopTour();started=false;$('start').classList.remove('hidden');$('panel').classList.remove('open');});
+ $('newBtn').addEventListener('click',()=>{if(!confirm('Start a new adventure in this save slot? Your existing progress in this slot will be replaced.'))return;localGuide?.cancel();applyState(C.freshSave(save.name));persist();toast('🌿 New family adventure started.');});
+ $('returnBtn').addEventListener('click',()=>{localGuide?.cancel();closeWorldActivity();closeActivity();persist();stopTour();started=false;$('start').classList.remove('hidden');$('panel').classList.remove('open');});
  $('interactBtn').addEventListener('click',interact);$('touchInteract').addEventListener('pointerdown',e=>{e.preventDefault();if(!worldPrimaryAction())interact();});
  $('farmGrid').addEventListener('click',e=>{const b=e.target.closest('button[data-plot]');if(!b)return;const action=C.farmAction(save,Number(b.dataset.plot),Date.now());save=action.save;const result=action.result;
  $('farmNotice').textContent=({'planted':'🌱 Planted! Come back when your corn is ripe.','growing':'🌿 Growing strong. Give it a moment.','harvested':'🌽 Harvest complete! +45 coins • +45 XP','needs-coins':'Collect a discovery stamp to earn seed money.','invalid':'That field is unavailable.'})[result]||result;
