@@ -1,0 +1,38 @@
+name: Babylon WebGL2 preview checks
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  babylon-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned Babylon and Vite dependencies
+        run: npm --prefix game install --no-audit --no-fund
+      - name: Verify Babylon foundation regression contracts
+        run: npm --prefix game run test:babylon-preview
+      - name: Bundle self-hosted Babylon preview
+        run: npm --prefix game run build:babylon-preview
+      - name: Install Playwright browser runtime
+        run: |
+          python -m pip install 'playwright>=1.50,<2'
+          python -m playwright install --with-deps chromium
+      - name: Verify actual WebGL2 renderer in Chromium
+        run: python game/tests/browser_babylon_webgl2.py
+      - name: Upload Babylon WebGL2 screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: babylon-webgl2-preview-evidence
+          path: /tmp/river-babylon-webgl2/
+          if-no-files-found: warn
