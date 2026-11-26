@@ -1,0 +1,41 @@
+{
+  "schema": "river-valley-geographic-source-registry/v1",
+  "status": "CANDIDATES_NOT_ENGINEERING_VALIDATED",
+  "sources": [
+    {
+      "id": "usgs-posey-2013-ept",
+      "provider": "USGS",
+      "kind": "EPT_LIDAR",
+      "metadataUrl": "https://s3-us-west-2.amazonaws.com/usgs-lidar-public/USGS_LPC_IN_WT_B12_Posey_2013_LAS_2016/ept.json",
+      "candidateSourceCRS": "EPSG:3857",
+      "outputCRS": "EPSG:26916",
+      "bounds3857": [-9791000, -9779000, 4562000, 4577000],
+      "sourceCRSVerified": false,
+      "verticalDatumVerified": false,
+      "classification": "HISTORICAL_SOURCE_CANDIDATE",
+      "usage": "headless bounded sample acquisition only"
+    },
+    {
+      "id": "cesium-ion-mount-vernon-buildings",
+      "provider": "Cesium ion",
+      "assetId": 6204792,
+      "kind": "3DTILES",
+      "userReportedStatus": "COMPLETE",
+      "actualStatusVerified": false,
+      "georegistrationVerified": false,
+      "productionApproved": false
+    },
+    {
+      "id": "cesium-ion-posey-terrain",
+      "provider": "Cesium ion",
+      "assetId": 6155964,
+      "kind": "TERRAIN",
+      "userReportedStatus": "COMPLETE",
+      "actualStatusVerified": false,
+      "georegistrationVerified": false,
+      "productionApproved": false
+    }
+  ],
+  "quarantinedCandidateAssetIds": [6204790, 6155963, 6155967],
+  "policy": "No automatic asset deletion, token storage, authoritative promotion, or use as surveyed control."
+}
