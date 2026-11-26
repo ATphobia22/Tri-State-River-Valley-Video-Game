@@ -32,5 +32,6 @@ test('main Babylon entrypoint wires real game loop and controls',()=>{
  const html=fs.readFileSync(path.join(root,'babylon-preview.html'),'utf8');
  const main=fs.readFileSync(path.join(root,'babylon-preview/main.js'),'utf8');
  assert.match(html,/id="adventure-status"/);assert.match(html,/data-move="forward"/);
- assert.match(main,/installPlayable/);assert.match(main,/playable=true|qa\.playable/);
+ const playable=fs.readFileSync(path.join(root,'babylon-preview/playable.mjs'),'utf8');
+ assert.match(main,/installPlayable/);assert.match(playable,/qa\.playable/);
 });
