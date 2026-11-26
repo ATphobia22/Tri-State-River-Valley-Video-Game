@@ -1,0 +1,36 @@
+name: Geographic candidate contracts
+on:
+  push:
+    paths:
+      - 'game/tools/build_pdal_ept_pipelines.py'
+      - 'game/tools/verify_ion_assets.py'
+      - 'game/babylon-preview/ion-3dtiles-adapter.mjs'
+      - 'game/tests/test_pdal_ept_pipelines.py'
+      - 'game/tests/test_verify_ion_assets.py'
+      - 'game/tests/test-ion-3dtiles-adapter.cjs'
+      - 'game/data/geographic/source-registry.json'
+      - '.github/workflows/geographic-candidate-contracts.yml'
+  pull_request:
+  workflow_dispatch:
+jobs:
+  candidate-unit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: game
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Python acquisition and ion contract tests
+        run: python -m unittest discover -s tests -p 'test_pdal_ept_pipelines.py' -v && python -m unittest discover -s tests -p 'test_verify_ion_assets.py' -v
+      - name: Babylon ion lifecycle tests
+        run: node --test tests/test-ion-3dtiles-adapter.cjs
+      - name: Validate source registry
+        run: python -m json.tool data/geographic/source-registry.json >/dev/null
