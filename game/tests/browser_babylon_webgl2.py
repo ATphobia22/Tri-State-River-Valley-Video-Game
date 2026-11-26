@@ -38,7 +38,7 @@ with Server(("127.0.0.1", 0), Handler) as server:
                 errors = []
                 page.on("pageerror", lambda err: errors.append(str(err)))
                 page.goto(url, wait_until="networkidle", timeout=60000)
-                page.locator("#status").get_by_text("WebGL2").wait_for(timeout=30000)
+                page.wait_for_function("document.getElementById('status').textContent.includes('WebGL2')", timeout=30000)
                 version = page.evaluate("""() => {
                   const canvas = document.getElementById('babylon-world');
                   const gl = canvas.getContext('webgl2');
