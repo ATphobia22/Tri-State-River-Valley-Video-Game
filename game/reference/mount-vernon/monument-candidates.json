@@ -1,0 +1,45 @@
+{
+  "schema": "river-valley-monument-candidates/v1",
+  "gate_state": "BLOCKED_SUBSTANTIVE",
+  "modeling_eligible": false,
+  "allow_rmse_certification": false,
+  "allow_build_flag_bypass": false,
+  "quarantine": {
+    "path": "game/reference/mount-vernon/control-points.geojson",
+    "state": "REFERENCE_ONLY",
+    "reason": "Nearest-road positions are not surveyed monuments"
+  },
+  "candidates": [
+    {
+      "pid": "HA1083",
+      "status": "UNVERIFIED",
+      "source": "https://geodesy.noaa.gov/datasheets/passive-marks/index.html?PID=HA1083"
+    },
+    {
+      "pid": "HA1080",
+      "status": "UNVERIFIED",
+      "source": "https://geodesy.noaa.gov/datasheets/passive-marks/index.html?PID=HA1080"
+    },
+    {
+      "pid": "HA1084",
+      "status": "UNVERIFIED",
+      "source": "https://geodesy.noaa.gov/datasheets/passive-marks/index.html?PID=HA1084"
+    },
+    {
+      "pid": "HA1085",
+      "status": "UNVERIFIED",
+      "source": "https://geodesy.noaa.gov/datasheets/passive-marks/index.html?PID=HA1085"
+    },
+    {
+      "pid": "AP2992",
+      "status": "UNVERIFIED",
+      "source": "https://geodesy.noaa.gov/datasheets/passive-marks/index.html?PID=AP2992"
+    }
+  ],
+  "required": {
+    "horizontal_realization": "NAD83(2011)",
+    "vertical_crs": "EPSG:5703",
+    "geoid_model": "GEOID18",
+    "independent_review": true
+  }
+}
