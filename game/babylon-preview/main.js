@@ -49,6 +49,12 @@ function applyQuality(name){
 }
 quality.addEventListener('change',()=>applyQuality(quality.value));
 applyQuality(quality.value);
-engine.runRenderLoop(()=>scene.render());
+const qa={frames:0,meshCount:scene.meshes.length,activeMeshes:0};
+window.__RIVER_BABYLON_QA__=qa;
+engine.runRenderLoop(()=>{
+ scene.render();
+ qa.frames++;
+ qa.activeMeshes=scene.getActiveMeshes().length;
+});
 window.addEventListener('resize',()=>engine.resize());
 window.addEventListener('pagehide',()=>{engine.stopRenderLoop();scene.dispose();engine.dispose();},{once:true});
