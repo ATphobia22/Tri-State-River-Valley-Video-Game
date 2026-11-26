@@ -155,6 +155,9 @@ def validate_release(manifest,root):
         else:
             roles.add(role)
         name=entry.get('path')
+        if not isinstance(name,str):
+            errors.append(label+': asset path must be a string')
+            continue
         if name in seen:
             errors.append(label+': duplicate asset')
         else:
