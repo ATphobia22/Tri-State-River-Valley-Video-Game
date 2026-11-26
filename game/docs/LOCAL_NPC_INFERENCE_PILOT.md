@@ -14,3 +14,7 @@ This opt-in guide is independent of authoritative gameplay and saves. It is not 
 References: https://huggingface.co/docs/transformers.js/installation ; https://huggingface.co/docs/transformers.js/en/guides/dtypes ; https://huggingface.co/onnx-community/SmolLM2-135M-Instruct-ONNX ; https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct .
 
 Reconciliation note (2026-11-26): carried forward to the current terrain GPU byte-accounting and renderer governor; no real-device or model-host security audit has been completed. Do not treat mocked tests as proof of model execution.
+
+## Staging and availability
+
+The experimental settings field is **hidden by default in production** and is displayed only with the explicit developer URL parameter `?localAiPilot=1` in a secure hosted browser. It still requires separate in-UI download consent. The version-pinned Transformers.js module URL follows its official v3.8.1 CDN import documentation. This staging switch is not a substitute for a vendor integrity audit, real-device model execution, GPU/CPU memory measurements, or a supported-model security review; those remain release blockers. The source ONNX repository has no model card; confirm the redistribution license for the converted artifact before broad rollout.
