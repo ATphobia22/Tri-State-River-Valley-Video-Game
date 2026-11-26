@@ -36,6 +36,20 @@ jobs:
         run: |
           python -m unittest discover -s game/tests -p test_local_earth_registration.py -v
           python -m unittest discover -s game/tests -p test_geographic_release_gate.py -v
+          python -m pip install -r game/tools/requirements-geodetic.txt
+          python -m unittest discover -s game/tests -p test_gcp_provenance_validator.py -v
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from game.tools.gcp_provenance_validator import evaluate_control_file
+          policy=json.loads(Path('game/data/control/posey/gcp-gate-policy.json').read_text())
+          assert policy['enforcement']=='HARD_BLOCK' and policy['allow_build_flag_bypass'] is False
+          assert policy['routes'][0]['modeling_eligible'] is False
+          result=evaluate_control_file(Path('game/reference/mount-vernon/control-points.geojson'))
+          assert result['gate_state']=='QUARANTINED' and result['modeling_eligible'] is False
+          assert not result['allow_vertical_rmse'] and not result['allow_3dtiles_registration']
+          print('PASS: nearest-road control is substantively QUARANTINED; never model-grade')
+          PY
       - name: Validate local 3D Tiles archive intake and binary-preserving repair
         run: python -m unittest discover -s game/tests -p test_tile_intake.py -v
       - name: Verify packaged tile integrity and root bounding volumes
