@@ -2,8 +2,6 @@
  * The current preview deliberately does not import or mount real-world tiles.
  * None of these client checks substitutes for independent survey authorization.
  */
-import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
-import { LRUCache } from '3d-tiles-renderer/core';
 import { PMTiles } from 'pmtiles';
 import { latLngToCell } from 'h3-js';
 import { createAssetTransport } from './asset-transport.mjs';
@@ -74,18 +72,20 @@ function assertReview(registration){
  */
 export function mountOfficialTiles({
  scene,url,origin=globalThis.location?.origin,registration,
- maxTiles=70,TilesRendererClass=TilesRenderer,CacheClass=LRUCache
+ maxTiles=70,TilesRendererClass,CacheClass
 }={}){
  assertReview(registration);
  if(scene?.useRightHandedSystem!==true)throw Error('NASA Babylon renderer requires right-handed scene');
  if(!scene.onBeforeRenderObservable?.add||!scene.onBeforeRenderObservable?.remove)throw Error('Babylon scene lifecycle required');
  if(!Number.isSafeInteger(maxTiles)||maxTiles<1||maxTiles>250)throw Error('invalid HLOD tile budget');
  const tileset=sameOriginUrl(url,origin);
+ if(typeof TilesRendererClass!=='function')throw Error('official Babylon tile renderer class required');
  const renderer=new TilesRendererClass(tileset,scene);
  if(!renderer||typeof renderer.update!=='function'||typeof renderer.dispose!=='function')
   throw Error('official tile renderer lifecycle required');
  // The upstream default cache is shared; isolate admission-controlled datasets.
- const cache=new CacheClass();
+ const cache=typeof CacheClass==='function'?new CacheClass():renderer.lruCache;
+ if(!cache)throw Error('official tile renderer cache required');
  cache.maxSize=maxTiles;
  cache.minSize=maxTiles;
  renderer.lruCache=cache;
@@ -100,4 +100,14 @@ export function mountOfficialTiles({
    renderer.dispose();
   }
  });
+}
+
+/** Lazily load the genuine upstream browser renderer; Node tests inject a fake renderer
+ * without evaluating Babylon's browser-oriented extensionless module imports.
+ */
+export async function mountOfficialTilesWithUpstream(options={}){
+ const [{TilesRenderer},{LRUCache}]=await Promise.all([
+  import('3d-tiles-renderer/babylonjs'),import('3d-tiles-renderer/core')
+ ]);
+ return mountOfficialTiles({...options,TilesRendererClass:TilesRenderer,CacheClass:LRUCache});
 }
