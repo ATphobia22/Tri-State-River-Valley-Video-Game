@@ -12,13 +12,16 @@ export const STOPS=Object.freeze([
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
 const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 const collision=(x,z)=>BUILDINGS.some(b=>Math.abs(x-b.x)<b.width/2+2.5&&Math.abs(z-b.z)<b.depth/2+2.5);
+const validPosition=(x,z)=>finite(x)&&finite(z)&&Math.abs(x)<=BOUNDS&&Math.abs(z)<=BOUNDS&&!collision(x,z);
+export function getBrowserStorage(host){try{return host?.localStorage??null;}catch{return null;}}
 export function createAdventure({storage=null}={}){
  let persisted={};
  try{persisted=JSON.parse(storage?.getItem(KEY)||'{}')||{};}catch{/* unavailable or damaged storage */}
  const ids=new Set(STOPS.map(s=>s.id));
  const discovered=new Set(Array.isArray(persisted.discovered)?persisted.discovered.filter(id=>ids.has(id)):[]);
  let x=0,z=49,hour=finite(persisted.hour)&&persisted.hour>=0&&persisted.hour<24?persisted.hour:16;
- const save=()=>{try{storage?.setItem(KEY,JSON.stringify({version:1,discovered:[...discovered],hour}));}catch{/* no persistence permission */}};
+ if(validPosition(persisted.position?.x,persisted.position?.z)){x=persisted.position.x;z=persisted.position.z;}
+ const save=()=>{try{storage?.setItem(KEY,JSON.stringify({version:1,discovered:[...discovered],hour,position:{x,z}}));}catch{/* no persistence permission */}};
  function move(dx,dz,dt,sprint=false){
   if(!finite(dx)||!finite(dz)||!finite(dt)||dt<=0)return snapshot();
   const n=Math.hypot(dx,dz);if(n<1e-9)return snapshot();
@@ -35,7 +38,7 @@ export function createAdventure({storage=null}={}){
   discovered.add(id);save();return {ok:true,title:stop.title};
  }
  function setTime(t){if(!finite(t)||t<0||t>=24)return false;hour=t;save();return true;}
- function setPosition(nx,nz){if(!finite(nx)||!finite(nz)||Math.abs(nx)>BOUNDS||Math.abs(nz)>BOUNDS||collision(nx,nz))return false;x=nx;z=nz;return true;}
+ function setPosition(nx,nz){if(!validPosition(nx,nz))return false;x=nx;z=nz;return true;}
  function snapshot(){return {position:{x,z},hour,discovered:[...discovered],total:STOPS.length,nearby:nearby()?.id||null};}
  return Object.freeze({move,nearby,discover,setTime,setPosition,snapshot});
 }
