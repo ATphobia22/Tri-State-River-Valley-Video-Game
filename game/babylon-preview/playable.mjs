@@ -1,8 +1,8 @@
 import {MeshBuilder,Vector3,Color3,PBRMaterial,PointLight} from '@babylonjs/core';
-import {createAdventure,STOPS} from './gameplay.mjs';
+import {createAdventure,STOPS,getBrowserStorage} from './gameplay.mjs';
 /** Illustrative world gameplay; never reports unsurveyed locations as authoritative geography. */
 export function installPlayable({scene,engine,camera,qa}){
- const game=createAdventure({storage:window.localStorage});
+ const game=createAdventure({storage:getBrowserStorage(window)});
  const player=MeshBuilder.CreateCapsule('playable-explorer',{height:3,radius:.8},scene);
  const outfit=new PBRMaterial('explorer-cloth',scene);outfit.albedoColor=new Color3(.89,.65,.31);outfit.roughness=.92;player.material=outfit;
  const markers=new Map();
