@@ -5,6 +5,7 @@ import {
 import {resolve} from './quality.mjs';
 import {installPlayable} from './playable.mjs';
 import {loadVerifiedHero} from './verified-hero.mjs';
+import {installLocalMedia} from './local-media.mjs';
 import {createFrameSupervisor} from './frame-supervisor.mjs';
 import {detectBrowserCapabilities,chooseComputeProfile} from './runtime-capabilities.mjs';
 const canvas=document.getElementById('babylon-world');
@@ -64,6 +65,7 @@ const browserCapabilities=detectBrowserCapabilities({
 const qa={frames:0,meshCount:scene.meshes.length,activeMeshes:0,renderState:'healthy',renderFaults:0,heroState:'loading',
  browserCapabilities,computePolicy:chooseComputeProfile(browserCapabilities)};
 const adventure=installPlayable({scene,engine,camera,qa});
+const media=installLocalMedia();
 const heroAbort=new AbortController();
 const heroStatus=document.getElementById('hero-status');
 void loadVerifiedHero({scene,qa,signal:heroAbort.signal}).then(controller=>{
@@ -98,4 +100,4 @@ const renderSupervisor=createFrameSupervisor({
 });
 engine.runRenderLoop(()=>renderSupervisor.tick());
 window.addEventListener('resize',()=>engine.resize());
-window.addEventListener('pagehide',()=>{heroAbort.abort();engine.stopRenderLoop();scene.dispose();engine.dispose();},{once:true});
+window.addEventListener('pagehide',()=>{heroAbort.abort();media?.dispose();engine.stopRenderLoop();scene.dispose();engine.dispose();},{once:true});
