@@ -4,6 +4,8 @@ import {
 } from '@babylonjs/core';
 import {resolve} from './quality.mjs';
 import {installPlayable} from './playable.mjs';
+import {loadVerifiedHero} from './verified-hero.mjs';
+import {installLocalMedia} from './local-media.mjs';
 import {createFrameSupervisor} from './frame-supervisor.mjs';
 import {detectBrowserCapabilities,chooseComputeProfile} from './runtime-capabilities.mjs';
 const canvas=document.getElementById('babylon-world');
@@ -60,9 +62,22 @@ const browserCapabilities=detectBrowserCapabilities({
  crossOriginIsolated:globalThis.crossOriginIsolated===true,
  hardwareConcurrency:navigator.hardwareConcurrency
 });
-const qa={frames:0,meshCount:scene.meshes.length,activeMeshes:0,renderState:'healthy',renderFaults:0,
+const qa={frames:0,meshCount:scene.meshes.length,activeMeshes:0,renderState:'healthy',renderFaults:0,heroState:'loading',
  browserCapabilities,computePolicy:chooseComputeProfile(browserCapabilities)};
 const adventure=installPlayable({scene,engine,camera,qa});
+const media=installLocalMedia();
+const heroAbort=new AbortController();
+const heroStatus=document.getElementById('hero-status');
+void loadVerifiedHero({scene,qa,signal:heroAbort.signal}).then(controller=>{
+ if(heroAbort.signal.aborted){controller.dispose();return;}
+ adventure.attachHeroVisual(controller);
+ qa.meshCount=scene.meshes.length;
+ if(heroStatus)heroStatus.textContent='Verified River Explorer: 27 bones, 13 clips, PBR materials';
+}).catch(error=>{
+ if(heroAbort.signal.aborted)return;
+ qa.heroState='fallback';qa.heroError=String(error?.message||error);
+ if(heroStatus)heroStatus.textContent='River Explorer fallback active: '+qa.heroError;
+});
 qa.meshCount=scene.meshes.length;
 window.__RIVER_BABYLON_QA__=qa;
 const renderSupervisor=createFrameSupervisor({
@@ -85,4 +100,4 @@ const renderSupervisor=createFrameSupervisor({
 });
 engine.runRenderLoop(()=>renderSupervisor.tick());
 window.addEventListener('resize',()=>engine.resize());
-window.addEventListener('pagehide',()=>{engine.stopRenderLoop();scene.dispose();engine.dispose();},{once:true});
+window.addEventListener('pagehide',()=>{heroAbort.abort();media?.dispose();engine.stopRenderLoop();scene.dispose();engine.dispose();},{once:true});

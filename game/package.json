@@ -9,7 +9,7 @@
     "pretest": "python3 tools/build_character_lods.py",
     "prebuild": "python3 tools/build_character_lods.py",
     "build:babylon-preview": "vite build --config babylon-preview/vite.config.mjs",
-    "test:babylon-preview": "node --test tests/test-babylon-foundation.cjs tests/test-babylon-playable.cjs"
+    "test:babylon-preview": "node --test tests/test-babylon-foundation.cjs tests/test-babylon-playable.cjs tests/test-babylon-hero-contract.cjs tests/test-babylon-local-media.cjs"
   },
   "engines": {
     "node": ">=20"
