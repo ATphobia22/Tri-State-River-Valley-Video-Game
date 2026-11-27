@@ -24,6 +24,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install exact-lockfile geographic rendering dependencies
+        run: npm --prefix game ci --ignore-scripts --no-audit --no-fund
       - name: Install Python HTML bundler dependency
         run: python -m pip install -r game/requirements.txt
       - name: Check Python syntax

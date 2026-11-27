@@ -1,11 +1,8 @@
 name: Clean up merged River Valley game branches
 on:
+  # Reconcile verified merged heads after each main merge, not just policy edits.
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/cleanup-merged-game-branches.yml'
-      - 'game/tools/reconcile_merged_branches.py'
-      - 'game/tests/test_branch_reconcile.py'
   workflow_dispatch:
     inputs:
       dry_run:
