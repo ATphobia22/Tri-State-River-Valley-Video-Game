@@ -1,9 +1,11 @@
 import {MeshBuilder,Vector3,Color3,PBRMaterial,PointLight} from '@babylonjs/core';
 import {createAdventure,STOPS,getBrowserStorage} from './gameplay.mjs';
+import {chooseHeroAction} from './hero-contract.mjs';
 /** Illustrative world gameplay; never reports unsurveyed locations as authoritative geography. */
 export function installPlayable({scene,engine,camera,qa}){
  const game=createAdventure({storage:getBrowserStorage(window)});
  const player=MeshBuilder.CreateCapsule('playable-explorer',{height:3,radius:.8},scene);
+ let heroVisual=null,heading=0;
  const outfit=new PBRMaterial('explorer-cloth',scene);outfit.albedoColor=new Color3(.89,.65,.31);outfit.roughness=.92;player.material=outfit;
  const markers=new Map();
  for(const stop of STOPS){
@@ -57,7 +59,19 @@ export function installPlayable({scene,engine,camera,qa}){
            Number(keys.has('a')||keys.has('arrowleft')||keys.has('left'));
   const dz=Number(keys.has('s')||keys.has('arrowdown')||keys.has('back'))-
            Number(keys.has('w')||keys.has('arrowup')||keys.has('forward'));
-  const snapshot=game.move(dx,dz,dt,keys.has('shift')||keys.has('sprint'));
+  const before=game.snapshot().position;
+  const sprint=keys.has('shift')||keys.has('sprint');
+  const snapshot=game.move(dx,dz,dt,sprint);
+  const traveled=Math.hypot(snapshot.position.x-before.x,snapshot.position.z-before.z);
+  if(traveled>0.0001)heading=Math.atan2(snapshot.position.x-before.x,snapshot.position.z-before.z);
+  if(heroVisual){
+   try{heroVisual.setPose({position:snapshot.position,heading,action:chooseHeroAction(traveled,dt,sprint)});}
+   catch(error){
+    qa.heroState='fallback';qa.heroError=String(error?.message||error);
+    try{heroVisual.dispose();}catch(disposeError){console.error('hero disposal failed',disposeError);}
+    heroVisual=null;player.setEnabled(true);
+   }
+  }
   player.position.set(snapshot.position.x,1.5,snapshot.position.z);
   lamp.position.set(snapshot.position.x,4,snapshot.position.z);
   lamp.intensity=snapshot.hour>=19?1.4:0;
@@ -66,7 +80,17 @@ export function installPlayable({scene,engine,camera,qa}){
   qa.nearby=snapshot.nearby;qa.hour=snapshot.hour;
   if(performance.now()-lastHUD>250){updateHUD();lastHUD=performance.now();}
  });
+ function attachHeroVisual(controller){
+  if(!controller||typeof controller.setPose!=='function'||typeof controller.dispose!=='function')
+   throw Error('a disposable skinned hero controller is required');
+  controller.setPose({position:game.snapshot().position,heading,action:'Idle'});
+  if(heroVisual)heroVisual.dispose();
+  heroVisual=controller;
+  player.setEnabled(false);
+  return true;
+ }
  function stop(){
+  if(heroVisual){heroVisual.dispose();heroVisual=null;}
   scene.onBeforeRenderObservable.remove(observer);
   window.removeEventListener('keydown',onKeyDown);window.removeEventListener('keyup',onKeyUp);window.removeEventListener('blur',onBlur);
   for(const [node,down,up] of pointerControls){
@@ -75,5 +99,5 @@ export function installPlayable({scene,engine,camera,qa}){
   interactButton?.removeEventListener('click',interact);cycleButton?.removeEventListener('click',cycleTime);
  }
  window.addEventListener('pagehide',stop,{once:true});
- return Object.freeze({snapshot:game.snapshot,stop});
+ return Object.freeze({snapshot:game.snapshot,stop,attachHeroVisual});
 }
