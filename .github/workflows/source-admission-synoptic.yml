@@ -1,0 +1,30 @@
+name: Source admission Synoptic contracts
+on:
+  pull_request:
+    branches: [main]
+  push:
+    paths:
+      - 'game/data/geographic/source-registry.json'
+      - 'game/ops/source-admission-synoptic.svg'
+      - 'game/ops/source-admission.csv'
+      - 'game/tools/build_source_admission_synoptic.py'
+      - 'game/tests/test-source-admission-synoptic.cjs'
+      - '.github/workflows/source-admission-synoptic.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-admission:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source-registry / SVG / CSV semantic and XML consistency
+        run: python3 game/tools/build_source_admission_synoptic.py --check
+      - name: Node source-contract validation
+        run: node --test game/tests/test-source-admission-synoptic.cjs

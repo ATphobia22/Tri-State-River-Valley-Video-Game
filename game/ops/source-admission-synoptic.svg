@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 365" data-okviz-svg-author="River Valley Engineering" data-okviz-svg-attribution="River Valley geographic source registry; candidate inventory only">
+<rect x="0" y="0" width="920" height="365" rx="20" fill="#f7f9fc" data-okviz-area-type="decoration"/>
+<g data-okviz-area-type="decoration" fill="#182d46" font-family="Arial, sans-serif">
+<text x="32" y="37" font-size="23" font-weight="bold">RIVER VALLEY  /  SOURCE ADMISSION</text>
+<text x="32" y="61" fill="#475b70" font-size="13">Three independent source candidates · Not a geographic map or surveyed overlay</text>
+<text x="32" y="105" font-size="17" font-weight="bold">USGS 3DEP EPT</text>
+<text x="32" y="123" font-size="12" fill="#586b7b">LiDAR source</text>
+<text x="32" y="273" font-size="12" fill="#586b7b">CRS and datum unverified</text>
+<text x="334" y="105" font-size="17" font-weight="bold">Mount Vernon LoD2</text>
+<text x="334" y="123" font-size="12" fill="#586b7b">3D Tiles buildings</text>
+<text x="334" y="273" font-size="12" fill="#586b7b">Ion status only user reported</text>
+<text x="636" y="105" font-size="17" font-weight="bold">Posey Terrain</text>
+<text x="636" y="123" font-size="12" fill="#586b7b">Cesium ion terrain</text>
+<text x="636" y="273" font-size="12" fill="#586b7b">Ion status only user reported</text>
+<text x="32" y="326" fill="#586b7b" font-size="12">Power BI Category column: id   ·   Resting fills are neutral; Synoptic Panel colors regions from bound status data</text>
+</g>
+<rect id="usgs-posey-2013-ept" x="32" y="137" width="270" height="109" rx="11" fill="#e3e9f2" stroke="#7386a6" stroke-width="2" data-okviz-area-type="area"/>
+<rect id="cesium-ion-mount-vernon-buildings" x="334" y="137" width="270" height="109" rx="11" fill="#e3e9f2" stroke="#7386a6" stroke-width="2" data-okviz-area-type="area"/>
+<rect id="cesium-ion-posey-terrain" x="636" y="137" width="270" height="109" rx="11" fill="#e3e9f2" stroke="#7386a6" stroke-width="2" data-okviz-area-type="area"/>
+</svg>

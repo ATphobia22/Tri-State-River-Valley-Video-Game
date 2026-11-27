@@ -54,7 +54,7 @@ export function createCesiumImageryController({Cesium,viewer,allowedHosts=[],max
       return new Cesium.UrlTemplateImageryProvider({url,credit:spec.attribution,maximumLevel:spec.maxLevel??18});
     }
     if(spec.kind==='wms') {
-      if(typeof spec.layers!=='string'||!/^[-\w,.]+$/.test(spec.layers)) throw Error('WMS layer names required');
+      if(typeof spec.layers!=='string'||!/^[-\w,.:]+$/.test(spec.layers)) throw Error('WMS layer names required');
       return new Cesium.WebMapServiceImageryProvider({url,layers:spec.layers,credit:spec.attribution});
     }
     validateRectangle(spec.rectangle);
