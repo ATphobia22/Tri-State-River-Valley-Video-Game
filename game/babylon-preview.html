@@ -6,11 +6,33 @@ html,body{height:100%;margin:0;background:#0d242a;color:#eff5e5;font:15px system
 #babylon-world{display:block;width:100%;height:100%;touch-action:none}
 aside{position:fixed;top:12px;left:12px;padding:14px;background:#0c2530e8;border:1px solid #b9ceae60;border-radius:12px;max-width:330px}
 label{display:block;margin:8px 0}select{background:#153b40;color:white;padding:5px;border-radius:6px}#status{font-size:12px;color:#d9e5c5}
-#adventure-status{display:block;margin:8px 0;font-size:12px;color:#d9e5c5}#actions{position:fixed;bottom:14px;left:14px;display:flex;flex-wrap:wrap;gap:8px;max-width:95vw;z-index:2}#actions button{min-width:45px;min-height:45px;background:#153b40;color:#fff;border:1px solid #a8c7a677;border-radius:7px;touch-action:none}#actions button:disabled{opacity:.55}aside{z-index:2}</style></head><body>
+#adventure-status{display:block;margin:8px 0;font-size:12px;color:#d9e5c5}#actions{position:fixed;bottom:14px;left:14px;display:flex;flex-wrap:wrap;gap:8px;max-width:95vw;z-index:2}#actions button{min-width:45px;min-height:45px;background:#153b40;color:#fff;border:1px solid #a8c7a677;border-radius:7px;touch-action:none}#actions button:disabled{opacity:.55}aside{z-index:2;max-height:calc(100vh - 48px);overflow-y:auto}
+#media-panel{margin-top:8px;border-top:1px solid #b9ceae60;padding-top:8px}
+#media-panel input{max-width:100%}
+#media-panel audio{max-width:100%;width:100%}
+#media-panel button{padding:6px 10px;background:#153b40;color:#fff;border:1px solid #a8c7a677;border-radius:6px;margin:4px 4px 4px 0}
+#media-panel button:disabled{opacity:.5}
+#media-panel select{max-width:100%}
+#media-panel small{display:block}
+#intro-overlay{position:fixed;inset:0;background:#000e;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+#intro-overlay[hidden]{display:none}
+#intro-player{max-width:95vw;max-height:75vh}
+#intro-skip{font-size:18px;padding:10px 20px}</style></head><body>
 <canvas id="babylon-world" aria-label="WebGL2 Babylon engine preview"></canvas>
 <aside><strong>River Valley · WebGL2 migration preview</strong>
 <label>Graphics quality <select id="quality"><option>low</option><option selected>medium</option><option>high</option><option>ultra</option><option>cinematic</option></select></label>
 <p id="status" role="status">Initializing WebGL2...</p>
-<small>Illustrative geometry only. No unregistered geographic tiles are displayed.</small><p id="hero-status" role="status">Loading verified project-original River Explorer…</p><p id="adventure-status" role="status">Loading gameplay...</p><small>Illustrative game world. No unregistered geographic tiles are displayed.</small></aside>
+<small>Illustrative geometry only. No unregistered geographic tiles are displayed.</small><p id="hero-status" role="status">Loading verified project-original River Explorer…</p><p id="adventure-status" role="status">Loading gameplay...</p><small>Illustrative game world. No unregistered geographic tiles are displayed.</small>
+<details id="media-panel"><summary>My local soundtrack and intro</summary>
+<label>Choose your MP3 soundtrack <input id="soundtrack-input" type="file" accept=".mp3,.m4a,.wav,.ogg,audio/*" multiple></label>
+<label>Track <select id="soundtrack-tracks" disabled aria-label="Local soundtrack tracks"></select></label>
+<button id="soundtrack-play" type="button" disabled>Play Music</button><button id="soundtrack-stop" type="button" disabled>Pause</button>
+<audio id="soundtrack-player" controls preload="none" aria-label="Local soundtrack player"></audio>
+<small id="soundtrack-status" role="status">Music stays on this device and is not uploaded.</small>
+<label>Choose an MP4 introduction <input id="intro-input" type="file" accept=".mp4,video/mp4"></label>
+<button id="intro-play" type="button" disabled>Play Intro</button>
+<small id="intro-status" role="status">Intro remains session-local and is never uploaded.</small>
+</details></aside>
+<div id="intro-overlay" hidden><video id="intro-player" controls playsinline preload="none" aria-label="Selected local game introduction"></video><button id="intro-skip" type="button">Skip Intro</button></div>
 <div id="actions" aria-label="Mobile game controls"><button data-move="left" aria-label="Walk left">◀</button><button data-move="forward" aria-label="Walk forward">▲</button><button data-move="back" aria-label="Walk backward">▼</button><button data-move="right" aria-label="Walk right">▶</button><button data-move="sprint" aria-label="Sprint">Run</button><button id="discover-waypoint">Discover</button><button id="cycle-time">Day/Night</button></div>
 <script type="module" src="./babylon-preview/main.js"></script></body></html>
