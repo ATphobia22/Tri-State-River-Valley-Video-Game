@@ -5,6 +5,8 @@ on:
   push:
     paths:
       - 'game/geospatial/cesium-imagery-controller.mjs'
+      - 'game/geospatial/indiana-ortho-imagery.mjs'
+      - 'game/tests/test-indiana-ortho-imagery.cjs'
       - 'game/babylon-preview/runtime-capabilities.mjs'
       - 'game/babylon-preview/main.js'
       - 'game/tests/test-cesium-imagery-controller.cjs'
@@ -24,7 +26,7 @@ jobs:
         with:
           node-version: '22'
       - name: Validate imagery lifecycle, provenance, URL and thread gates
-        run: node --test game/tests/test-cesium-imagery-controller.cjs game/tests/test-runtime-capabilities.cjs
+        run: node --test game/tests/test-cesium-imagery-controller.cjs game/tests/test-runtime-capabilities.cjs game/tests/test-indiana-ortho-imagery.cjs
       - name: Install pinned Babylon dependencies
         run: npm --prefix game ci --no-audit --no-fund
       - name: Run Babylon unit contracts
