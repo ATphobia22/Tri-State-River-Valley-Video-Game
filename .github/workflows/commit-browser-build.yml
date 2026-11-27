@@ -9,6 +9,9 @@ on:
       - 'game/index.html'
       - 'game/sw.js'
       - 'game/build_*.py'
+      - 'game/package.json'
+      - 'game/package-lock.json'
+      - 'game/babylon-preview/**'
   workflow_dispatch:
 
 permissions:
@@ -34,6 +37,8 @@ jobs:
           python-version: '3.12'
       - name: Install project dependencies
         run: python -m pip install -r game/requirements.txt
+      - name: Install locked JavaScript dependencies
+        run: npm --prefix game ci
       - name: Build the actual updated offline and hosted game
         run: npm --prefix game run build
       - name: Verify before recording generated game files
