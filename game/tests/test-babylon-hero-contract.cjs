@@ -35,3 +35,10 @@ test('actual Babylon preview attempts the project GLB with explicit fallback',()
  assert.match(main,/loadVerifiedHero/);
  assert.match(main,/heroState='fallback'/);
 });
+test('Babylon scene disposal supports boolean and callable signatures',async()=>{
+ const {isSceneDisposed}=await load;
+ assert.equal(isSceneDisposed({isDisposed:false}),false);
+ assert.equal(isSceneDisposed({isDisposed:true}),true);
+ assert.equal(isSceneDisposed({isDisposed(){return true;}}),true);
+ assert.equal(isSceneDisposed({isDisposed(){return false;}}),false);
+});
