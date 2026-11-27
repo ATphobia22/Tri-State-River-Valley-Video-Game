@@ -4,6 +4,7 @@ import {
 } from '@babylonjs/core';
 import {resolve} from './quality.mjs';
 import {installPlayable} from './playable.mjs';
+import {createFrameSupervisor} from './frame-supervisor.mjs';
 import {detectBrowserCapabilities,chooseComputeProfile} from './runtime-capabilities.mjs';
 const canvas=document.getElementById('babylon-world');
 const status=document.getElementById('status');
@@ -59,15 +60,29 @@ const browserCapabilities=detectBrowserCapabilities({
  crossOriginIsolated:globalThis.crossOriginIsolated===true,
  hardwareConcurrency:navigator.hardwareConcurrency
 });
-const qa={frames:0,meshCount:scene.meshes.length,activeMeshes:0,
+const qa={frames:0,meshCount:scene.meshes.length,activeMeshes:0,renderState:'healthy',renderFaults:0,
  browserCapabilities,computePolicy:chooseComputeProfile(browserCapabilities)};
 const adventure=installPlayable({scene,engine,camera,qa});
 qa.meshCount=scene.meshes.length;
 window.__RIVER_BABYLON_QA__=qa;
-engine.runRenderLoop(()=>{
- scene.render();
- qa.frames++;
- qa.activeMeshes=scene.getActiveMeshes().length;
+const renderSupervisor=createFrameSupervisor({
+ render:()=>scene.render(),
+ onFrame:()=>{
+  qa.frames++;
+  qa.activeMeshes=scene.getActiveMeshes().length;
+ },
+ onError:({message,failureCount,retryFrames})=>{
+  qa.renderState='degraded';
+  qa.renderFaults++;
+  qa.lastRenderError=message;
+  status.textContent='WebGL2 render fault ('+failureCount+') · retry in '+retryFrames+' frames · '+message;
+ },
+ onRecovered:()=>{
+  qa.renderState='healthy';
+  qa.lastRenderError=null;
+  applyQuality(quality.value);
+ }
 });
+engine.runRenderLoop(()=>renderSupervisor.tick());
 window.addEventListener('resize',()=>engine.resize());
 window.addEventListener('pagehide',()=>{engine.stopRenderLoop();scene.dispose();engine.dispose();},{once:true});
