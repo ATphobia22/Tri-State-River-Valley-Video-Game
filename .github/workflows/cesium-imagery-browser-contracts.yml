@@ -1,0 +1,35 @@
+name: Cesium imagery and browser capability contracts
+on:
+  pull_request:
+    branches: [main]
+  push:
+    paths:
+      - 'game/geospatial/cesium-imagery-controller.mjs'
+      - 'game/geospatial/indiana-ortho-imagery.mjs'
+      - 'game/tests/test-indiana-ortho-imagery.cjs'
+      - 'game/babylon-preview/runtime-capabilities.mjs'
+      - 'game/babylon-preview/main.js'
+      - 'game/tests/test-cesium-imagery-controller.cjs'
+      - 'game/tests/test-runtime-capabilities.cjs'
+      - 'game/docs/CESIUM_IMAGERY_WASM_WEBGL2_20261126.md'
+      - '.github/workflows/cesium-imagery-browser-contracts.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate-imagery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate imagery lifecycle, provenance, URL and thread gates
+        run: node --test game/tests/test-cesium-imagery-controller.cjs game/tests/test-runtime-capabilities.cjs game/tests/test-indiana-ortho-imagery.cjs
+      - name: Install pinned Babylon dependencies
+        run: npm --prefix game ci --no-audit --no-fund
+      - name: Run Babylon unit contracts
+        run: npm --prefix game run test:babylon-preview
+      - name: Build production-format opt-in WebGL2 preview
+        run: npm --prefix game run build:babylon-preview

@@ -1,0 +1,4 @@
+id,kind,registration_status,production_approved,verified
+usgs-posey-2013-ept,LiDAR source,candidate_unverified,0,0
+cesium-ion-mount-vernon-buildings,3D Tiles buildings,candidate_unverified,0,0
+cesium-ion-posey-terrain,Cesium ion terrain,candidate_unverified,0,0
