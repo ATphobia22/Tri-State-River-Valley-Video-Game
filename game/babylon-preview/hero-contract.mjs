@@ -25,3 +25,9 @@ export async function verifyHeroBytes(bytes,manifest,subtle=globalThis.crypto?.s
  return Object.freeze({bytes:bytes.byteLength,sha256:hash});
 }
 export const REQUIRED_HERO_ACTIONS=ACTIONS;
+
+/** Babylon 9 can expose disposal as a boolean property; older adapters use a method. */
+export function isSceneDisposed(scene){
+ if(!scene)return true;
+ return typeof scene.isDisposed==='function'?Boolean(scene.isDisposed()):scene.isDisposed===true;
+}
