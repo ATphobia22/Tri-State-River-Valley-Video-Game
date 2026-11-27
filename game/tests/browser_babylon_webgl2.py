@@ -1,5 +1,7 @@
 """Real Chromium smoke test for the isolated Babylon WebGL2 preview."""
 import functools
+import io
+import wave
 import http.server
 import json
 import os
@@ -79,6 +81,22 @@ with Server(("127.0.0.1", 0), Handler) as server:
                 page.locator("#cycle-time").click()
                 page.wait_for_function("window.__RIVER_BABYLON_QA__.hour === 21", timeout=10000)
                 assert "night" in page.locator("#adventure-status").inner_text()
+                # Real WAV audio fixture exercises session-local File API and HTMLAudioElement playback.
+                audio_buffer = io.BytesIO()
+                with wave.open(audio_buffer, "wb") as wav:
+                    wav.setnchannels(1)
+                    wav.setsampwidth(2)
+                    wav.setframerate(22050)
+                    wav.writeframes(b"\\x00\\x00" * 22050)
+                page.locator("#media-panel").evaluate("(panel) => panel.open = true")
+                page.locator("#soundtrack-input").set_input_files({
+                    "name": "qa-tone.wav", "mimeType": "audio/wav", "buffer": audio_buffer.getvalue()
+                })
+                assert "1 local track" in page.locator("#soundtrack-status").inner_text()
+                page.locator("#soundtrack-play").click()
+                page.wait_for_function("document.getElementById('soundtrack-player').currentTime > 0.05", timeout=10000)
+                page.locator("#soundtrack-stop").click()
+                assert page.locator("#soundtrack-player").evaluate("(audio) => audio.paused")
                 page.screenshot(path=str(out / f"{name}-webgl2.png"))
                 print(json.dumps({"viewport": name, "context": version, "status": "render-smoke-passed"}))
                 page.close()
