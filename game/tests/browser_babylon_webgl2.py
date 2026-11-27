@@ -47,6 +47,13 @@ with Server(("127.0.0.1", 0), Handler) as server:
                           version: gl.getParameter(gl.VERSION), render: window.__RIVER_BABYLON_QA__};
                 }""")
                 assert version["webgl2"] and version["width"] > 0 and version["height"] > 0 and version["render"]["frames"] >= 3 and version["render"]["meshCount"] >= 25 and version["render"]["activeMeshes"] > 0, version
+                page.wait_for_function("window.__RIVER_BABYLON_QA__?.heroState !== 'loading'", timeout=45000)
+                hero = page.evaluate("window.__RIVER_BABYLON_QA__")
+                assert hero["heroState"] == "rigged", hero
+                assert hero["heroBoneCount"] == 27, hero
+                assert hero["heroClipCount"] >= 13, hero
+                assert hero["heroPbrMaterials"] >= 1, hero
+                assert hero["heroMeshCount"] >= 1, hero
                 assert not errors, errors
                 for setting in ("low", "high", "cinematic"):
                     page.locator("#quality").select_option(setting)
