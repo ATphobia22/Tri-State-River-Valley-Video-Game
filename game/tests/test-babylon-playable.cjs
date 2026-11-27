@@ -35,3 +35,29 @@ test('main Babylon entrypoint wires real game loop and controls',()=>{
  const playable=fs.readFileSync(path.join(root,'babylon-preview/playable.mjs'),'utf8');
  assert.match(main,/installPlayable/);assert.match(playable,/qa\.playable/);
 });
+
+const memory=()=>{let value=null;return {getItem:()=>value,setItem:(_key,next)=>{value=next;}};};
+test('discovery checkpoints restore player location and progress',async()=>{
+ const {createAdventure}=await load;const storage=memory();const game=createAdventure({storage});
+ assert.equal(game.setPosition(-38,49),true);assert.equal(game.discover('pier').ok,true);
+ const resumed=createAdventure({storage}).snapshot();
+ assert.deepEqual(resumed.position,{x:-38,z:49});assert.deepEqual(resumed.discovered,['pier']);
+});
+test('invalid saved positions fall back to safe spawn without losing progress',async()=>{
+ const {createAdventure}=await load;
+ for(const position of [{x:100,z:49},{x:-37.5,z:-27},{x:'0',z:49},null]){
+  const storage={getItem:()=>JSON.stringify({version:1,position,discovered:['pier'],hour:21})};
+  const resumed=createAdventure({storage}).snapshot();
+  assert.deepEqual(resumed.position,{x:0,z:49});assert.deepEqual(resumed.discovered,['pier']);assert.equal(resumed.hour,21);
+ }
+});
+test('browser storage getter denial is safe',async()=>{
+ const {getBrowserStorage,createAdventure}=await load;
+ const storage=getBrowserStorage({get localStorage(){throw new Error('SecurityError');}});
+ assert.equal(storage,null);assert.equal(createAdventure({storage}).snapshot().total,3);
+});
+test('legacy saves without positions remain compatible',async()=>{
+ const {createAdventure}=await load;
+ const storage={getItem:()=>JSON.stringify({version:1,discovered:['grove'],hour:16})};
+ assert.deepEqual(createAdventure({storage}).snapshot().position,{x:0,z:49});
+});
