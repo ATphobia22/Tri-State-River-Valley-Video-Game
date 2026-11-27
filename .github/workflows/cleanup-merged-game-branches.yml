@@ -20,6 +20,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   cleanup-verified-merged:
+    if: github.repository == 'ATphobia22/Tri-State-River-Valley-Video-Game' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -38,7 +39,7 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
           set -euo pipefail
-          command=(python game/tools/reconcile_merged_branches.py --repository "$GITHUB_REPOSITORY" --report "$RUNNER_TEMP/game-merged-branch-audit.json")
+          command=(python game/tools/reconcile_merged_branches.py --repository "$GITHUB_REPOSITORY" --max-delete 50 --report "$RUNNER_TEMP/game-merged-branch-audit.json")
           if [[ "$DRY_RUN" != "true" ]]; then command+=(--apply); fi
           "${command[@]}"
           python - <<'PY'
