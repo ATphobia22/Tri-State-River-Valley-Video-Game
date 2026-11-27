@@ -3,7 +3,7 @@ import {SceneLoader,TransformNode} from '@babylonjs/core';
 import '@babylonjs/loaders/glTF';
 import heroUrl from '../assets/models/river_explorer_rigged.glb?url';
 import manifest from '../assets/models/river_explorer_manifest.json';
-import {verifyHeroBytes,REQUIRED_HERO_ACTIONS} from './hero-contract.mjs';
+import {verifyHeroBytes,REQUIRED_HERO_ACTIONS,isSceneDisposed} from './hero-contract.mjs';
 
 function cleanImport(imported){
  for(const group of imported?.animationGroups||[])group.dispose();
@@ -17,13 +17,13 @@ export async function loadVerifiedHero({scene,qa,signal,fetchImpl=globalThis.fet
  if(!response?.ok)throw Error('hero GLB unavailable: HTTP '+(response?.status??'unknown'));
  const bytes=new Uint8Array(await response.arrayBuffer());
  await verifyHeroBytes(bytes,manifest);
- if(signal?.aborted||scene.isDisposed())throw Error('hero import cancelled');
+ if(signal?.aborted||isSceneDisposed(scene))throw Error('hero import cancelled');
  const blobUrl=URL.createObjectURL(new Blob([bytes],{type:'model/gltf-binary'}));
  let imported;
  try{
   imported=await SceneLoader.ImportMeshAsync(null,'',blobUrl,scene,undefined,'.glb');
  }finally{URL.revokeObjectURL(blobUrl);}
- if(signal?.aborted||scene.isDisposed()){cleanImport(imported);throw Error('hero import cancelled');}
+ if(signal?.aborted||isSceneDisposed(scene)){cleanImport(imported);throw Error('hero import cancelled');}
  const skeleton=imported.skeletons.find(s=>s.bones.length===manifest.boneCount);
  const clips=new Map(imported.animationGroups.map(group=>[group.name,group]));
  const actualMeshes=imported.meshes.filter(mesh=>typeof mesh.getTotalVertices==='function'&&mesh.getTotalVertices()>0);
