@@ -74,8 +74,8 @@ export function mountOfficialTiles({
  scene,url,origin=globalThis.location?.origin,registration,
  maxTiles=70,TilesRendererClass,CacheClass
 }={}){
- assertReview(registration);
  if(scene?.useRightHandedSystem!==true)throw Error('NASA Babylon renderer requires right-handed scene');
+ assertReview(registration);
  if(!scene.onBeforeRenderObservable?.add||!scene.onBeforeRenderObservable?.remove)throw Error('Babylon scene lifecycle required');
  if(!Number.isSafeInteger(maxTiles)||maxTiles<1||maxTiles>250)throw Error('invalid HLOD tile budget');
  const tileset=sameOriginUrl(url,origin);
