@@ -4,7 +4,8 @@
 (function(root,factory){
  const api=factory();
  if(typeof module==='object'&&module.exports)module.exports=api;
- else root.ValleyGameplaySkills=api;
+ // Keep browser global available when imported as an ESM side effect by Babylon.
+ if(typeof window!=='undefined')root.ValleyGameplaySkills=api;
 })(typeof globalThis==='object'?globalThis:this,function(){
  'use strict';
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
