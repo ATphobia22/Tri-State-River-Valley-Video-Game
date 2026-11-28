@@ -2,7 +2,7 @@ import {MeshBuilder,Vector3,Color3,PBRMaterial,PointLight} from '@babylonjs/core
 import {createAdventure,STOPS,getBrowserStorage} from './gameplay.mjs';
 import {chooseHeroAction} from './hero-contract.mjs';
 /** Illustrative world gameplay; never reports unsurveyed locations as authoritative geography. */
-export function installPlayable({scene,engine,camera,qa}){
+export function installPlayable({scene,engine,camera,qa,onDiscover=null}){
  const game=createAdventure({storage:getBrowserStorage(window)});
  const player=MeshBuilder.CreateCapsule('playable-explorer',{height:3,radius:.8},scene);
  let heroVisual=null,heading=0;
@@ -28,7 +28,7 @@ export function installPlayable({scene,engine,camera,qa}){
   for(const [id,marker] of markers)marker.material.emissiveColor=s.discovered.includes(id)?new Color3(.45,.28,.04):new Color3(.08,.2,.16);
   if(interactButton)interactButton.disabled=!stop||s.discovered.includes(stop.id);
  }
- function interact(){const stop=game.nearby();if(!stop)return;game.discover(stop.id);updateHUD();}
+ function interact(){const stop=game.nearby();if(!stop)return;const result=game.discover(stop.id);if(result.ok)onDiscover?.(stop.id);updateHUD();}
  function cycleTime(){game.setTime(game.snapshot().hour===16?21:16);updateHUD();}
  function onKeyDown(event){
   const tag=event.target?.tagName?.toLowerCase();if(tag==='select'||tag==='input')return;
