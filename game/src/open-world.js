@@ -2,7 +2,7 @@
  * The geometry shares the terrain sample function supplied by the main render engine.
  * All hunting/fishing progression is handled by the existing unit-tested ValleyCore.
  */
-(function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.ValleyOpenWorld=api;})(typeof globalThis==='object'?globalThis:this,function(root){'use strict';
+(function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;if(typeof window!=='undefined')root.ValleyOpenWorld=api;})(typeof globalThis==='object'?globalThis:this,function(root){'use strict';
 const SKILLS=root.ValleyGameplaySkills||(typeof require==='function'?require('./gameplay-skills.js'):null);
 const CREATURES=root.ValleyCreatures||(typeof require==='function'?require('./creatures.js'):null);
 const SITES=Object.freeze({
