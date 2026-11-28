@@ -7,6 +7,7 @@ import roadsUrl from '../reference/mount-vernon/roads.geojson?url';
 import buildingsUrl from '../reference/mount-vernon/buildings.geojson?url';
 import registration from '../reference/mount-vernon/registration.json';
 import anchors from '../reference/mount-vernon/landmark-anchors-receipt.json';
+import {buildingMasses} from './building-masses.mjs';
 import {aerialPlane,geographicLines} from './geo-scene.mjs';
 
 export function mountGeographicStage(scene) {
@@ -25,6 +26,9 @@ export function mountGeographicStage(scene) {
   material.backFaceCulling=false;
   ground.material=material;
   const meshes=[ground];
+  const buildingMaterial=new StandardMaterial('artistic-building-masonry',scene);
+  buildingMaterial.diffuseColor=new Color3(.65,.49,.37);
+  buildingMaterial.backFaceCulling=false;
   const controller=new AbortController();
   function addLines(name,source,color,y){
     if (!source.length) return;
@@ -46,10 +50,18 @@ export function mountGeographicStage(scene) {
       const roadLines=geographicLines(roads,origin,{radiusMeters:500,maxLines:250,maxVertices:9500});
       const buildingLines=geographicLines(buildings,origin,{radiusMeters:500,maxLines:500,maxVertices:14000});
       addLines('IGIO-road-centerlines-2025',roadLines,'#8ac4e4',.25);
-      addLines('IGIO-building-footprints-2020',buildingLines,'#e8ccb0',.35);
+      const masses=buildingMasses(buildings,origin);
+      for(const [i,mass] of masses.entries()){
+        const mesh=new Mesh('artistic-building-'+i,scene);
+        const data=new VertexData();
+        data.positions=mass.positions;data.indices=mass.indices;data.normals=[];
+        VertexData.ComputeNormals(data.positions,data.indices,data.normals);
+        data.applyToMesh(mesh);mesh.material=buildingMaterial;
+        mesh.metadata={provenance:mass.provenance};meshes.push(mesh);
+      }
       return Object.freeze({state:'source-plotted',roadSegments:roadLines.length,
-        buildingOutlines:buildingLines.length,sourceImageryYear:2023,
+        buildingOutlines:buildingLines.length,artisticBuildings:masses.length,sourceImageryYear:2023,
         horizontalCRS:'EPSG:4326',verticalDatumVerified:false,registered3DTiles:0});
     });
-  return Object.freeze({ready,dispose(){controller.abort();for(const mesh of meshes)mesh.dispose();material.dispose();}});
+  return Object.freeze({ready,dispose(){controller.abort();for(const mesh of meshes)mesh.dispose();material.dispose();buildingMaterial.dispose();}});
 }
