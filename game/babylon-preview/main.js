@@ -6,6 +6,7 @@ import {resolve} from './quality.mjs';
 import {installPlayable} from './playable.mjs';
 import {loadVerifiedHero} from './verified-hero.mjs';
 import {installLocalMedia} from './local-media.mjs';
+import {installSharedActivities} from './activities-ui.mjs';
 import {createFrameSupervisor} from './frame-supervisor.mjs';
 import {mountGeographicStage} from './geo-stage.mjs';
 import {detectBrowserCapabilities,chooseComputeProfile} from './runtime-capabilities.mjs';
@@ -65,7 +66,12 @@ void geography.ready.then(info=>{
  qa.geography={state:'unavailable',error:String(error?.message||error)};
  applyQuality(quality.value);
 });
-const adventure=installPlayable({scene,engine,camera,qa});
+let sharedActivities=null;
+const adventure=installPlayable({scene,engine,camera,qa,onDiscover:id=>sharedActivities?.onDiscover(id)});
+sharedActivities=installSharedActivities({scene,adventure,qa});
+// Checkpoint reconciliation: existing discovered waypoints earn canonical legacy
+// rewards exactly once, including saves created before the shared-rule migration.
+for(const id of adventure.snapshot().discovered)sharedActivities.onDiscover(id);
 const media=installLocalMedia();
 const heroAbort=new AbortController();
 const heroStatus=document.getElementById('hero-status');
@@ -101,4 +107,4 @@ const renderSupervisor=createFrameSupervisor({
 });
 engine.runRenderLoop(()=>renderSupervisor.tick());
 window.addEventListener('resize',()=>engine.resize());
-window.addEventListener('pagehide',()=>{heroAbort.abort();media?.dispose();geography.dispose();engine.stopRenderLoop();scene.dispose();engine.dispose();},{once:true});
+window.addEventListener('pagehide',()=>{heroAbort.abort();media?.dispose();sharedActivities?.dispose();geography.dispose();engine.stopRenderLoop();scene.dispose();engine.dispose();},{once:true});
