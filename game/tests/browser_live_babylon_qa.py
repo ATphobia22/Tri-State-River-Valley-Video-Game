@@ -28,14 +28,28 @@ def verify(page, device, output):
         const q = window.__RIVER_BABYLON_QA__;
         return q?.frames >= 5 && q.activeMeshes > 0 && q.playable === true && q.playerPosition;
     }""", timeout=45000)
+    # The prior 25-mesh gate depended on invented blocks removed by PR #87.
+    # Assert that the authoritative source imagery and recorded 2D overlays are loaded instead.
+    page.wait_for_function(
+        "() => window.__RIVER_BABYLON_QA__?.geography?.state === 'source-plotted'",
+        timeout=45000,
+    )
     data = page.evaluate("""() => {
         const gl = document.getElementById('babylon-world')?.getContext('webgl2');
         const q = window.__RIVER_BABYLON_QA__;
         return { webgl2: gl instanceof WebGL2RenderingContext, frames: q.frames,
           activeMeshes: q.activeMeshes, meshCount: q.meshCount,
-          playerPosition: q.playerPosition, status: document.getElementById('status')?.textContent };
+          playerPosition: q.playerPosition, geography: q.geography,
+          status: document.getElementById('status')?.textContent };
     }""")
-    assert data["webgl2"] and data["meshCount"] >= 25, (device, data)
+    assert data["webgl2"] and data["meshCount"] >= 3, (device, data)
+    geo = data["geography"]
+    assert geo["state"] == "source-plotted", (device, geo)
+    assert geo["sourceImageryYear"] == 2023, (device, geo)
+    assert geo["horizontalCRS"] == "EPSG:4326", (device, geo)
+    assert geo["roadSegments"] > 0 and geo["buildingOutlines"] > 0, (device, geo)
+    assert geo["verticalDatumVerified"] is False, (device, geo)
+    assert geo["registered3DTiles"] == 0, (device, geo)
     assert "registered tiles: 0" in data["status"], "Unregistered tiles must remain absent"
     start = data["playerPosition"]["x"]
     if device == "mobile":
