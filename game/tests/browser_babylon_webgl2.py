@@ -48,7 +48,14 @@ with Server(("127.0.0.1", 0), Handler) as server:
                           width: gl.drawingBufferWidth, height: gl.drawingBufferHeight,
                           version: gl.getParameter(gl.VERSION), render: window.__RIVER_BABYLON_QA__};
                 }""")
-                assert version["webgl2"] and version["width"] > 0 and version["height"] > 0 and version["render"]["frames"] >= 3 and version["render"]["meshCount"] >= 25 and version["render"]["activeMeshes"] > 0, version
+                assert version["webgl2"] and version["width"] > 0 and version["height"] > 0 and version["render"]["frames"] >= 3 and version["render"]["meshCount"] >= 3 and version["render"]["activeMeshes"] > 0, version
+                # Source-admitted geography is more meaningful than the old fabricated-box mesh count.
+                page.wait_for_function("window.__RIVER_BABYLON_QA__?.geography?.state === 'source-plotted'", timeout=30000)
+                geo = page.evaluate("window.__RIVER_BABYLON_QA__.geography")
+                assert geo["sourceImageryYear"] == 2023, geo
+                assert geo["roadSegments"] > 0 and geo["buildingOutlines"] > 0, geo
+                assert geo["horizontalCRS"] == "EPSG:4326", geo
+                assert geo["verticalDatumVerified"] is False and geo["registered3DTiles"] == 0, geo
                 page.wait_for_function("window.__RIVER_BABYLON_QA__?.heroState !== 'loading'", timeout=45000)
                 hero = page.evaluate("window.__RIVER_BABYLON_QA__")
                 assert hero["heroState"] == "rigged", hero
