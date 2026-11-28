@@ -5879,7 +5879,8 @@ return Object.freeze({chooseGrid,validSource,FALLBACK_LABEL});
 (function(root,factory){
   const api=factory();
   if(typeof module==='object'&&module.exports) module.exports=api;
-  else root.ValleyCore=api;
+  // Browser ESM bundlers may provide a CommonJS shim; expose the same API to the game window.
+  if(typeof window!=='undefined') root.ValleyCore=api;
 })(typeof globalThis==='object'?globalThis:this,function(){
 'use strict';
 const LIMIT=2450;
@@ -6671,7 +6672,8 @@ return {SCENES,render};
 (function(root,factory){
  const api=factory();
  if(typeof module==='object'&&module.exports)module.exports=api;
- else root.ValleyGameplaySkills=api;
+ // Keep browser global available when imported as an ESM side effect by Babylon.
+ if(typeof window!=='undefined')root.ValleyGameplaySkills=api;
 })(typeof globalThis==='object'?globalThis:this,function(){
  'use strict';
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -6807,7 +6809,7 @@ return Object.freeze({create,createScout,createDeer,createTurkey,createRabbit,at
  * The geometry shares the terrain sample function supplied by the main render engine.
  * All hunting/fishing progression is handled by the existing unit-tested ValleyCore.
  */
-(function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.ValleyOpenWorld=api;})(typeof globalThis==='object'?globalThis:this,function(root){'use strict';
+(function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;if(typeof window!=='undefined')root.ValleyOpenWorld=api;})(typeof globalThis==='object'?globalThis:this,function(root){'use strict';
 const SKILLS=root.ValleyGameplaySkills||(typeof require==='function'?require('./gameplay-skills.js'):null);
 const CREATURES=root.ValleyCreatures||(typeof require==='function'?require('./creatures.js'):null);
 const SITES=Object.freeze({
