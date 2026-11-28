@@ -70,6 +70,12 @@ with Server(("127.0.0.1", 0), Handler) as server:
                 assert hero["heroClipCount"] >= 13, hero
                 assert hero["heroPbrMaterials"] >= 1, hero
                 assert hero["heroMeshCount"] >= 1, hero
+                # Babylon now runs the canonical family game rules, not a separate scoring demo.
+                page.wait_for_function("window.__RIVER_BABYLON_QA__?.activities?.rules === 'canonical-ValleyCore'", timeout=10000)
+                activities = page.evaluate("window.__RIVER_BABYLON_QA__.activities")
+                assert activities["wildlifeSpecies"] == 3 and activities["recipes"] == 6, activities
+                for control in ["fishing-cast", "fishing-reel", "farm-action", "cook-action", "hunting-track"]:
+                    assert page.locator("#" + control).count() == 1, control
                 assert not errors, errors
                 for setting in ("low", "high", "cinematic"):
                     page.locator("#quality").select_option(setting)
@@ -92,6 +98,24 @@ with Server(("127.0.0.1", 0), Handler) as server:
                     page.mouse.up()
                 end_x = page.evaluate("window.__RIVER_BABYLON_QA__.playerPosition.x")
                 assert end_x < start_x - 0.1, {"viewport": name, "start": start_x, "end": end_x}
+                # Walk to the actual river activity marker and cast via visible game controls.
+                # Keep the original 1100ms real-time bite/tension contract in unit tests.
+                if name == "desktop":
+                    page.keyboard.down("a")
+                    page.wait_for_timeout(1700)
+                    page.keyboard.up("a")
+                else:
+                    left = page.locator('[data-move="left"]')
+                    bounds = left.bounding_box()
+                    page.mouse.move(bounds["x"] + bounds["width"]/2, bounds["y"] + bounds["height"]/2)
+                    page.mouse.down()
+                    page.wait_for_timeout(1700)
+                    page.mouse.up()
+                page.wait_for_function("!document.getElementById('fishing-cast').disabled", timeout=10000)
+                page.locator("#gameplay-panel").evaluate("(panel) => panel.open = true")
+                page.locator("#fishing-cast").click()
+                assert "cast" in page.locator("#activity-result").inner_text().lower()
+                assert "fishing" in page.locator("#activity-cue").inner_text().lower()
                 page.locator("#cycle-time").click()
                 page.wait_for_function("window.__RIVER_BABYLON_QA__.hour === 21", timeout=10000)
                 assert "night" in page.locator("#adventure-status").inner_text()
