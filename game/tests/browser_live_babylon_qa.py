@@ -26,16 +26,21 @@ def verify(page, device, output):
     assert response is not None and response.status == 200, "Public preview must return HTTP 200"
     page.wait_for_function("""() => {
         const q = window.__RIVER_BABYLON_QA__;
-        return q?.frames >= 5 && q.activeMeshes > 0 && q.playable === true && q.playerPosition;
+        return q?.frames >= 5 && q.activeMeshes > 0 && q.playable === true && q.playerPosition &&
+            q.geography?.state === 'source-plotted';
     }""", timeout=45000)
     data = page.evaluate("""() => {
         const gl = document.getElementById('babylon-world')?.getContext('webgl2');
         const q = window.__RIVER_BABYLON_QA__;
         return { webgl2: gl instanceof WebGL2RenderingContext, frames: q.frames,
           activeMeshes: q.activeMeshes, meshCount: q.meshCount,
-          playerPosition: q.playerPosition, status: document.getElementById('status')?.textContent };
+          geography: q.geography, playerPosition: q.playerPosition, status: document.getElementById('status')?.textContent };
     }""")
-    assert data["webgl2"] and data["meshCount"] >= 25, (device, data)
+    assert data["webgl2"] and data["meshCount"] >= 3 and data["activeMeshes"] > 0, (device, data)
+    geo = data["geography"]
+    assert geo["sourceImageryYear"] == 2023 and geo["horizontalCRS"] == "EPSG:4326", geo
+    assert geo["roadSegments"] > 0 and geo["buildingOutlines"] > 0, geo
+    assert geo["verticalDatumVerified"] is False and geo["registered3DTiles"] == 0, geo
     assert "registered tiles: 0" in data["status"], "Unregistered tiles must remain absent"
     start = data["playerPosition"]["x"]
     if device == "mobile":
