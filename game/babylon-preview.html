@@ -17,7 +17,16 @@ label{display:block;margin:8px 0}select{background:#153b40;color:white;padding:5
 #intro-overlay{position:fixed;inset:0;background:#000e;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
 #intro-overlay[hidden]{display:none}
 #intro-player{max-width:95vw;max-height:75vh}
-#intro-skip{font-size:18px;padding:10px 20px}</style></head><body>
+#intro-skip{font-size:18px;padding:10px 20px}
+#gameplay-panel{margin-top:8px;border-top:1px solid #b9ceae60;padding-top:8px}
+#gameplay-panel label{font-size:12px}
+#gameplay-panel select{max-width:100%;min-height:34px}
+#gameplay-panel button{padding:7px 10px;margin:3px;background:#153b40;color:#fff;border:1px solid #b9ceae60;border-radius:7px;min-height:38px}
+#gameplay-panel button:disabled{opacity:.45;cursor:not-allowed}
+#gameplay-panel section{padding-top:6px;border-top:1px solid #ffffff22}
+#gameplay-panel output{display:block;font-size:12px;color:#d9e5c5;margin:6px 0}
+#activity-aim{width:100%;accent-color:#f1bd70}
+</style></head><body>
 <canvas id="babylon-world" aria-label="WebGL2 Babylon engine preview"></canvas>
 <aside><strong>River Valley · WebGL2 migration preview</strong>
 <label>Graphics quality <select id="quality"><option>low</option><option selected>medium</option><option>high</option><option>ultra</option><option>cinematic</option></select></label>
@@ -32,6 +41,26 @@ label{display:block;margin:8px 0}select{background:#153b40;color:white;padding:5
 <label>Choose an MP4 introduction <input id="intro-input" type="file" accept=".mp4,video/mp4"></label>
 <button id="intro-play" type="button" disabled>Play Intro</button>
 <small id="intro-status" role="status">Intro remains session-local and is never uploaded.</small>
+</details>
+<details id="gameplay-panel" open><summary>Family Adventure · Shared Game Progress</summary>
+<output id="game-economy" aria-live="polite">Loading original game saves…</output>
+<small>Original three-slot save format · Babylon WebGL2 uses the existing rewards and pantry.</small>
+<section><strong>River Fishing</strong>
+<label>Fish <select id="fish-kind"><option value="bass">Bass</option><option value="bluegill">Bluegill</option><option value="channelCatfish">Channel Catfish</option></select></label>
+<button type="button" id="fishing-cast">Cast</button><button type="button" id="fishing-reel">Reel</button>
+</section>
+<section><strong>Wildlife Tracking</strong>
+<label>Animal <select id="hunt-kind"><option value="deer">Deer</option><option value="turkey">Turkey</option><option value="rabbit">Rabbit</option></select></label>
+<button type="button" id="hunting-track">Track</button><button type="button" id="hunting-shoot">Take Shot</button>
+<label>Aim <input id="activity-aim" type="range" min="0" max="100" value="50"></label>
+<output id="activity-cue" aria-live="polite">Find a riverbank or wildlife marker to begin.</output>
+</section>
+<section><strong>Family Farm</strong><label>Crop plot <select id="farm-plot" aria-label="Farm crop plot"><option value="0">Plot 1</option><option value="1">Plot 2</option><option value="2">Plot 3</option><option value="3">Plot 4</option><option value="4">Plot 5</option><option value="5">Plot 6</option><option value="6">Plot 7</option><option value="7">Plot 8</option><option value="8">Plot 9</option></select></label>
+<button type="button" id="farm-action">Plant / Harvest</button><button type="button" id="farm-water">Water Growing Crops</button>
+</section>
+<section><strong>Camp Cooking</strong><label>Recipe <select id="cook-recipe" aria-label="Choose recipe"></select></label>
+<button type="button" id="cook-action">Cook from Pantry</button></section>
+<output id="activity-result" aria-live="polite" role="status">Walk to the corresponding activity station to play.</output>
 </details></aside>
 <div id="intro-overlay" hidden><video id="intro-player" controls playsinline preload="none" aria-label="Selected local game introduction"></video><button id="intro-skip" type="button">Skip Intro</button></div>
 <div id="actions" aria-label="Mobile game controls"><button data-move="left" aria-label="Walk left">◀</button><button data-move="forward" aria-label="Walk forward">▲</button><button data-move="back" aria-label="Walk backward">▼</button><button data-move="right" aria-label="Walk right">▶</button><button data-move="sprint" aria-label="Sprint">Run</button><button id="discover-waypoint">Discover</button><button id="cycle-time">Day/Night</button></div>
