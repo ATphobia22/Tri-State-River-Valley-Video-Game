@@ -1,12 +1,13 @@
 import {
- Engine, Scene, ArcRotateCamera, Vector3, Color3, Color4, HemisphericLight,
- DirectionalLight, MeshBuilder, PBRMaterial, ShadowGenerator
+ Engine, Scene, ArcRotateCamera, Vector3, Color4, HemisphericLight,
+ DirectionalLight, ShadowGenerator
 } from '@babylonjs/core';
 import {resolve} from './quality.mjs';
 import {installPlayable} from './playable.mjs';
 import {loadVerifiedHero} from './verified-hero.mjs';
 import {installLocalMedia} from './local-media.mjs';
 import {createFrameSupervisor} from './frame-supervisor.mjs';
+import {mountGeographicStage} from './geo-stage.mjs';
 import {detectBrowserCapabilities,chooseComputeProfile} from './runtime-capabilities.mjs';
 const canvas=document.getElementById('babylon-world');
 const status=document.getElementById('status');
@@ -28,17 +29,7 @@ const sun=new DirectionalLight('sun',new Vector3(-.5,-1,-.35),scene);
 sun.position=new Vector3(50,90,35);sun.intensity=2;
 let shadows=new ShadowGenerator(1024,sun);
 shadows.usePercentageCloserFiltering=true;
-const ground=MeshBuilder.CreateGround('illustrative-ground',{width:120,height:120,subdivisions:4},scene);
-const soil=new PBRMaterial('soil',scene);soil.albedoColor=new Color3(.32,.43,.29);soil.roughness=.95;ground.material=soil;ground.receiveShadows=true;
-for(let i=0;i<24;i++){
- const x=(i%6-2.5)*15,z=(Math.floor(i/6)-1.5)*18;
- const block=MeshBuilder.CreateBox('illustrative-block-'+i,{width:8,height:6+(i%4)*2,depth:9},scene);
- block.position.set(x,(6+(i%4)*2)/2,z);
- const mat=new PBRMaterial('building-mat-'+i,scene);
- mat.albedoColor=Color3.FromHexString(['#bfa98f','#b9ac9a','#987f69','#bba68e'][i%4]);
- mat.metallic=0;mat.roughness=.82;block.material=mat;
- shadows.addShadowCaster(block);
-}
+let geographicState='loading';
 function applyQuality(name){
  const p=resolve(name);
  engine.setHardwareScalingLevel(p.hardwareScaling);
@@ -46,10 +37,9 @@ function applyQuality(name){
   shadows.dispose();
   shadows=new ShadowGenerator(p.shadowMap,sun);
   shadows.usePercentageCloserFiltering=true;
-  for(const mesh of scene.meshes) if(mesh.name.startsWith('illustrative-block-')) shadows.addShadowCaster(mesh);
  }
  status.textContent='Babylon.js WebGL'+engine.webGLVersion+' · '+p.name+
-  ' · illustrative demo only · registered tiles: 0';
+  ' · aerial reference '+geographicState+' · elevations unverified · registered tiles: 0';
  return p;
 }
 quality.addEventListener('change',()=>applyQuality(quality.value));
@@ -64,6 +54,17 @@ const browserCapabilities=detectBrowserCapabilities({
 });
 const qa={frames:0,meshCount:scene.meshes.length,activeMeshes:0,renderState:'healthy',renderFaults:0,heroState:'loading',
  browserCapabilities,computePolicy:chooseComputeProfile(browserCapabilities)};
+const geography=mountGeographicStage(scene);
+void geography.ready.then(info=>{
+ geographicState=info.state==='source-plotted'?'source-plotted':'unavailable';
+ qa.geography=info;
+ qa.meshCount=scene.meshes.length;
+ applyQuality(quality.value);
+}).catch(error=>{
+ geographicState='unavailable';
+ qa.geography={state:'unavailable',error:String(error?.message||error)};
+ applyQuality(quality.value);
+});
 const adventure=installPlayable({scene,engine,camera,qa});
 const media=installLocalMedia();
 const heroAbort=new AbortController();
@@ -100,4 +101,4 @@ const renderSupervisor=createFrameSupervisor({
 });
 engine.runRenderLoop(()=>renderSupervisor.tick());
 window.addEventListener('resize',()=>engine.resize());
-window.addEventListener('pagehide',()=>{heroAbort.abort();media?.dispose();engine.stopRenderLoop();scene.dispose();engine.dispose();},{once:true});
+window.addEventListener('pagehide',()=>{heroAbort.abort();media?.dispose();geography.dispose();engine.stopRenderLoop();scene.dispose();engine.dispose();},{once:true});
