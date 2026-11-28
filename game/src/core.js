@@ -3,7 +3,8 @@
 (function(root,factory){
   const api=factory();
   if(typeof module==='object'&&module.exports) module.exports=api;
-  else root.ValleyCore=api;
+  // Browser ESM bundlers may provide a CommonJS shim; expose the same API to the game window.
+  if(typeof window!=='undefined') root.ValleyCore=api;
 })(typeof globalThis==='object'?globalThis:this,function(){
 'use strict';
 const LIMIT=2450;
