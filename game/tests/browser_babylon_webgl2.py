@@ -100,18 +100,33 @@ with Server(("127.0.0.1", 0), Handler) as server:
                 assert end_x < start_x - 0.1, {"viewport": name, "start": start_x, "end": end_x}
                 # Walk to the actual river activity marker and cast via visible game controls.
                 # Keep the original 1100ms real-time bite/tension contract in unit tests.
-                if name == "desktop":
-                    page.keyboard.down("a")
-                    page.wait_for_timeout(1700)
-                    page.keyboard.up("a")
-                else:
-                    left = page.locator('[data-move="left"]')
-                    bounds = left.bounding_box()
-                    page.mouse.move(bounds["x"] + bounds["width"]/2, bounds["y"] + bounds["height"]/2)
-                    page.mouse.down()
-                    page.wait_for_timeout(1700)
-                    page.mouse.up()
-                page.wait_for_function("!document.getElementById('fishing-cast').disabled", timeout=10000)
+                # SwiftShader may render far below display refresh rate. Move in bounded
+                # increments and observe actual game position, not elapsed wall time.
+                reached_pier = False
+                for _ in range(24):
+                    if page.locator("#fishing-cast").is_enabled():
+                        reached_pier = True
+                        break
+                    position_x = page.evaluate("window.__RIVER_BABYLON_QA__.playerPosition.x")
+                    if position_x <= -54:
+                        break  # Never keep walking outside the pier's activation radius.
+                    if name == "desktop":
+                        page.keyboard.down("a")
+                        page.wait_for_timeout(600)
+                        page.keyboard.up("a")
+                    else:
+                        left = page.locator('[data-move="left"]')
+                        bounds = left.bounding_box()
+                        page.mouse.move(bounds["x"] + bounds["width"]/2, bounds["y"] + bounds["height"]/2)
+                        page.mouse.down()
+                        page.wait_for_timeout(600)
+                        page.mouse.up()
+                    page.wait_for_timeout(200)
+                reached_pier = reached_pier or page.locator("#fishing-cast").is_enabled()
+                assert reached_pier, {"device": name, "player": page.evaluate(
+                    "window.__RIVER_BABYLON_QA__.playerPosition"), "activity": page.evaluate(
+                    "window.__RIVER_BABYLON_QA__.activities")}
+
                 page.locator("#gameplay-panel").evaluate("(panel) => panel.open = true")
                 page.locator("#fishing-cast").click()
                 assert "cast" in page.locator("#activity-result").inner_text().lower()
