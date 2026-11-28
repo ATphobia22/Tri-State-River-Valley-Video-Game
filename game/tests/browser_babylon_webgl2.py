@@ -40,7 +40,14 @@ with Server(("127.0.0.1", 0), Handler) as server:
                 errors = []
                 page.on("pageerror", lambda err: errors.append(str(err)))
                 page.goto(url, wait_until="networkidle", timeout=60000)
-                page.wait_for_function("document.getElementById('status').textContent.includes('WebGL2') && window.__RIVER_BABYLON_QA__?.frames >= 3 && window.__RIVER_BABYLON_QA__?.activeMeshes > 0", timeout=30000)
+                try:
+                    page.wait_for_function("document.getElementById('status').textContent.includes('WebGL2') && window.__RIVER_BABYLON_QA__?.frames >= 3 && window.__RIVER_BABYLON_QA__?.activeMeshes > 0", timeout=30000)
+                except Exception:
+                    print(json.dumps({"startup_failure": name, "errors": errors,
+                        "status": page.locator("#status").inner_text(),
+                        "qa": page.evaluate("window.__RIVER_BABYLON_QA__ || null")}, default=str))
+                    page.screenshot(path=str(out / f"{name}-startup-failure.png"))
+                    raise
                 version = page.evaluate("""() => {
                   const canvas = document.getElementById('babylon-world');
                   const gl = canvas.getContext('webgl2');
