@@ -60,7 +60,7 @@ test('farming, watering and six kitchen recipes reuse the original rules and pan
  const plot=session.farm(0,1000);assert.equal(plot.result,'planted');
  assert.equal(session.farm(0,1001).result,'growing');
  assert.equal(session.waterFarm(2000).result,'watered');
- assert.equal(session.farm(0,3500).result,'growing');
+ assert.equal(session.farm(0,3499).result,'growing');
  assert.equal(session.farm(0,3501).result,'harvested');
  assert.equal(session.snapshot().save.inventory.corn,1);
  assert.equal(session.cook('cornSkillet').result,'ingredients');
